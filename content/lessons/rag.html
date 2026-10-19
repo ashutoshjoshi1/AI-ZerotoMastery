@@ -1,0 +1,423 @@
+<!--
+{
+  "title": "Retrieval-augmented generation (RAG)",
+  "short": "RAG",
+  "summary": "Make a model answer from your own documents, with citations, by building the full pipeline without a framework (parsing, chunking, hybrid retrieval, reranking and grounded generation), then measure it and fix what it gets wrong.",
+  "sessions": [
+    "Why RAG, and the architecture of a retrieval pipeline",
+    "Ingestion: parsing documents and chunking them well",
+    "Retrieval: dense, BM25, hybrid fusion and reranking",
+    "Grounded generation with citations, and advanced retrieval techniques",
+    "Evaluate a RAG system, diagnose failures, and know when to use long context instead"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU). Retrieval downloads two small models; generating answers needs an API key.",
+  "glossary": [
+    {"term": "BM25", "def": "A classic keyword-ranking function that rewards rare query terms, with diminishing returns for repeats and a document-length correction."},
+    {"term": "Chunking", "def": "Splitting documents into retrievable pieces for RAG."},
+    {"term": "Cross-encoder", "def": "A model that reads a query and a document together to score relevance. Accurate but slow; used for reranking."},
+    {"term": "Hybrid search", "def": "Combining keyword and embedding retrieval, typically with reciprocal rank fusion."},
+    {"term": "RAG (retrieval-augmented generation)", "def": "Retrieving relevant documents at question time and asking the model to answer from them."},
+    {"term": "Reciprocal rank fusion (RRF)", "def": "Merging rankings by summing 1/(k + rank) across retrievers."},
+    {"term": "Reranker", "def": "A model, usually a cross-encoder, that reorders retrieved candidates by relevance."}
+  ]
+}
+-->
+<h2>Why RAG</h2>
+<p>An LLM knows what was in its training data, up to its cutoff date. It does not know your instrument manuals, last week's incident reports, your codebase or your customer contracts. You could paste documents into the prompt, but a document collection is usually far larger than any context window, and paying for a million tokens per question is wasteful.</p>
+<p><strong>Retrieval-augmented generation</strong> solves this: for each question, <em>retrieve</em> the few most relevant passages from your collection and <em>give them to the model</em> with instructions to answer from them and cite them. It is the most common LLM application pattern in industry because it:</p>
+<ul>
+<li>grounds answers in your data, which reduces hallucination and enables <strong>citations</strong> users can check;</li>
+<li>stays current: update the index, not the model;</li>
+<li>respects access control: retrieve only what this user is allowed to see;</li>
+<li>is far cheaper and simpler than fine-tuning a model to "know" facts (fine-tuning is for behaviour and format, not knowledge; lesson <a data-ref="fine-tuning"></a>).</li>
+</ul>
+<h2>The architecture</h2>
+<figure>
+<svg class="diagram" viewBox="0 0 680 250" role="img" aria-label="RAG pipeline: offline indexing of documents into a vector and keyword index; online, a question retrieves chunks, which are reranked and passed with the question to the LLM to produce a cited answer">
+<text x="10" y="20" class="muted">Offline: indexing</text>
+<rect class="box" x="10" y="32" width="100" height="40" rx="6"/><text x="60" y="57" text-anchor="middle">documents</text>
+<rect class="box" x="135" y="32" width="100" height="40" rx="6"/><text x="185" y="57" text-anchor="middle">parse + clean</text>
+<rect class="box" x="260" y="32" width="100" height="40" rx="6"/><text x="310" y="57" text-anchor="middle">chunk</text>
+<rect class="box" x="385" y="32" width="100" height="40" rx="6"/><text x="435" y="57" text-anchor="middle">embed</text>
+<rect x="510" y="32" width="160" height="40" rx="6" class="accent" opacity="0.15"/><rect x="510" y="32" width="160" height="40" rx="6" class="accent-stroke"/><text x="590" y="50" text-anchor="middle">vector + keyword</text><text x="590" y="66" text-anchor="middle">index</text>
+<path class="wire" d="M110 52 H135 M235 52 H260 M360 52 H385 M485 52 H510"/>
+<text x="10" y="120" class="muted">Online: every question</text>
+<rect class="box" x="10" y="132" width="100" height="40" rx="6"/><text x="60" y="157" text-anchor="middle">question</text>
+<rect class="box" x="135" y="132" width="110" height="40" rx="6"/><text x="190" y="150" text-anchor="middle">retrieve</text><text x="190" y="165" text-anchor="middle" font-size="11" class="muted">hybrid, top 30</text>
+<rect class="box" x="270" y="132" width="110" height="40" rx="6"/><text x="325" y="150" text-anchor="middle">rerank</text><text x="325" y="165" text-anchor="middle" font-size="11" class="muted">keep top 5</text>
+<rect class="box" x="405" y="132" width="110" height="40" rx="6"/><text x="460" y="150" text-anchor="middle">LLM</text><text x="460" y="165" text-anchor="middle" font-size="11" class="muted">question + chunks</text>
+<rect class="box" x="540" y="132" width="130" height="40" rx="6"/><text x="605" y="157" text-anchor="middle">cited answer</text>
+<path class="wire" d="M110 152 H135 M245 152 H270 M380 152 H405 M515 152 H540"/>
+<path class="accent-stroke" d="M590 72 V100 H190 V132" stroke-dasharray="5 4"/>
+<text x="400" y="95" class="muted" font-size="11">search</text>
+<text x="10" y="215" font-size="12" class="muted">Every box is a place where quality is won or lost, so every box needs its own test.</text>
+</svg>
+<figcaption>Indexing runs whenever documents change; retrieval and generation run for every question.</figcaption>
+</figure>
+
+<p>Frameworks such as LlamaIndex and LangChain package these steps. This lesson builds them by hand first, because when a RAG system gives a bad answer you need to know which box failed, and you cannot debug what you do not understand.</p>
+<h2>Ingestion: parsing and chunking</h2>
+<h3>Parsing: garbage in, garbage out</h3>
+<p>Most retrieval failures start here. PDFs are layout instructions, not text: columns get interleaved, tables turn into number soup, headers and footers repeat on every page, scanned pages contain no text at all.</p>
+<ul>
+<li><strong>Text-based PDFs</strong>: <code>pypdf</code> or PyMuPDF for plain extraction; layout-aware tools such as Docling or Unstructured for headings, lists and tables.</li>
+<li><strong>Scanned documents</strong>: OCR (Tesseract, or a cloud OCR service), or send page images to a vision-capable model (lesson <a data-ref="multimodal"></a>).</li>
+<li><strong>HTML, Markdown, Word</strong>: convert to clean text while <strong>keeping structure</strong>: headings, list items and table rows carry meaning.</li>
+<li><strong>Always look at the output.</strong> Print ten parsed pages before indexing a thousand.</li>
+</ul>
+<p>Keep <strong>metadata</strong> with every piece of text: source file, page, section heading, date, product, access level. You will use it to filter, to cite, and to show users where an answer came from.</p>
+<h3>Chunking</h3>
+<p>Documents are split into <strong>chunks</strong> that are embedded and retrieved individually. Chunk size is a real trade-off:</p>
+<ul>
+<li><strong>Too small</strong> (a sentence): precise matches, but the chunk lacks the context needed to answer ("Set it to 5" — set what?).</li>
+<li><strong>Too large</strong> (a whole chapter): the embedding becomes a blurry average of many topics, retrieval gets less precise, and you waste context tokens.</li>
+<li>A common starting point is <strong>200 to 800 tokens</strong>, split at natural boundaries (sections, then paragraphs, then sentences), with a little <strong>overlap</strong> so ideas spanning a boundary survive.</li>
+</ul>
+<pre><code class="language-python">import re
+
+def split_long(paragraph: str, max_chars: int) -&gt; list[str]:
+    """Split an over-long paragraph at sentence boundaries."""
+    if len(paragraph) &lt;= max_chars:
+        return [paragraph]
+    out, cur = [], ""
+    for s in re.split(r"(?&lt;=[.!?])\s+", paragraph):
+        if cur and len(cur) + len(s) + 1 &gt; max_chars:
+            out.append(cur)
+            cur = s
+        else:
+            cur = f"{cur} {s}".strip()
+    return out + [cur] if cur else out
+
+def chunk_text(text: str, max_chars: int = 2000, overlap_chars: int = 200) -&gt; list[str]:
+    """Pack paragraphs into chunks of about max_chars, carrying a little overlap forward."""
+    paras = [piece for p in re.split(r"\n\s*\n", text) if p.strip()
+             for piece in split_long(p.strip(), max_chars)]
+    chunks, cur = [], ""
+    for p in paras:
+        if cur and len(cur) + len(p) + 2 &gt; max_chars:
+            chunks.append(cur)
+            tail = cur[-overlap_chars:] if overlap_chars else ""
+            cur = tail[tail.find(" ") + 1:] if " " in tail else tail   # start the overlap at a word boundary
+        cur = f"{cur}\n\n{p}" if cur else p
+    if cur:
+        chunks.append(cur)
+    return chunks</code></pre>
+<p>About 4 characters per token in English, so <code>max_chars=2000</code> is roughly 500 tokens.</p>
+<div class="admonition tip">
+<p class="admonition-title">Give every chunk its context</p>
+<p>A chunk saying "Tighten to 2 N·m" is useless if retrieval cannot tell it belongs to "Section 4.2: Replacing the filter wheel belt" of the model X manual. Prepend the document title and section path to each chunk's text before embedding. Going further, <strong>contextual retrieval</strong> asks an LLM to write one or two sentences situating each chunk within its whole document, and prepends that. Anthropic reported this substantially reduced retrieval failures, and it combines well with prompt caching to keep the cost down.</p>
+</div>
+<h2>Retrieval</h2>
+<h3>Dense retrieval</h3>
+<p>Embed the chunks and the question; take the nearest chunks by cosine similarity (lesson <a data-ref="embeddings-vector-search"></a>). Strong on paraphrase and meaning.</p>
+<h3>Keyword retrieval with BM25</h3>
+<p>BM25 scores documents by how many query terms they contain, weighted by how rare each term is across the collection (rare terms such as error codes count for a lot), with diminishing returns for repeats and a correction for document length. It is decades old and still excellent for exact terms. Here it is from scratch:</p>
+<pre><code class="language-python">import math
+from collections import Counter
+
+def tokenize(s: str) -&gt; list[str]:
+    return re.findall(r"[a-z0-9]+(?:-[a-z0-9]+)*", s.lower())     # keeps codes like "e-4071" whole
+
+class BM25:
+    def __init__(self, docs: list[str], k1: float = 1.5, b: float = 0.75):
+        self.k1, self.b = k1, b
+        self.toks = [tokenize(d) for d in docs]
+        self.avgdl = sum(map(len, self.toks)) / len(docs)
+        df = Counter(w for t in self.toks for w in set(t))           # in how many docs each word appears
+        N = len(docs)
+        self.idf = {w: math.log(1 + (N - n + 0.5) / (n + 0.5)) for w, n in df.items()}
+        self.tf = [Counter(t) for t in self.toks]
+
+    def scores(self, query: str) -&gt; list[float]:
+        q = tokenize(query)
+        out = []
+        for tf, toks in zip(self.tf, self.toks):
+            norm = self.k1 * (1 - self.b + self.b * len(toks) / self.avgdl)
+            out.append(sum(self.idf[w] * tf[w] * (self.k1 + 1) / (tf[w] + norm) for w in q if w in tf))
+        return out
+
+docs = ["Error E-4071 indicates a filter wheel position fault.",
+        "Filter wheel faults are often caused by a slipping belt.",
+        "Error E-2210 means the GPS has no fix.",
+        "Replace the desiccant every six months."]
+print([round(s, 2) for s in BM25(docs).scores("what does error E-4071 mean")])
+# [1.9, 0.0, 0.69, 0.0]: the exact code dominates</code></pre>
+<p>In production use a library (<code>rank_bm25</code>, or the full-text search built into PostgreSQL, Elasticsearch or OpenSearch).</p>
+<h3>Hybrid search with reciprocal rank fusion</h3>
+<p>Dense and keyword scores are on different scales, so do not add them. <strong>Reciprocal rank fusion (RRF)</strong> combines <em>rankings</em> instead: each document earns \(1/(k + \text{rank})\) from each retriever, with \(k \approx 60\), and the sums are re-sorted. Documents ranked well by both rise to the top.</p>
+<pre><code class="language-python">def rrf(rankings: list[list[int]], k: int = 60) -&gt; list[int]:
+    scores = Counter()
+    for ranking in rankings:
+        for rank, doc_id in enumerate(ranking):
+            scores[doc_id] += 1 / (k + rank + 1)
+    return [doc_id for doc_id, _ in scores.most_common()]
+
+print(rrf([[0, 1, 2, 3], [1, 0, 3, 2], [2, 1, 0, 3]]))   # [1, 0, 2, 3]</code></pre>
+<h3>Reranking</h3>
+<p>First-stage retrieval is built for speed: query and document are embedded <em>separately</em>. A <strong>cross-encoder reranker</strong> reads the query and a candidate <em>together</em> and outputs a relevance score. It is far more accurate and far too slow to run on the whole collection, so use it on the top 20 to 50 candidates and keep the best 3 to 8.</p>
+<pre><code class="language-python">from sentence_transformers import CrossEncoder
+
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+scores = reranker.predict([(question, chunks[i]) for i in candidate_ids])
+best = [candidate_ids[i] for i in np.argsort(-scores)[:5]]</code></pre>
+<p>Hosted rerank APIs exist too. Reranking is often the single cheapest large improvement to a RAG system.</p>
+<h2>Grounded generation</h2>
+<h3>The prompt</h3>
+<p>Number the retrieved chunks, tell the model to answer only from them, to cite them, and to say when they do not contain the answer.</p>
+<pre><code class="language-python">RAG_PROMPT = """You answer questions about field instruments using only the sources below.
+
+&lt;sources&gt;
+{sources}
+&lt;/sources&gt;
+
+Rules:
+- Answer only from the sources. If they do not contain the answer, say so plainly and suggest
+  what document might help. Do not use outside knowledge for facts.
+- Cite sources inline as [1], [2] after the sentence they support.
+- If sources disagree, say so and cite both.
+- Be concise: a direct answer first, then any necessary detail or steps.
+
+Question: {question}"""
+
+def format_sources(hits: list[dict]) -&gt; str:
+    return "\n\n".join(
+        f'&lt;source id="{i}" title="{h["title"]}" section="{h["section"]}"&gt;\n{h["text"]}\n&lt;/source&gt;'
+        for i, h in enumerate(hits, start=1)
+    )</code></pre>
+<h3>The whole pipeline, no framework</h3>
+<pre><code class="language-python">import numpy as np, anthropic
+from sentence_transformers import SentenceTransformer, CrossEncoder
+
+class MiniRAG:
+    def __init__(self, embed_model="all-MiniLM-L6-v2",
+                 rerank_model="cross-encoder/ms-marco-MiniLM-L-6-v2", llm_model="claude-sonnet-5-5"):
+        self.embedder = SentenceTransformer(embed_model)
+        self.reranker = CrossEncoder(rerank_model)
+        self.client = anthropic.Anthropic()
+        self.llm_model = llm_model
+        self.chunks: list[dict] = []
+
+    def index(self, documents: list[dict]):
+        """documents: [{"title": ..., "text": ...}, ...]"""
+        for doc in documents:
+            for j, chunk in enumerate(chunk_text(doc["text"])):
+                section = chunk.splitlines()[0][:80]               # crude: first line as section label
+                self.chunks.append({"title": doc["title"], "section": section,
+                                    "text": chunk, "id": f'{doc["title"]}#{j}'})
+        texts = [f'{c["title"]}\n{c["text"]}' for c in self.chunks]   # title travels with the chunk
+        self.vecs = self.embedder.encode(texts, normalize_embeddings=True)
+        self.bm25 = BM25(texts)
+
+    def retrieve(self, question: str, k_first=30, k_final=5) -&gt; list[dict]:
+        q = self.embedder.encode([question], normalize_embeddings=True)[0]
+        dense = list(np.argsort(-(self.vecs @ q))[:k_first])
+        sparse = list(np.argsort(-np.array(self.bm25.scores(question)))[:k_first])
+        candidates = rrf([dense, sparse])[:k_first]
+        scores = self.reranker.predict([(question, self.chunks[i]["text"]) for i in candidates])
+        return [self.chunks[candidates[i]] for i in np.argsort(-scores)[:k_final]]
+
+    def answer(self, question: str) -&gt; dict:
+        hits = self.retrieve(question)
+        prompt = RAG_PROMPT.format(sources=format_sources(hits), question=question)
+        r = self.client.messages.create(model=self.llm_model, max_tokens=700, temperature=0,
+                                        messages=[{"role": "user", "content": prompt}])
+        return {"answer": r.content[0].text, "sources": [h["id"] for h in hits]}
+
+# rag = MiniRAG()
+# rag.index([{"title": p.stem, "text": p.read_text()} for p in Path("docs").glob("*.md")])
+# print(rag.answer("How often should the desiccant be replaced in humid sites?"))</code></pre>
+<p>About seventy lines, and it contains every essential idea of a production RAG system. Production adds a persistent vector store, metadata filters and access control, incremental re-indexing, caching, streaming and monitoring.</p>
+<h2>Advanced retrieval techniques</h2>
+<p>Reach for these when your evaluation (below) shows a specific weakness, not by default.</p>
+<ul>
+<li><strong>Query rewriting.</strong> Users write "and what about the other one?" mid-conversation. Have an LLM rewrite the latest message into a standalone search query using the chat history before retrieving.</li>
+<li><strong>Multi-query.</strong> Generate three or four rephrasings of the question, retrieve for each, fuse with RRF. Helps with vague or multi-part questions.</li>
+<li><strong>HyDE (hypothetical document embeddings).</strong> Ask the LLM to write a plausible answer, then embed <em>that</em> for retrieval: answers look more like documents than questions do.</li>
+<li><strong>Small-to-big (parent document) retrieval.</strong> Index small chunks for precise matching, but hand the model the larger parent section they came from.</li>
+<li><strong>Metadata filtering and routing.</strong> Extract filters from the question ("model X", "since 2025") or route to the right collection before searching.</li>
+<li><strong>Agentic RAG.</strong> Give an agent a search tool and let it search repeatedly, refine queries and decide when it has enough (lesson <a data-ref="agents"></a>). Better for complex questions, slower and costlier.</li>
+<li><strong>GraphRAG.</strong> Extract entities and relationships into a knowledge graph to answer questions that need connecting many documents ("which sites had both firmware 2.3 and belt failures?").</li>
+</ul>
+<h2>Evaluate and improve</h2>
+<p>You cannot improve what you do not measure, and RAG has two separate things to measure.</p>
+<h3>Build an evaluation set</h3>
+<p>Collect 50 to 200 realistic questions with, for each, the chunk or document that contains the answer and a reference answer. Sources: real user questions, questions written by domain experts, and LLM-generated questions from your documents (review them; generated questions tend to be too easy because they reuse the document's wording). Include questions the documents <strong>cannot</strong> answer, to test abstention.</p>
+<h3>Retrieval metrics</h3>
+<ul>
+<li><strong>Recall@k</strong>: fraction of questions whose relevant chunk appears in the top \(k\). If the right chunk is not retrieved, the model cannot answer correctly; this is the first thing to measure.</li>
+<li><strong>MRR</strong> (mean reciprocal rank): rewards getting the relevant chunk near the top.</li>
+</ul>
+<pre><code class="language-python">def retrieval_eval(rag, eval_set, k=5):
+    hits, rr = 0, 0.0
+    for item in eval_set:                                   # {"question": ..., "gold_id": "manual-x#12"}
+        ids = [c["id"] for c in rag.retrieve(item["question"], k_final=k)]
+        if item["gold_id"] in ids:
+            hits += 1
+            rr += 1 / (ids.index(item["gold_id"]) + 1)
+    return {"recall@k": hits / len(eval_set), "mrr": rr / len(eval_set)}</code></pre>
+<h3>Generation metrics</h3>
+<ul>
+<li><strong>Faithfulness (groundedness)</strong>: is every claim supported by the retrieved sources?</li>
+<li><strong>Answer correctness</strong>: does it match the reference answer?</li>
+<li><strong>Citation accuracy</strong>: do the cited sources actually support the sentences they are attached to?</li>
+<li><strong>Abstention</strong>: on unanswerable questions, does it say so?</li>
+</ul>
+<p>These are judged by people on a sample, and at scale by an <strong>LLM-as-judge</strong> with a careful rubric (lesson <a data-ref="evaluation"></a>). Libraries such as RAGAS package common versions of these metrics.</p>
+<h3>Diagnose, then fix</h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Where it broke</th>
+<th>Typical fixes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Right chunk not in top 30</td>
+<td>Parsing, chunking or first-stage retrieval</td>
+<td>Fix parsing; add titles and context to chunks; hybrid search; better embedding model; query rewriting</td>
+</tr>
+<tr>
+<td>Right chunk in top 30 but not top 5</td>
+<td>Ranking</td>
+<td>Add or improve the reranker; increase k_final</td>
+</tr>
+<tr>
+<td>Right chunk given, wrong answer</td>
+<td>Generation</td>
+<td>Clearer prompt; extract-quotes-then-answer chaining; stronger model</td>
+</tr>
+<tr>
+<td>Answer includes facts not in sources</td>
+<td>Grounding</td>
+<td>Stricter instructions; faithfulness check step; lower temperature</td>
+</tr>
+<tr>
+<td>Confident answer to unanswerable question</td>
+<td>Abstention</td>
+<td>Explicit permission and instruction to say "not in the documents"; test cases for it</td>
+</tr>
+</tbody>
+</table>
+<h2>RAG or long context?</h2>
+<p>Context windows of hundreds of thousands of tokens raise the question: why not paste everything? For a <strong>small, stable</strong> collection (a few long documents) that fits comfortably, long context with prompt caching is simpler and can be more accurate, since nothing is lost to retrieval. RAG wins when the collection is <strong>large or changing</strong>, when <strong>cost and latency</strong> per question matter, when you need <strong>access control</strong> per document, or when you need <strong>citations to precise passages</strong>. Many systems combine them: retrieve generously, then give the model larger sections than a classic RAG system would.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: build, measure and improve a RAG system</p>
+<ol>
+<li>Pick a document collection you care about: product manuals, a set of papers, a project's documentation, or the Markdown sources of your learning log. Aim for at least 50 pages.</li>
+<li>Index it with <code>MiniRAG</code>. Write 25 evaluation questions with the chunk id that answers each, plus 5 questions the documents cannot answer.</li>
+<li>Measure recall@5 and MRR for: dense only, BM25 only, hybrid, and hybrid plus reranker. Record a table.</li>
+<li>Answer all 30 questions and grade faithfulness and abstention by hand. Find your three worst failures and classify each with the diagnosis table.</li>
+<li>Fix one failure class and re-measure.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what a typical first run looks like</summary>
+<p>Results vary with your documents, but a common pattern is:</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Recall@5</th>
+<th>MRR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dense only</td>
+<td>0.68</td>
+<td>0.52</td>
+</tr>
+<tr>
+<td>BM25 only</td>
+<td>0.60</td>
+<td>0.47</td>
+</tr>
+<tr>
+<td>Hybrid (RRF)</td>
+<td>0.80</td>
+<td>0.61</td>
+</tr>
+<tr>
+<td>Hybrid + reranker</td>
+<td>0.88</td>
+<td>0.76</td>
+</tr>
+</tbody>
+</table>
+<p>To compare configurations, add a <code>mode</code> argument to <code>retrieve</code> that skips the sparse list, the dense list, or the reranker. Typical failure classes on a first run: tables that parsed into nonsense (fix parsing), chunks with no indication of which product they describe (prepend titles and sections), and the model answering an unanswerable question from general knowledge (strengthen the abstention instruction and add a check). The habit to keep: <strong>every change gets measured on the same evaluation set</strong>. Gut feeling about a few hand-picked questions is how RAG systems quietly get worse.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Why is RAG usually preferred over fine-tuning for giving a model knowledge of company documents?</p>
+<ul>
+<li>Fine-tuning is impossible for most models</li>
+<li class="correct">RAG stays current by re-indexing, enables citations and access control, and is cheaper; fine-tuning is better suited to behaviour and format</li>
+<li>RAG never hallucinates</li>
+<li>Fine-tuned models cannot answer questions</li>
+</ul>
+<p class="why">Knowledge changes; indexes are easy to update. Fine-tuning shapes how a model behaves rather than reliably storing facts.</p>
+</div>
+<div class="q">
+<p>What is the risk of very large chunks?</p>
+<ul>
+<li>They cannot be embedded</li>
+<li class="correct">Their embeddings blur many topics together, making retrieval less precise and wasting context</li>
+<li>They make BM25 impossible</li>
+<li>They always exceed the context window</li>
+</ul>
+<p class="why">Chunk size trades precision against context. Start around 200 to 800 tokens and measure.</p>
+</div>
+<div class="q">
+<p>Why combine dense and BM25 results with reciprocal rank fusion rather than adding their scores?</p>
+<ul>
+<li>RRF is faster to compute</li>
+<li class="correct">The two scores are on incomparable scales; fusing ranks avoids calibrating them</li>
+<li>BM25 scores are always negative</li>
+<li>Dense scores cannot be sorted</li>
+</ul>
+<p class="why">RRF uses only positions in each ranking, so no score normalisation is needed.</p>
+</div>
+<div class="q">
+<p>Your evaluation shows the correct chunk is usually in the top 30 but rarely in the top 5. What should you try first?</p>
+<ul>
+<li>A bigger LLM for generation</li>
+<li>Smaller chunks</li>
+<li class="correct">A cross-encoder reranker on the top candidates</li>
+<li>A higher temperature</li>
+</ul>
+<p class="why">The first stage finds it; the ordering is the problem. Rerankers fix ordering.</p>
+</div>
+<div class="q">
+<p>What should a RAG system do when the retrieved sources do not contain the answer?</p>
+<ul>
+<li>Answer from general knowledge without saying so</li>
+<li class="correct">Say the documents do not contain the answer, and ideally suggest where to look</li>
+<li>Return the most similar chunk verbatim</li>
+<li>Retry with a higher temperature until it answers</li>
+</ul>
+<p class="why">Abstention is a feature. Test for it explicitly with unanswerable questions.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>RAG retrieves relevant passages at question time and asks the model to answer from them with citations. It grounds answers, stays current and respects access control.</li>
+<li>Quality is won or lost in parsing and chunking: keep structure and metadata, chunk at natural boundaries, and give each chunk its context.</li>
+<li>Hybrid retrieval (dense plus BM25 fused with RRF) followed by a cross-encoder reranker is a strong default.</li>
+<li>Prompt for answers only from sources, inline citations and explicit abstention.</li>
+<li>Measure retrieval (recall@k, MRR) and generation (faithfulness, correctness, abstention) separately, diagnose which stage failed, and re-measure after every change.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Lewis et al., "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks" (arXiv 2005.11401)</li>
+<li>Anthropic, "Introducing Contextual Retrieval" (engineering blog post, 2024)</li>
+<li>Liu et al., "Lost in the Middle: How Language Models Use Long Contexts" (arXiv 2307.03172)</li>
+<li>Gao et al., "Precise Zero-Shot Dense Retrieval without Relevance Labels" (HyDE, arXiv 2212.10496)</li>
+<li>The LlamaIndex and RAGAS documentation, once you understand the parts</li>
+</ul>

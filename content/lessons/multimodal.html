@@ -1,0 +1,260 @@
+<!--
+{
+  "title": "Multimodal AI: vision, documents, speech and image generation",
+  "short": "Multimodal AI",
+  "summary": "Extend everything you know beyond text, from vision transformers and CLIP to sending images and documents to vision-language models, transcribing speech, and understanding how diffusion models generate images.",
+  "sessions": [
+    "Vision: from CNNs to vision transformers, CLIP, and vision-language models via API",
+    "Documents and speech: document understanding, OCR, speech-to-text and text-to-speech",
+    "Generating images: diffusion models from intuition to code"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "CPU for most cells; an API key for the vision-language model; a GPU for image generation.",
+  "glossary": [
+    {"term": "CLIP", "def": "A model that embeds images and text into a shared space, enabling zero-shot image classification and cross-modal search."},
+    {"term": "Diffusion model", "def": "A generative model that learns to remove noise step by step, generating images (or audio, video) from pure noise."},
+    {"term": "Vision transformer (ViT)", "def": "A transformer that processes images as sequences of patches."},
+    {"term": "VLM (vision-language model)", "def": "A model that accepts images alongside text."},
+    {"term": "Zero-shot", "def": "Performing a task with no task-specific examples or training."}
+  ]
+}
+-->
+<h2>One architecture, many modalities</h2>
+<p>The transformer turned out to be modality-agnostic. Anything you can cut into a sequence of vectors, it can process: image patches, audio frames, video clips, sensor readings. Modern frontier models are <strong>multimodal</strong>: they accept images (and often audio or documents) alongside text, in the same conversation. For an AI engineer this opens up reading scanned forms, inspecting photos from the field, understanding plots and diagrams, transcribing meetings and generating images.</p>
+<h2>Vision</h2>
+<h3>Vision transformers</h3>
+<p>A <strong>vision transformer (ViT)</strong> cuts an image into fixed-size patches (for example 16×16 pixels), flattens each patch, projects it to a vector with a linear layer, adds position embeddings, and feeds the sequence to a standard transformer encoder (lesson <a data-ref="transformers"></a>). A 224×224 image becomes \((224/16)^2 = 196\) patch tokens. Patches are to images what tokens are to text.</p>
+<p>ViTs need more training data than CNNs (they lack the built-in locality assumption of convolutions, lesson <a data-ref="pytorch"></a>), but at scale they match or beat them, and they plug directly into language models.</p>
+<h3>CLIP: connecting images and text</h3>
+<p><strong>CLIP</strong> (2021) trains an image encoder and a text encoder together on hundreds of millions of image-caption pairs, contrastively (like the embedding models in lesson <a data-ref="embeddings-vector-search"></a>): the embedding of an image should be close to the embedding of its own caption and far from other captions. The result is a <strong>shared space</strong> for images and text, which enables:</p>
+<ul>
+<li><strong>Zero-shot classification</strong>: embed candidate labels as sentences ("a photo of a corroded connector") and pick the closest to the image. No training needed.</li>
+<li><strong>Text-to-image search</strong> and <strong>image-to-image search</strong> over photo collections.</li>
+<li>The text-conditioning backbone of many image generators.</li>
+</ul>
+<pre><code class="language-python"># uv add transformers torch pillow
+from PIL import Image
+from transformers import CLIPModel, CLIPProcessor
+
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+proc = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+image = Image.open("field_photo.jpg")
+labels = ["a clean optical window", "a dirty optical window", "a cracked optical window", "a bird nest"]
+inputs = proc(text=[f"a photo of {l}" for l in labels], images=image, return_tensors="pt", padding=True)
+probs = model(**inputs).logits_per_image.softmax(dim=1)[0]
+for label, p in sorted(zip(labels, probs.tolist()), key=lambda x: -x[1]):
+    print(f"{p:.2f}  {label}")</code></pre>
+<p>Zero-shot CLIP is a superb baseline for triaging images. For high accuracy on your categories, train a small classifier on CLIP embeddings with a few hundred labelled images, or fine-tune.</p>
+<h3>Vision-language models through an API</h3>
+<p>A <strong>vision-language model (VLM)</strong> connects a vision encoder to an LLM, so images become tokens in the conversation. You send images as content blocks next to text.</p>
+<pre><code class="language-python">import base64, anthropic
+
+client = anthropic.Anthropic()
+
+def ask_about_image(path: str, question: str, media_type: str = "image/jpeg") -&gt; str:
+    data = base64.standard_b64encode(open(path, "rb").read()).decode()
+    r = client.messages.create(
+        model="claude-sonnet-5-5",
+        max_tokens=800,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": data}},
+                {"type": "text", "text": question},
+            ],
+        }],
+    )
+    return r.content[0].text
+
+print(ask_about_image("spectrum_plot.png",
+                      "Describe this plot: axes, units, the main features, and anything that looks like an artefact.",
+                      media_type="image/png"))</code></pre>
+<p>Practical notes:</p>
+<ul>
+<li><strong>Images cost tokens</strong>, roughly in proportion to their pixel count. Resize large photos to the resolution the task needs before sending.</li>
+<li><strong>Put the image before the question</strong> and be specific about what to look for.</li>
+<li><strong>Combine with structured output</strong> (lesson <a data-ref="llm-apis"></a>) to turn photos and scans into validated records.</li>
+<li>VLMs are strong at reading text in images, charts and screenshots, describing scenes and comparing images. They can still misread small text, miscount objects and misjudge precise spatial measurements; verify where accuracy matters.</li>
+</ul>
+<h2>Documents and speech</h2>
+<h3>Document understanding</h3>
+<p>Real-world documents are PDFs, scans, photos of forms, spreadsheets in screenshots. Three approaches, often combined:</p>
+<ol>
+<li><strong>Text extraction</strong> with PDF libraries for digital PDFs (lesson <a data-ref="rag"></a>): fast and cheap, but loses layout and fails on scans.</li>
+<li><strong>OCR</strong> (Tesseract, cloud OCR services, or layout-aware tools such as Docling) for scanned pages: produces text, sometimes with layout and tables.</li>
+<li><strong>Send page images to a VLM</strong> with a schema: best on messy layouts, handwriting, tables and forms, at higher cost per page. Many APIs also accept PDFs directly as document blocks.</li>
+</ol>
+<pre><code class="language-python">from pydantic import BaseModel
+
+class CalibrationCert(BaseModel):
+    instrument_serial: str
+    calibration_date: str          # ISO format, YYYY-MM-DD
+    lab_name: str
+    wavelength_range_nm: tuple[float, float] | None
+    passed: bool
+
+# Render each PDF page to PNG (e.g. with PyMuPDF), then for each page image:
+# use the forced-tool-call pattern from lesson 10 with input_schema=CalibrationCert.model_json_schema(),
+# sending the image block plus "Extract the certificate fields. Use null for anything not present."</code></pre>
+<p>Evaluate extraction like any other system: a labelled set of documents, field-level accuracy, and special attention to fields that must never be guessed.</p>
+<h3>Speech-to-text</h3>
+<p><strong>Whisper</strong> (2022) is an encoder-decoder transformer (lesson <a data-ref="transformers"></a>) trained on hundreds of thousands of hours of audio. It transcribes and translates many languages and runs locally in sizes from tiny to large.</p>
+<pre><code class="language-python"># uv add transformers torch  (and install ffmpeg on your system for audio decoding)
+from transformers import pipeline
+
+asr = pipeline("automatic-speech-recognition", model="openai/whisper-small")
+result = asr("site_visit_notes.m4a", return_timestamps=True)
+print(result["text"])</code></pre>
+<p>Faster local implementations (faster-whisper, whisper.cpp) and hosted speech APIs are common in production. A powerful pattern: transcribe a technician's voice memo, then use an LLM with structured output to turn it into a maintenance record (your lesson <a data-ref="fine-tuning"></a> task, now hands-free).</p>
+<h3>Text-to-speech and voice agents</h3>
+<p>Neural text-to-speech models produce natural voices from text, and many providers offer them via API. A <strong>voice agent</strong> chains speech-to-text, an LLM (often with tools) and text-to-speech, or uses a natively speech-capable model end to end. The engineering challenge is <strong>latency</strong>: people expect replies within about a second, so everything streams and every stage is optimised.</p>
+<h2>Generating images: diffusion models</h2>
+<h3>The intuition</h3>
+<p>A <strong>diffusion model</strong> learns to reverse a gradual noising process. Training: take a real image, add a random amount of Gaussian noise, and train a network to predict the noise that was added. Generation: start from pure noise, and repeatedly ask the network "what noise is in this?", subtract a little of it, and repeat. Over tens of steps, structure emerges from static.</p>
+<p>The forward (noising) process has a convenient closed form. With a noise schedule \(\beta_t\) and \(\bar\alpha_t = \prod_{s\le t}(1-\beta_s)\):</p>
+\[
+x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\varepsilon,\qquad \varepsilon\sim\mathcal{N}(0, I)
+\]
+<p>and the network \(\varepsilon_\theta(x_t, t)\) is trained with a simple mean-squared error, \(\lVert \varepsilon - \varepsilon_\theta(x_t, t)\rVert^2\).</p>
+<pre><code class="language-python">import numpy as np
+
+T = 1000
+betas = np.linspace(1e-4, 0.02, T)              # the linear schedule from the original DDPM paper
+alpha_bar = np.cumprod(1 - betas)
+
+rng = np.random.default_rng(0)
+x0 = np.sin(np.linspace(0, 4 * np.pi, 200))     # a stand-in "image": a clean signal
+
+def q_sample(x0, t):
+    eps = rng.normal(size=x0.shape)
+    return np.sqrt(alpha_bar[t]) * x0 + np.sqrt(1 - alpha_bar[t]) * eps, eps
+
+for t in [0, 100, 300, 999]:
+    xt, _ = q_sample(x0, t)
+    print(t, round(float(np.corrcoef(x0, xt)[0, 1]), 2))
+# 0 1.0    100 0.9    300 0.57    999 -0.05: by the last step, nothing of the signal remains</code></pre>
+<p>Plot <code>xt</code> for those four steps and you will see the signal dissolve into noise. Generation runs this film backwards, one learned denoising step at a time.</p>
+<h3>What makes modern image generators work</h3>
+<ul>
+<li><strong>Latent diffusion</strong>: run diffusion in the compressed latent space of an autoencoder rather than on raw pixels, which makes it far cheaper (Stable Diffusion's key idea).</li>
+<li><strong>Text conditioning</strong>: the denoiser attends to text embeddings (from CLIP-style or T5-style encoders) via cross-attention, so the prompt steers each step.</li>
+<li><strong>Classifier-free guidance</strong>: at each step, compare the prediction with and without the prompt and push further in the prompt's direction. The guidance scale trades prompt fidelity against diversity.</li>
+<li><strong>Fewer steps</strong>: distillation techniques let models generate in 1 to 4 steps instead of 50.</li>
+<li><strong>Transformers as denoisers</strong>: newer models replace the U-Net denoiser with a diffusion transformer.</li>
+</ul>
+<pre><code class="language-python"># on a GPU: uv add diffusers transformers accelerate torch
+import torch
+from diffusers import AutoPipelineForText2Image
+
+pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sd-turbo", torch_dtype=torch.float16).to("cuda")
+image = pipe(prompt="a weatherproof scientific instrument on a mountain ridge at dawn, photo",
+             num_inference_steps=1, guidance_scale=0.0).images[0]      # sd-turbo is distilled for 1 to 4 steps
+image.save("instrument.png")</code></pre>
+<p>Image generation raises its own responsible-use issues: likenesses of real people, copyrighted styles and characters, and misleading synthetic imagery. Check model licences and your organisation's policies, and label generated images where it matters.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a field-photo triage pipeline</p>
+<p>You have a folder of photos from site visits and want to flag ones needing attention.</p>
+<ol>
+<li>Use CLIP zero-shot with 4 to 6 descriptive labels to triage 30 or more images (your own photos, or public-domain images of equipment, weather and landscapes). Measure accuracy against your own labels.</li>
+<li>For images CLIP flags as problems, call a VLM with a Pydantic schema: <code>{issue_type, severity 1-5, visible_evidence, recommended_action}</code>.</li>
+<li>Compare cost and time per image for the two stages. Why is the two-stage design sensible?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution sketch and discussion</summary>
+<p><pre><code class="language-python">from pathlib import Path
+from pydantic import BaseModel, Field
+
+class Finding(BaseModel):
+    issue_type: str
+    severity: int = Field(ge=1, le=5)
+    visible_evidence: str
+    recommended_action: str
+
+def triage(path):
+    image = Image.open(path).convert("RGB")
+    inputs = proc(text=[f"a photo of {l}" for l in labels], images=image, return_tensors="pt", padding=True)
+    probs = model(**inputs).logits_per_image.softmax(dim=1)[0]
+    return labels[int(probs.argmax())], float(probs.max())
+
+for p in sorted(Path("photos").glob("*.jpg")):
+    label, conf = triage(p)
+    if label != "a clean optical window" or conf &lt; 0.6:       # problem or unsure: escalate
+        # call the VLM with the forced-tool pattern and input_schema=Finding.model_json_schema()
+        ...</code></pre>
+CLIP runs locally in tens of milliseconds per image at no per-call cost; the VLM costs real money and seconds per image but gives far richer, structured judgements. Routing only problems and low-confidence cases to the VLM is the same cheap-model-first pattern as lesson <a data-ref="deployment-llmops"></a>, applied to vision. Expect CLIP's zero-shot accuracy to depend heavily on label wording: "a photo of a dirty lens with dust spots" often beats "dirty". Treat label phrasing like prompt engineering and test variants on your labelled set.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>How does a vision transformer turn an image into a sequence?</p>
+<ul>
+<li>It reads pixels one at a time, row by row</li>
+<li class="correct">It cuts the image into fixed-size patches and projects each patch to a vector, adding position embeddings</li>
+<li>It converts the image to a text caption first</li>
+<li>It uses an RNN over columns</li>
+</ul>
+<p class="why">Patches play the role tokens play for text: 224×224 with 16×16 patches gives 196 tokens.</p>
+</div>
+<div class="q">
+<p>What enables CLIP to classify images into categories it was never explicitly trained on?</p>
+<ul>
+<li class="correct">Images and text share an embedding space, so you can compare an image with sentence descriptions of any label</li>
+<li>It was trained on every possible category</li>
+<li>It generates captions and string-matches them</li>
+<li>It fine-tunes itself at inference time</li>
+</ul>
+<p class="why">Contrastive training on image-caption pairs aligns the two modalities.</p>
+</div>
+<div class="q">
+<p>What is a diffusion model's denoising network trained to predict?</p>
+<ul>
+<li>The class of the image</li>
+<li>The next pixel</li>
+<li class="correct">The noise that was added to a training image at a given step</li>
+<li>The text prompt</li>
+</ul>
+<p class="why">Generation repeatedly subtracts predicted noise, starting from pure noise.</p>
+</div>
+<div class="q">
+<p>Why resize large photos before sending them to a vision-language model API?</p>
+<ul>
+<li>APIs reject large images</li>
+<li class="correct">Image token cost grows with resolution, so oversized images waste money and latency without helping the task</li>
+<li>Small images are more accurate</li>
+<li>Resizing removes personal data</li>
+</ul>
+<p class="why">Send the resolution the task needs; for reading tiny text, crop rather than shrink.</p>
+</div>
+<div class="q">
+<p>What is classifier-free guidance used for in text-to-image diffusion?</p>
+<ul>
+<li>Removing the need for a text encoder</li>
+<li class="correct">Strengthening how closely each denoising step follows the prompt, trading off diversity</li>
+<li>Classifying generated images</li>
+<li>Speeding up training</li>
+</ul>
+<p class="why">The model compares conditional and unconditional predictions and pushes towards the prompt.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Transformers handle any modality that can be cut into a sequence: image patches, audio frames, video.</li>
+<li>CLIP aligns images and text in one space, enabling zero-shot classification and cross-modal search; VLMs accept images in the conversation and pair well with structured output.</li>
+<li>Document understanding combines text extraction, OCR and VLMs; speech pipelines combine Whisper-style transcription, LLMs and text-to-speech, with latency as the main challenge.</li>
+<li>Diffusion models generate by learning to remove noise step by step; latent diffusion, text conditioning, guidance and step distillation make them practical.</li>
+<li>Route cheaply first and escalate to expensive multimodal models only where needed.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Dosovitskiy et al., "An Image is Worth 16x16 Words" (ViT, arXiv 2010.11929)</li>
+<li>Radford et al., "Learning Transferable Visual Models From Natural Language Supervision" (CLIP, arXiv 2103.00020)</li>
+<li>Ho, Jain and Abbeel, "Denoising Diffusion Probabilistic Models" (arXiv 2006.11239)</li>
+<li>Rombach et al., "High-Resolution Image Synthesis with Latent Diffusion Models" (arXiv 2112.10752)</li>
+<li>Radford et al., "Robust Speech Recognition via Large-Scale Weak Supervision" (Whisper, arXiv 2212.04356)</li>
+<li>Hugging Face Diffusers documentation and course</li>
+</ul>

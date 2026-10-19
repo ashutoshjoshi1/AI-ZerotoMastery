@@ -1,0 +1,104 @@
+{
+  "title": "AI Engineering",
+  "tagline": "from zero to mastery",
+  "description": "A free, self-paced course in AI engineering: Python and maths, machine learning, deep learning, transformers and LLMs, then building, evaluating and shipping AI systems, with a Jupyter notebook for every lesson.",
+  "repo": "ashutoshjoshi1/AI-ZerotoMastery",
+  "branch": "main",
+  "site_url": "https://ashutoshjoshi1.github.io/AI-ZerotoMastery/",
+  "sessions_per_week": 5,
+  "parts": [
+    {
+      "name": "Orientation",
+      "desc": "Set up your workbench and see the whole map before you start walking.",
+      "lessons": [
+        "welcome"
+      ]
+    },
+    {
+      "name": "Foundations",
+      "desc": "Python, numerical computing and the maths every later lesson leans on.",
+      "lessons": [
+        "python-for-ai",
+        "math-for-ai"
+      ]
+    },
+    {
+      "name": "Machine learning",
+      "desc": "How models learn from data, and how to tell whether they really did.",
+      "lessons": [
+        "ml-fundamentals",
+        "classical-ml"
+      ]
+    },
+    {
+      "name": "Deep learning",
+      "desc": "Neural networks from first principles, then the same ideas in PyTorch.",
+      "lessons": [
+        "neural-networks",
+        "pytorch",
+        "sequences-embeddings"
+      ]
+    },
+    {
+      "name": "Transformers and LLMs",
+      "desc": "Attention, the transformer block, and how large language models are made.",
+      "lessons": [
+        "transformers",
+        "how-llms-are-built"
+      ]
+    },
+    {
+      "name": "Building with LLMs",
+      "desc": "The core craft: APIs, prompts, reasoning models, retrieval, agents, context engineering and evaluation.",
+      "lessons": [
+        "llm-apis",
+        "prompt-engineering",
+        "reasoning-models",
+        "embeddings-vector-search",
+        "rag",
+        "agents",
+        "context-engineering",
+        "evaluation"
+      ]
+    },
+    {
+      "name": "Fine-tuning and inference",
+      "desc": "Change what a model knows and how it behaves, then make it fast and cheap to run: supervised fine-tuning, preference tuning and distillation, and the mechanics of LLM inference.",
+      "lessons": [
+        "fine-tuning",
+        "advanced-fine-tuning",
+        "llm-inference"
+      ]
+    },
+    {
+      "name": "Production",
+      "desc": "Serving, scaling, securing and extending AI systems in the real world.",
+      "lessons": [
+        "deployment-llmops",
+        "safety-security",
+        "multimodal"
+      ]
+    },
+    {
+      "name": "The wider field",
+      "desc": "The rest of AI beyond language models: search and planning, reinforcement learning, generative models, vision, time series and graphs, training at scale, and interpretability. Each lesson stands on its own, so take them in order or pick the ones your work needs.",
+      "lessons": [
+        "classical-ai",
+        "reinforcement-learning",
+        "generative-models",
+        "computer-vision",
+        "time-series-recsys-graphs",
+        "training-at-scale",
+        "interpretability"
+      ]
+    },
+    {
+      "name": "Mastery",
+      "desc": "System design, capstone projects, and turning skill into a career.",
+      "lessons": [
+        "system-design",
+        "capstones-career"
+      ]
+    }
+  ]
+}

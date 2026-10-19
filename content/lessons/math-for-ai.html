@@ -1,0 +1,299 @@
+<!--
+{
+  "title": "The maths behind AI",
+  "short": "Maths for AI",
+  "summary": "Just enough linear algebra, calculus and probability to understand what every model is doing, with each idea turned straight into NumPy code.",
+  "sessions": [
+    "Vectors, dot products, norms and cosine similarity",
+    "Matrices as transformations, matrix multiplication, and the SVD",
+    "Derivatives, the chain rule, gradients and gradient descent",
+    "Probability for ML: distributions, Bayes, softmax, cross-entropy and KL divergence"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU).",
+  "glossary": [
+    {"term": "Cosine similarity", "def": "The cosine of the angle between two vectors: 1 for same direction, 0 for perpendicular. The standard similarity for embeddings."},
+    {"term": "Cross-entropy", "def": "The loss −log p(correct answer). The training objective of classifiers and LLMs."},
+    {"term": "Gradient", "def": "The vector of partial derivatives of the loss with respect to each parameter; points uphill."},
+    {"term": "Gradient descent", "def": "Repeatedly stepping parameters against the gradient to reduce the loss."},
+    {"term": "KL divergence", "def": "A measure of how one probability distribution differs from another; used in distillation and RLHF."},
+    {"term": "Learning rate", "def": "The step size in gradient descent; the most important training hyperparameter."},
+    {"term": "Logits", "def": "Raw, unnormalised model scores before softmax."},
+    {"term": "Loss function", "def": "The number training minimises, measuring how wrong the model is."},
+    {"term": "Softmax", "def": "Converts logits to probabilities that sum to 1."}
+  ]
+}
+-->
+<h2>How much maths do you need?</h2>
+<p>Less than you fear, more than none. You do not need to prove theorems. You do need to read an equation in a paper and see the code it describes, and to reason about why training is unstable or why two embeddings are "close". Three areas cover almost everything:</p>
+<ul>
+<li><strong>Linear algebra</strong> describes the data and the model: vectors, matrices and how they multiply.</li>
+<li><strong>Calculus</strong> describes how a model learns: gradients tell each parameter which way to move.</li>
+<li><strong>Probability</strong> describes what a model outputs and how we score it: distributions, likelihood, cross-entropy.</li>
+</ul>
+<p>Every idea below comes with code. If an equation feels slippery, run the code and change the numbers.</p>
+<h2>Vectors and similarity</h2>
+<p>A vector is an ordered list of numbers. Geometrically it is an arrow from the origin to a point. In AI a vector represents <em>something</em>: a house as (area, rooms, age), a word as 768 learned numbers, a sentence as 1,536 numbers from an embedding model.</p>
+<h3>The dot product</h3>
+<p>The dot product multiplies matching entries and adds them up:</p>
+\[
+\mathbf{a}\cdot\mathbf{b} = \sum_{i=1}^{n} a_i b_i
+\]
+<p>It is the single most important operation in deep learning. A neuron computes a dot product of its inputs with its weights. Attention in a transformer is a dot product between queries and keys. Similarity search is a dot product between embeddings.</p>
+<h3>Length and angle</h3>
+<p>The length (Euclidean or L2 norm) of a vector is \(\lVert\mathbf{a}\rVert = \sqrt{\mathbf{a}\cdot\mathbf{a}}\). The dot product also encodes the angle between two vectors:</p>
+\[
+\mathbf{a}\cdot\mathbf{b} = \lVert\mathbf{a}\rVert\,\lVert\mathbf{b}\rVert\cos\theta
+\quad\Longrightarrow\quad
+\cos\theta = \frac{\mathbf{a}\cdot\mathbf{b}}{\lVert\mathbf{a}\rVert\,\lVert\mathbf{b}\rVert}
+\]
+<p>That ratio is <strong>cosine similarity</strong>: 1 when the vectors point the same way, 0 when they are perpendicular (unrelated), −1 when opposite. It ignores length and compares only direction, which is exactly what you want when comparing the meaning of two texts of different lengths.</p>
+<pre><code class="language-python">import numpy as np
+
+a = np.array([3.0, 4.0])
+b = np.array([4.0, 3.0])
+print(np.linalg.norm(a))                 # 5.0
+print(a @ b)                             # 24.0
+cos = a @ b / (np.linalg.norm(a) * np.linalg.norm(b))
+print(cos)                               # 0.96: nearly the same direction</code></pre>
+<div class="admonition tip">
+<p class="admonition-title">Normalise once, then dot</p>
+<p>If you scale every vector to length 1 up front, cosine similarity becomes a plain dot product. Vector databases rely on this trick: store normalised embeddings, and similarity search becomes one fast matrix multiplication.</p>
+</div>
+<h2>Matrices as transformations</h2>
+<p>A matrix is a grid of numbers, but the useful way to think of one is as a <em>function that transforms vectors</em>. Multiplying a vector by a matrix rotates, stretches, squashes or projects it.</p>
+<pre><code class="language-python">R = np.array([[0, -1],
+              [1,  0]])                  # rotate 90 degrees anticlockwise
+print(R @ np.array([1, 0]))              # [0 1]
+
+S = np.array([[2, 0],
+              [0, 0.5]])                 # stretch x, squash y
+print(S @ np.array([1, 1]))              # [2.  0.5]</code></pre>
+<p>A layer of a neural network is a matrix multiplication followed by a non-linearity: it transforms its input into a new space where the next layer's job is easier. Stack enough of them and the network can untangle very complicated data.</p>
+<h3>Matrix multiplication, carefully</h3>
+<p>For \(C = AB\), each entry is the dot product of a row of \(A\) with a column of \(B\):</p>
+\[
+C_{ij} = \sum_k A_{ik} B_{kj}
+\]
+<p>So <code>(m, n) @ (n, p)</code> gives <code>(m, p)</code>. Two facts trip people up: matrix multiplication is <strong>not commutative</strong> (\(AB \neq BA\) in general), and the transpose reverses order, \((AB)^\top = B^\top A^\top\).</p>
+<p>When you process a batch, the batch is the rows of a matrix. A batch of 32 inputs with 128 features, through a layer with weight matrix of shape <code>(128, 64)</code>, is one multiplication <code>(32, 128) @ (128, 64) -&gt; (32, 64)</code>. That is why GPUs, which are very good at large matrix multiplications, are so good at deep learning.</p>
+<h3>Rank and the SVD, in one paragraph</h3>
+<p>Any matrix can be factored as \(A = U\Sigma V^\top\), the <strong>singular value decomposition</strong>. \(U\) and \(V\) are rotations and \(\Sigma\) is a diagonal of non-negative <em>singular values</em> that say how much the matrix stretches along each direction. The number of non-zero singular values is the <strong>rank</strong>: how many independent directions the matrix really uses. A huge matrix with only a few large singular values is "secretly small", and you can approximate it with far fewer numbers. That single idea underlies PCA (lesson <a data-ref="classical-ml"></a>) and LoRA fine-tuning (lesson <a data-ref="fine-tuning"></a>).</p>
+<pre><code class="language-python">rng = np.random.default_rng(0)
+A = rng.normal(size=(100, 20)) @ rng.normal(size=(20, 50))   # a 100x50 matrix built from rank 20
+U, S, Vt = np.linalg.svd(A, full_matrices=False)
+print((S &gt; 1e-8).sum())          # 20: only 20 directions are really used</code></pre>
+<h2>Calculus: how models learn</h2>
+<p>Training a model means adjusting its parameters to make a <strong>loss</strong> (a number measuring how wrong it is) as small as possible. Calculus tells us which direction to adjust them in.</p>
+<h3>Derivatives</h3>
+<p>The derivative \(f'(x)\) is the slope of \(f\) at \(x\): how much the output changes per tiny change in the input. If the slope is positive, increasing \(x\) increases \(f\); to make \(f\) smaller, move \(x\) the other way.</p>
+<h3>Gradient descent in one dimension</h3>
+<p>That observation is an algorithm. Repeatedly step <em>against</em> the slope:</p>
+\[
+w \leftarrow w - \eta\, f'(w)
+\]
+<p>where \(\eta\) (eta) is the <strong>learning rate</strong>, the step size.</p>
+<pre><code class="language-python">def f(w):  return (w - 3) ** 2 + 1      # minimum at w = 3
+def df(w): return 2 * (w - 3)            # its derivative
+
+w, lr = -4.0, 0.1
+for step in range(50):
+    w -= lr * df(w)
+print(round(w, 4))                       # 2.9999</code></pre>
+<p>Try <code>lr = 1.1</code> and watch <code>w</code> explode, then <code>lr = 0.001</code> and watch it crawl. Choosing the learning rate is the most important practical decision in training, and you will see it again in every lesson that trains anything.</p>
+<h3>Many parameters: the gradient</h3>
+<p>Real models have millions or billions of parameters. The <strong>gradient</strong> \(\nabla L\) is the vector of partial derivatives, one per parameter, each saying how the loss changes if you nudge that parameter alone. It points uphill, in the direction of steepest increase, so gradient descent steps the other way:</p>
+\[
+\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \eta\,\nabla_{\boldsymbol{\theta}} L
+\]
+<h3>The chain rule</h3>
+<p>Models are functions of functions: the loss depends on the prediction, which depends on a layer's output, which depends on its weights. The <strong>chain rule</strong> says the derivatives multiply along the chain:</p>
+\[
+\frac{dL}{dw} = \frac{dL}{d\hat{y}}\cdot\frac{d\hat{y}}{dw}
+\]
+<p>Backpropagation, the algorithm that trains every neural network, is nothing more than the chain rule applied efficiently from the output back to the inputs. You will implement it by hand in lesson <a data-ref="neural-networks"></a>.</p>
+<h3>Worked example: fit a line with gradient descent</h3>
+<p>We have points that roughly follow \(y = 2.5x + 4\) and want to recover the slope and intercept. Prediction \(\hat{y} = wx + b\); loss is mean squared error:</p>
+\[
+L = \frac{1}{N}\sum_i (\hat{y}_i - y_i)^2,
+\qquad
+\frac{\partial L}{\partial w} = \frac{2}{N}\sum_i (\hat{y}_i - y_i)\,x_i,
+\qquad
+\frac{\partial L}{\partial b} = \frac{2}{N}\sum_i (\hat{y}_i - y_i)
+\]
+<pre><code class="language-python">rng = np.random.default_rng(0)
+x = rng.uniform(0, 10, 200)
+y = 2.5 * x + 4 + rng.normal(0, 2, 200)      # true line plus noise
+
+w, b, lr = 0.0, 0.0, 0.01
+for epoch in range(2000):
+    err = (w * x + b) - y                     # prediction error, shape (200,)
+    loss = (err ** 2).mean()
+    dw = 2 * (err * x).mean()                 # dL/dw
+    db = 2 * err.mean()                       # dL/db
+    w -= lr * dw
+    b -= lr * db
+    if epoch % 500 == 0:
+        print(epoch, round(loss, 3), round(w, 3), round(b, 3))
+
+print(f"w={w:.3f}, b={b:.3f}")               # close to 2.45 and 4.09
+print(np.polyfit(x, y, 1))                   # the exact least-squares answer agrees</code></pre>
+<p>This loop (predict, measure the error, compute gradients, step) is the skeleton of <em>every</em> training loop in this course, including the ones that train transformers. Only the model and the way gradients are computed change.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: check a gradient numerically</p>
+<p>Analytic gradients are easy to get wrong. A <strong>gradient check</strong> compares them with a numerical estimate using a tiny nudge \(\varepsilon\):
+\(\frac{\partial L}{\partial \theta_i} \approx \frac{L(\theta + \varepsilon e_i) - L(\theta - \varepsilon e_i)}{2\varepsilon}\).
+Write <code>numerical_grad(loss_fn, params)</code> and confirm it matches <code>dw</code> and <code>db</code> above at <code>params = [1.0, 1.0]</code>.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">def numerical_grad(loss_fn, params, eps=1e-5):
+    g = np.zeros_like(params)
+    for i in range(len(params)):
+        e = np.zeros_like(params)
+        e[i] = eps
+        g[i] = (loss_fn(params + e) - loss_fn(params - e)) / (2 * eps)
+    return g
+
+def loss_fn(p):
+    w, b = p
+    return ((w * x + b - y) ** 2).mean()
+
+p = np.array([1.0, 1.0])
+err = p[0] * x + p[1] - y
+print(numerical_grad(loss_fn, p))
+print([2 * (err * x).mean(), 2 * err.mean()])   # should agree to ~6 decimal places</code></pre>
+Researchers still use gradient checks when they write custom layers. It is the unit test of calculus.</p>
+</details>
+<h2>Probability: what models output</h2>
+<p>A classifier does not just say "cat"; it outputs a probability distribution: 0.92 cat, 0.07 dog, 0.01 car. An LLM outputs a distribution over its whole vocabulary for the next token. To work with these you need a few ideas.</p>
+<h3>Distributions, expectation and variance</h3>
+<p>A probability distribution assigns probabilities that are non-negative and sum to 1. The <strong>expectation</strong> \(\mathbb{E}[X] = \sum_x x\,p(x)\) is the probability-weighted average; the <strong>variance</strong> measures spread around it. The <strong>normal (Gaussian)</strong> distribution, the familiar bell curve, appears everywhere: measurement noise, weight initialisation, the noise in diffusion models.</p>
+<h3>Bayes' rule</h3>
+<p>Bayes' rule tells you how to update a belief after seeing evidence:</p>
+\[
+P(A\mid B) = \frac{P(B\mid A)\,P(A)}{P(B)}
+\]
+<p>Classic example. A fault affects 1% of instruments. A diagnostic test catches 95% of faulty ones but also flags 5% of healthy ones. An instrument tests positive: how likely is it to be faulty?</p>
+<pre><code class="language-python">prior, sensitivity, false_pos = 0.01, 0.95, 0.05
+posterior = sensitivity * prior / (sensitivity * prior + false_pos * (1 - prior))
+print(round(posterior, 3))       # 0.161, only 16%</code></pre>
+<p>Most people guess around 95%. The base rate matters enormously, a lesson that returns when you evaluate classifiers on rare events such as fraud or equipment failures.</p>
+<h3>Softmax: turning scores into probabilities</h3>
+<p>Models produce raw scores called <strong>logits</strong> that can be any real numbers. Softmax converts them into a distribution:</p>
+\[
+\mathrm{softmax}(\mathbf{z})_i = \frac{e^{z_i}}{\sum_j e^{z_j}}
+\]
+<pre><code class="language-python">def softmax(z):
+    z = z - z.max(axis=-1, keepdims=True)    # subtract the max for numerical stability
+    e = np.exp(z)
+    return e / e.sum(axis=-1, keepdims=True)
+
+print(softmax(np.array([2.0, 1.0, 0.1])).round(3))          # [0.659 0.242 0.099]
+print(softmax(np.array([1000.0, 1001.0, 1002.0])).round(3)) # works; naive exp(1000) would overflow</code></pre>
+<p>Subtracting the maximum does not change the answer (it cancels in the ratio) but prevents overflow. Small details like this are the difference between code that trains and code that produces <code>nan</code>.</p>
+<h3>Cross-entropy: the loss behind almost every classifier and LLM</h3>
+<p>If the true class is \(y\) and the model gives it probability \(p_y\), the <strong>cross-entropy loss</strong> is</p>
+\[
+L = -\log p_y
+\]
+<p>If the model is confident and right (\(p_y \approx 1\)), the loss is near 0. If it gives the right answer a tiny probability, the loss is large. LLM pretraining minimises exactly this, averaged over every next-token prediction in trillions of tokens.</p>
+<pre><code class="language-python">p = softmax(np.array([2.0, 1.0, 0.1]))
+print(-np.log(p[0]))     # 0.417: the right class had 66% probability
+print(-np.log(p[2]))     # 2.317: the right class had only 10%</code></pre>
+<h3>Entropy and KL divergence</h3>
+<p><strong>Entropy</strong> \(H(P) = -\sum_x P(x)\log P(x)\) measures how uncertain a distribution is. <strong>KL divergence</strong> measures how different a distribution \(Q\) is from a reference \(P\):</p>
+\[
+D_{\mathrm{KL}}(P\,\|\,Q) = \sum_x P(x)\log\frac{P(x)}{Q(x)}
+\]
+<p>It is zero only when the two are identical, and it is not symmetric. You will meet it in knowledge distillation (a small model learning to match a big model's distribution) and in RLHF, where a KL penalty stops a fine-tuned model drifting too far from where it started. A useful identity ties it together: cross-entropy equals entropy plus KL divergence, \(H(P,Q) = H(P) + D_{\mathrm{KL}}(P\,\|\,Q)\).</p>
+<pre><code class="language-python">P = np.array([0.7, 0.2, 0.1])
+Q = np.array([0.5, 0.3, 0.2])
+H  = -(P * np.log(P)).sum()            # 0.8018
+CE = -(P * np.log(Q)).sum()            # 0.8869
+KL = (P * np.log(P / Q)).sum()         # 0.0851 = CE - H</code></pre>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: temperature</p>
+<p>LLMs divide their logits by a <strong>temperature</strong> \(T\) before softmax. For logits <code>[2.0, 1.0, 0.1]</code>, compute the distribution at \(T = 0.2, 1, 5\) and its entropy. Describe in one sentence what temperature does. You will use this when you control LLM sampling in lesson <a data-ref="how-llms-are-built"></a>.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">z = np.array([2.0, 1.0, 0.1])
+for T in [0.2, 1, 5]:
+    p = softmax(z / T)
+    H = -(p * np.log(p)).sum()
+    print(T, p.round(3), round(H, 3))
+# 0.2 [0.993 0.007 0.   ] 0.043   nearly deterministic
+# 1   [0.659 0.242 0.099] 0.832
+# 5   [0.402 0.329 0.269] 1.085   close to uniform</code></pre>
+Low temperature sharpens the distribution towards the top choice; high temperature flattens it towards uniform, so sampling becomes more random and more "creative".</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Two embedding vectors have cosine similarity 0.02. What does that suggest?</p>
+<ul>
+<li>They are almost identical</li>
+<li class="correct">They point in nearly perpendicular directions, so the texts are largely unrelated</li>
+<li>They have opposite meanings</li>
+<li>One vector is much longer than the other</li>
+</ul>
+<p class="why">Cosine similarity measures direction only. Near 0 means roughly perpendicular, usually read as "unrelated".</p>
+</div>
+<div class="q">
+<p>In gradient descent, why do we subtract the gradient rather than add it?</p>
+<ul>
+<li class="correct">The gradient points in the direction of steepest increase of the loss, and we want the loss to decrease</li>
+<li>Subtraction is numerically more stable</li>
+<li>Adding would make the learning rate negative</li>
+<li>It is a convention; adding works equally well</li>
+</ul>
+<p class="why">The gradient points uphill. Stepping against it goes downhill.</p>
+</div>
+<div class="q">
+<p>Your loss jumps around wildly and then becomes nan. What is the first thing to try?</p>
+<ul>
+<li>Increase the learning rate</li>
+<li class="correct">Lower the learning rate</li>
+<li>Train for more epochs</li>
+<li>Remove the bias term</li>
+</ul>
+<p class="why">Steps that are too large overshoot the minimum and can diverge. Lowering the learning rate is the first fix.</p>
+</div>
+<div class="q">
+<p>Why do we subtract max(z) inside softmax?</p>
+<ul>
+<li>It makes the probabilities sum to 1</li>
+<li>It sharpens the distribution</li>
+<li class="correct">It prevents overflow in exp() without changing the result</li>
+<li>It converts logits into log-probabilities</li>
+</ul>
+<p class="why">The constant cancels between numerator and denominator, so the output is unchanged, but exp never sees huge numbers.</p>
+</div>
+<div class="q">
+<p>A model assigns probability 0.01 to the correct next token. What is the cross-entropy loss for that prediction?</p>
+<ul>
+<li>0.01</li>
+<li>0.99</li>
+<li class="correct">About 4.6</li>
+<li>About 0.0</li>
+</ul>
+<p class="why">−ln(0.01) ≈ 4.605. Confident wrong predictions are punished heavily.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>The dot product is everywhere: neurons, attention and similarity search. Cosine similarity compares direction and ignores length.</li>
+<li>Matrices transform vectors; <code>(m, n) @ (n, p) -&gt; (m, p)</code>. The SVD reveals how many directions a matrix really uses, which underpins PCA and LoRA.</li>
+<li>Training is gradient descent: predict, measure loss, compute gradients with the chain rule, step against them. The learning rate is the critical knob.</li>
+<li>Models output distributions via softmax; they are trained with cross-entropy. KL divergence measures how far one distribution is from another.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>3Blue1Brown, <em>Essence of Linear Algebra</em> and <em>Essence of Calculus</em> video series: the best visual intuition available</li>
+<li>Deisenroth, Faisal and Ong, <em>Mathematics for Machine Learning</em> (free PDF at mml-book.github.io)</li>
+<li>Gilbert Strang, <em>Linear Algebra and Learning from Data</em></li>
+</ul>

@@ -1,0 +1,2 @@
+{"id": "q-001", "input": "Replace with a real question", "expected": "what a correct answer must contain", "tags": ["lookup"]}
+{"id": "q-002", "input": "A question your data cannot answer", "expected": "NOT_IN_DOCS", "tags": ["unanswerable"]}

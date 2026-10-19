@@ -1,0 +1,401 @@
+<!--
+{
+  "title": "Working with LLM APIs",
+  "short": "LLM APIs",
+  "summary": "Call hosted and local models from code like a professional, covering messages and system prompts, streaming, reliable structured output, errors and retries, token costs, caching and concurrency, then build a streaming command-line chatbot.",
+  "sessions": [
+    "First calls: messages, system prompts, multi-turn conversations and parameters",
+    "Streaming, structured output with Pydantic, errors, retries and rate limits",
+    "Tokens and cost, prompt caching, concurrency, local models, and a CLI chatbot"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer, plus an API key. Cells that call a model are marked.",
+  "glossary": [
+    {"term": "Prompt caching", "def": "Reusing the processed form of a repeated prompt prefix at reduced cost and latency."},
+    {"term": "Streaming", "def": "Sending generated tokens to the client as they are produced."},
+    {"term": "Structured output", "def": "Constraining model output to a schema, then validating it."},
+    {"term": "System prompt", "def": "Standing instructions and context for a conversation."}
+  ]
+}
+-->
+<h2>The shape of every chat API</h2>
+<p>From here on you build <em>with</em> models rather than build models. Almost every LLM provider exposes the same shape of API: you send a list of <strong>messages</strong>, each with a <strong>role</strong> and <strong>content</strong>, plus settings, and you get back the next assistant message along with token counts.</p>
+<ul>
+<li><strong>System prompt</strong>: standing instructions and context for the whole conversation ("You are a support assistant for...").</li>
+<li><strong>User</strong> messages: what the person (or your program) says.</li>
+<li><strong>Assistant</strong> messages: what the model said earlier. The API is <strong>stateless</strong>: the model remembers nothing between calls, so to continue a conversation you send the whole history every time.</li>
+</ul>
+<p>This lesson uses the Anthropic Python SDK for the main examples, with the OpenAI-style equivalent alongside, because that second format is also what most local and open-model servers speak. The concepts transfer to any provider.</p>
+<pre><code class="language-bash">uv add anthropic openai pydantic python-dotenv</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Model names change</p>
+<p>Providers release new models every few months. The examples use <code>claude-sonnet-5-5</code> as a capable default and <code>claude-haiku-5-5</code> as a fast, cheap one. Check your provider's model list and keep the name in one configuration constant so swapping models is a one-line change.</p>
+</div>
+<h2>First calls</h2>
+<div class="tabs">
+<section data-tab="Anthropic">
+<pre><code class="language-python">import anthropic
+from dotenv import load_dotenv
+
+load_dotenv()                                   # ANTHROPIC_API_KEY from .env
+client = anthropic.Anthropic()
+MODEL = "claude-sonnet-5-5"
+
+resp = client.messages.create(
+    model=MODEL,
+    max_tokens=500,                             # upper bound on the reply length
+    system="You are a concise teaching assistant for an AI engineering course.",
+    messages=[{"role": "user", "content": "Explain overfitting in two sentences."}],
+)
+print(resp.content[0].text)
+print(resp.stop_reason)                         # "end_turn", or "max_tokens" if it was cut off
+print(resp.usage.input_tokens, resp.usage.output_tokens)</code></pre>
+</section>
+<section data-tab="OpenAI-compatible">
+<pre><code class="language-python">from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()                                   # OPENAI_API_KEY from .env
+client = OpenAI()
+resp = client.chat.completions.create(
+    model="YOUR_MODEL_NAME",
+    max_tokens=500,
+    messages=[
+        {"role": "system", "content": "You are a concise teaching assistant."},
+        {"role": "user", "content": "Explain overfitting in two sentences."},
+    ],
+)
+print(resp.choices[0].message.content)
+print(resp.choices[0].finish_reason)            # "stop" or "length"
+print(resp.usage.prompt_tokens, resp.usage.completion_tokens)</code></pre>
+</section>
+</div>
+<p>Note the small differences: Anthropic takes the system prompt as a separate argument and returns a list of content blocks; the OpenAI format puts the system prompt in the message list and returns <code>choices</code>. Wrapping these differences in one small function of your own keeps the rest of your code provider-neutral.</p>
+<h3>Multi-turn conversations</h3>
+<p>Because the API is stateless, a conversation is a list you keep appending to.</p>
+<pre><code class="language-python">history = []
+
+def chat(user_text: str) -&gt; str:
+    history.append({"role": "user", "content": user_text})
+    resp = client.messages.create(model=MODEL, max_tokens=800, messages=history,
+                                  system="You are a helpful tutor.")
+    reply = resp.content[0].text
+    history.append({"role": "assistant", "content": reply})
+    return reply
+
+print(chat("What is a learning rate?"))
+print(chat("What happens if mine is too high?"))   # "mine" is understood because history was resent</code></pre>
+<p>Two consequences to remember: every turn re-sends (and re-bills) the whole history, and history eventually overflows the context window. Long-running chats need a strategy: drop old turns, summarise them, or store facts outside the conversation and retrieve them when needed (lessons <a data-ref="rag"></a> and <a data-ref="agents"></a>).</p>
+<h3>The parameters that matter</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>What it does</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_tokens</code></td>
+<td>Hard cap on output length</td>
+<td>Always set it. Check <code>stop_reason</code> to detect truncation</td>
+</tr>
+<tr>
+<td><code>temperature</code></td>
+<td>Randomness of sampling (lesson <a data-ref="how-llms-are-built"></a>)</td>
+<td>0 to 0.3 for extraction and code, 0.7 to 1 for creative work</td>
+</tr>
+<tr>
+<td><code>top_p</code></td>
+<td>Nucleus sampling cut-off</td>
+<td>Usually leave at default; adjust temperature instead</td>
+</tr>
+<tr>
+<td><code>stop_sequences</code></td>
+<td>Strings that end generation early</td>
+<td>Stop at a delimiter in structured formats</td>
+</tr>
+<tr>
+<td><code>system</code></td>
+<td>Standing instructions</td>
+<td>Role, rules, context, output format</td>
+</tr>
+</tbody>
+</table>
+<h2>Streaming</h2>
+<p>A long answer can take many seconds. Streaming sends tokens as they are generated, so users see text appear immediately. The <strong>time to first token</strong> is what makes an app feel fast.</p>
+<pre><code class="language-python">with client.messages.stream(
+    model=MODEL, max_tokens=800,
+    messages=[{"role": "user", "content": "Explain gradient descent to a new engineer."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+    final = stream.get_final_message()               # full message with usage after streaming
+print("\n", final.usage.output_tokens, "tokens")</code></pre>
+<p>The OpenAI-style equivalent passes <code>stream=True</code> and iterates over chunks, reading <code>chunk.choices[0].delta.content</code>.</p>
+<h2>Structured output you can trust</h2>
+<p>Programs need data, not prose. Asking "reply in JSON" works most of the time, and "most of the time" breaks production systems. Use the strongest mechanism the API offers, then <strong>validate</strong> the result.</p>
+<h3>Define the shape with Pydantic</h3>
+<pre><code class="language-python">from pydantic import BaseModel, Field
+from typing import Literal
+
+class Ticket(BaseModel):
+    category: Literal["hardware", "software", "data", "other"]
+    severity: int = Field(ge=1, le=5, description="1 = cosmetic, 5 = instrument down")
+    instrument_id: str | None = Field(default=None, description="e.g. 'P-117' if mentioned")
+    summary: str = Field(max_length=200)</code></pre>
+<h3>Force the model to fill it in</h3>
+<p>A reliable pattern with the Anthropic API is to declare a "tool" whose input schema is your data shape and require the model to call it. The model's output is then the tool's arguments: JSON that matches the schema.</p>
+<pre><code class="language-python">import json
+
+def extract_ticket(email_text: str) -&gt; Ticket:
+    resp = client.messages.create(
+        model=MODEL,
+        max_tokens=500,
+        tools=[{
+            "name": "record_ticket",
+            "description": "Record a structured support ticket.",
+            "input_schema": Ticket.model_json_schema(),
+        }],
+        tool_choice={"type": "tool", "name": "record_ticket"},     # must call this tool
+        messages=[{"role": "user", "content": f"Create a ticket from this email:\n\n{email_text}"}],
+    )
+    block = next(b for b in resp.content if b.type == "tool_use")
+    return Ticket.model_validate(block.input)                       # raises if anything is off
+
+t = extract_ticket("Hi, unit P-117 at the coastal site stopped logging overnight. "
+                   "Power LED is on but no data since 02:00. Urgent, campaign starts Monday.")
+print(t)
+# category='hardware' severity=4 instrument_id='P-117' summary='Unit P-117 stopped logging ...'</code></pre>
+<p>OpenAI-style APIs offer a similar guarantee through a JSON-schema response format (and the OpenAI SDK can accept a Pydantic class directly). Whichever you use, keep the Pydantic validation: it catches the rare malformed result and gives you typed objects for the rest of your program.</p>
+<div class="admonition tip">
+<p class="admonition-title">Validate, then repair</p>
+<p>If validation fails, send the error message back to the model ("Your output failed validation: severity must be at most 5. Fix it.") and retry once or twice. Libraries such as Instructor automate this loop.</p>
+</div>
+<h2>Errors, retries and rate limits</h2>
+<p>Every network call can fail. Expect four kinds of trouble:</p>
+<ul>
+<li><strong>Rate limits</strong> (HTTP 429): too many requests or tokens per minute for your account tier.</li>
+<li><strong>Overload or server errors</strong> (5xx, including the provider's "overloaded" status): transient, retry later.</li>
+<li><strong>Timeouts and connection errors</strong>: transient.</li>
+<li><strong>Bad requests</strong> (400, 401, 404): a bug or bad key. Retrying will not help.</li>
+</ul>
+<p>The official SDKs already retry transient errors with exponential backoff. Configure it, and handle what remains:</p>
+<pre><code class="language-python">client = anthropic.Anthropic(max_retries=4, timeout=60.0)
+
+try:
+    resp = client.messages.create(model=MODEL, max_tokens=300,
+                                  messages=[{"role": "user", "content": "Hello"}])
+except anthropic.RateLimitError:
+    ...   # back off further, queue the work, or route to another model
+except anthropic.APIConnectionError:
+    ...   # network trouble: alert if persistent
+except anthropic.APIStatusError as e:
+    print(e.status_code, e.message)   # bad request, auth, etc.: log and fix, do not retry blindly</code></pre>
+<p>For production, add a <strong>fallback</strong>: if the primary model keeps failing, try a second model or provider, and degrade gracefully (a cached answer, or a clear "try again shortly") rather than crashing.</p>
+<h2>Tokens, cost and speed</h2>
+<h3>Estimate before you build</h3>
+<p>Providers price input and output tokens separately, and output tokens cost several times more than input tokens. A back-of-envelope calculation before you build saves surprises:</p>
+<pre><code class="language-python">def monthly_cost(requests_per_day, in_tokens, out_tokens, price_in_per_m, price_out_per_m):
+    per_request = in_tokens / 1e6 * price_in_per_m + out_tokens / 1e6 * price_out_per_m
+    return per_request * requests_per_day * 30
+
+# 5,000 requests a day, 3,000 tokens of prompt (instructions + retrieved context), 400 tokens out.
+# Plug in your provider's current per-million-token prices:
+print(monthly_cost(5_000, 3_000, 400, price_in_per_m=3.0, price_out_per_m=15.0))   # 2250.0 per month</code></pre>
+<p>The example shows the usual pattern: the <em>prompt</em> dominates the bill when you stuff in lots of context. That is where caching, shorter prompts and smaller models pay off.</p>
+<p>Count tokens exactly with the provider's tokenizer or counting endpoint rather than guessing:</p>
+<pre><code class="language-python">count = client.messages.count_tokens(model=MODEL, messages=[{"role": "user", "content": long_text}])
+print(count.input_tokens)</code></pre>
+<h3>Prompt caching</h3>
+<p>If many requests share a long prefix (a big system prompt, a manual, a set of examples), providers can cache the processed prefix. Cached input tokens are billed at a fraction of the normal price and processed faster. With the Anthropic API you mark where the cacheable prefix ends:</p>
+<pre><code class="language-python">manual = open("instrument_manual.txt").read()          # tens of thousands of tokens, same every call
+
+def ask_manual(question: str) -&gt; str:
+    resp = client.messages.create(
+        model=MODEL, max_tokens=600,
+        system=[
+            {"type": "text", "text": "Answer using only the manual below. Quote section numbers."},
+            {"type": "text", "text": manual, "cache_control": {"type": "ephemeral"}},
+        ],
+        messages=[{"role": "user", "content": question}],
+    )
+    u = resp.usage
+    print("cache write", u.cache_creation_input_tokens, "cache read", u.cache_read_input_tokens)
+    return resp.content[0].text</code></pre>
+<p>The first call writes the cache; calls within the cache lifetime read it. Put stable content first and variable content last: anything that changes before the cache marker invalidates the cache.</p>
+<h3>Choosing a model size</h3>
+<p>Smaller models are several times cheaper and faster. A good habit is to start prototyping with a capable model to learn what "good" looks like, build an evaluation set (lesson <a data-ref="evaluation"></a>), then test whether a smaller model passes it. Many production systems <strong>route</strong>: a cheap model handles easy requests and escalates hard ones.</p>
+<h3>Concurrency and batch processing</h3>
+<p>To process thousands of documents, run requests concurrently, with a limit so you stay under your rate limits.</p>
+<pre><code class="language-python">import asyncio
+from anthropic import AsyncAnthropic
+
+aclient = AsyncAnthropic(max_retries=5)
+sem = asyncio.Semaphore(8)                        # at most 8 requests in flight
+
+async def summarise(doc: str) -&gt; str:
+    async with sem:
+        r = await aclient.messages.create(model="claude-haiku-5-5", max_tokens=200,
+                                          messages=[{"role": "user", "content": f"Summarise in one sentence:\n{doc}"}])
+        return r.content[0].text
+
+async def main(docs):
+    return await asyncio.gather(*(summarise(d) for d in docs))
+
+# summaries = asyncio.run(main(docs))</code></pre>
+<p>For large jobs that do not need answers immediately, providers offer <strong>batch APIs</strong>: submit thousands of requests at once, collect the results within hours, at a substantial discount (often around half price). Ideal for nightly classification, backfills and evaluation runs.</p>
+<h2>Local and open models</h2>
+<p>Many local servers (Ollama, vLLM, llama.cpp's server, LM Studio) expose an <strong>OpenAI-compatible</strong> endpoint, so the same client code works by changing the base URL.</p>
+<pre><code class="language-bash"># install Ollama from ollama.com, then:
+ollama pull llama3.2          # a small open model, a couple of GB</code></pre>
+<pre><code class="language-python">from openai import OpenAI
+
+local = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")   # the key is ignored locally
+r = local.chat.completions.create(
+    model="llama3.2",
+    messages=[{"role": "user", "content": "Give me three uses of a spectrometer."}],
+)
+print(r.choices[0].message.content)</code></pre>
+<p>Local models are free per call, private and work offline, but they are smaller and less capable than frontier APIs, and you own the hardware and operations. Lesson <a data-ref="deployment-llmops"></a> covers serving them properly.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a streaming CLI chatbot</p>
+<p>Build <code>chat.py</code>, a terminal chatbot that:</p>
+<ol>
+<li>Streams replies as they are generated.</li>
+<li>Keeps conversation history, and trims the oldest turns when the history exceeds about 20,000 tokens (estimate with <code>count_tokens</code>, or roughly 4 characters per token).</li>
+<li>Prints the running token usage and an estimated cost after each reply.</li>
+<li>Supports <code>/reset</code> to clear history, <code>/system &lt;text&gt;</code> to change the system prompt, and <code>/quit</code>.</li>
+<li>Survives a network error without losing the conversation.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre data-file="chat.py"><code class="language-python">import anthropic
+from dotenv import load_dotenv
+
+load_dotenv()
+client = anthropic.Anthropic(max_retries=3)
+MODEL = "claude-sonnet-5-5"
+PRICE_IN, PRICE_OUT = 3.0, 15.0          # per million tokens: set to your provider's current prices
+MAX_HISTORY_CHARS = 80_000                # about 20k tokens
+
+system = "You are a friendly, precise tutor for an AI engineering course."
+history: list[dict] = []
+spent_in = spent_out = 0
+
+def trim(history):
+    while sum(len(m["content"]) for m in history) &gt; MAX_HISTORY_CHARS and len(history) &gt; 2:
+        history.pop(0); history.pop(0)     # drop the oldest user/assistant pair
+    return history
+
+while True:
+    try:
+        user = input("\nyou&gt; ").strip()
+    except (EOFError, KeyboardInterrupt):
+        break
+    if not user:
+        continue
+    if user == "/quit":
+        break
+    if user == "/reset":
+        history.clear(); print("history cleared"); continue
+    if user.startswith("/system "):
+        system = user[len("/system "):]; print("system prompt updated"); continue
+
+    history.append({"role": "user", "content": user})
+    trim(history)
+    print("bot&gt; ", end="", flush=True)
+    try:
+        with client.messages.stream(model=MODEL, max_tokens=1000, system=system,
+                                    messages=history) as stream:
+            parts = []
+            for piece in stream.text_stream:
+                print(piece, end="", flush=True)
+                parts.append(piece)
+            final = stream.get_final_message()
+        reply = "".join(parts)
+    except anthropic.APIError as e:
+        history.pop()                      # remove the unanswered user turn so history stays valid
+        print(f"\n[request failed: {e.__class__.__name__}; your conversation is intact, try again]")
+        continue
+    history.append({"role": "assistant", "content": reply})
+    spent_in += final.usage.input_tokens
+    spent_out += final.usage.output_tokens
+    cost = spent_in / 1e6 * PRICE_IN + spent_out / 1e6 * PRICE_OUT
+    print(f"\n[{final.usage.input_tokens} in / {final.usage.output_tokens} out; session ≈ {cost:.4f} USD]")</code></pre>
+Watch the input-token count climb every turn: that is the stateless API re-reading the whole history. It is the clearest demonstration of why long conversations get slow and expensive, and why trimming, summarising or caching matters.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Your chatbot "forgets" what the user said two turns ago. What is the most likely cause?</p>
+<ul>
+<li>The model's memory was full</li>
+<li class="correct">The previous turns were not included in the messages sent with the latest request; the API is stateless</li>
+<li>The temperature was too high</li>
+<li>The system prompt was too long</li>
+</ul>
+<p class="why">The model sees only what you send in each request. Conversation state lives in your code.</p>
+</div>
+<div class="q">
+<p>What is the most reliable way to get structured data out of an LLM?</p>
+<ul>
+<li>Ask politely for JSON in the prompt</li>
+<li>Use a high temperature</li>
+<li class="correct">Use the API's schema-constrained mechanism (such as a forced tool call or JSON-schema output), then validate with Pydantic</li>
+<li>Parse whatever comes back with regular expressions</li>
+</ul>
+<p class="why">Constrain the output, validate it, and retry with the error message on the rare failure.</p>
+</div>
+<div class="q">
+<p>Which errors should your code retry automatically?</p>
+<ul>
+<li class="correct">Rate limits, overload or server errors, and timeouts, with exponential backoff</li>
+<li>Authentication errors</li>
+<li>Bad request errors caused by an invalid parameter</li>
+<li>All errors, immediately and indefinitely</li>
+</ul>
+<p class="why">Transient errors deserve a retry; client errors mean a bug that retrying will not fix.</p>
+</div>
+<div class="q">
+<p>Many requests share a 30,000-token system prompt containing a manual. What most reduces cost?</p>
+<ul>
+<li>Increase max_tokens</li>
+<li class="correct">Prompt caching on the shared prefix</li>
+<li>Use streaming</li>
+<li>Raise the temperature</li>
+</ul>
+<p class="why">Cached prefix tokens are billed at a fraction of the normal rate and processed faster.</p>
+</div>
+<div class="q">
+<p>Why does each turn of a long chat cost more than the previous one?</p>
+<ul>
+<li>Providers charge more as the conversation ages</li>
+<li class="correct">Each request re-sends and re-bills the entire history as input tokens</li>
+<li>Output tokens get more expensive over time</li>
+<li>Streaming adds overhead</li>
+</ul>
+<p class="why">Input tokens grow with every turn. Trim, summarise or cache to control it.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Chat APIs take a system prompt plus a list of role-tagged messages and are stateless: you resend history each turn.</li>
+<li>Always set <code>max_tokens</code> and check the stop reason. Stream responses for a fast-feeling experience.</li>
+<li>Get structured output with schema-constrained mechanisms and validate with Pydantic.</li>
+<li>Retry transient errors with backoff, fail fast on client errors, and keep a fallback.</li>
+<li>Estimate costs up front; input context usually dominates. Use prompt caching, smaller models, routing, concurrency limits and batch APIs.</li>
+<li>OpenAI-compatible endpoints let the same code talk to local open models.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li><a href="https://docs.claude.com/en/api/overview">Claude API documentation</a>, including tool use, prompt caching, streaming and batches</li>
+<li><a href="https://platform.openai.com/docs/api-reference">OpenAI API reference</a></li>
+<li><a href="https://docs.pydantic.dev/">Pydantic documentation</a></li>
+<li><a href="https://ollama.com">Ollama</a> for running open models locally</li>
+</ul>

@@ -1,0 +1,29 @@
+<h2>How the course works</h2>
+<p>Every lesson is split into sessions of about an hour. A session is one sitting: read the section, run the code, do the hands-on exercise. Inside each lesson a divider marks where one session ends and the next begins, with a checkbox to tick it off. The quiz at the end of a lesson comes once you have finished all its sessions. The <a href="schedule.html">daily schedule</a> lays the whole course out day by day, and its checkboxes record the same progress.</p>
+<p>The order matters. Parts I to V build the mental model: Python, the maths, classical machine learning, neural networks and the transformer. Part VI is the day-to-day craft of an AI engineer: calling models, prompting, reasoning models, retrieval, agents, context engineering and evaluation. Part VII changes models and runs them efficiently: fine-tuning, post-training and inference. Part VIII is about running all of that in production. Part IX covers the wider field of AI beyond language models, and part X pulls everything together into system design, capstone projects and a portfolio.</p>
+<p>If you already know a topic, skim the lesson, do the hands-on exercises and the quiz, and move on. If the exercises are easy and the quiz is clean, you have earned the skip.</p>
+
+<h2>Read on your phone, practise at your computer</h2>
+<p>The lessons are written to be read anywhere. The code is meant to be run on a computer. The course is built for switching between the two.</p>
+<ol>
+<li><strong>Read on any screen.</strong> Open <a href="{{site_url}}">{{site_url}}</a> on your phone. In Safari use <em>Share, Add to Home Screen</em>; in Chrome use <em>Install app</em>. It then opens like an app, and every lesson you open is saved for reading offline. The <span class="aa">Aa</span> button sets the text size, typeface and theme.</li>
+<li><strong>Practise at your computer.</strong> Clone the repository, open the <code>notebooks</code> folder in JupyterLab or VS Code, and run the notebook with the same number as the lesson. Each exercise in a lesson is labelled <span class="chip">At your computer</span> and names the notebook cell to use. No setup on the day? Every lesson also has an <em>Open in Colab</em> link.</li>
+<li><strong>Keep one set of ticks.</strong> Progress is saved in each browser separately. The <span class="aa">Aa</span> button gives you a sync link: open it on your other device and its ticks are merged in.</li>
+</ol>
+<p>A good rhythm: read a session on your phone during the day, then sit down at your computer in the evening, open the notebook and do that session's exercise. The lesson page remembers where you stopped reading.</p>
+
+<h2>What you need</h2>
+<ul>
+<li>A computer with Python 3.11 or newer. Lesson 00 walks through the setup.</li>
+<li>A free Google Colab account (or any machine with an NVIDIA GPU) for the deep learning, fine-tuning and inference lessons. Everything else runs on a laptop CPU.</li>
+<li>An API key for a hosted model provider for part VI. A few US dollars of credit covers every exercise in the course.</li>
+<li>A Git repository for your notes and code. Treat it as your lab notebook; it becomes your portfolio.</li>
+</ul>
+
+<h2>Companion notebooks</h2>
+<p>Every lesson has a Jupyter notebook in the <code>notebooks</code> folder with all of the lesson's code ready to run and an empty cell for each hands-on exercise. Complete, runnable solutions are in <code>notebooks/solutions</code>. <code>notebooks/README.md</code> explains how to run them locally or on Colab, and which ones need a GPU or an API key.</p>
+
+<h2>Habits that make this stick</h2>
+<p><strong>Type the code rather than pasting it</strong>, at least through part V. Typing forces you to read every line, and the typos you fix teach you more than the code that ran first time.</p>
+<p><strong>Close the page and explain it back.</strong> At the end of each session, write three or four sentences in your learning log describing what you learned, without looking. If you cannot, reread the section. This is retrieval practice, and it is the single most effective study technique we know of.</p>
+<p><strong>Build something small every week.</strong> The hands-on exercises are designed to be extended. Change the dataset, swap the model, break it on purpose, and write down what happened.</p>

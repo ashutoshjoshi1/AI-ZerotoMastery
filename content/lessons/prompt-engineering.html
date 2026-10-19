@@ -1,0 +1,307 @@
+<!--
+{
+  "title": "Prompt engineering",
+  "short": "Prompt engineering",
+  "summary": "Write prompts that work reliably, not just once, through clear instructions, context, examples and structure, along with reasoning and chaining techniques, and treat prompts as tested, versioned code.",
+  "sessions": [
+    "Principles: clarity, context, examples and structure",
+    "Techniques: few-shot, reasoning, output control and prompt chaining",
+    "Prompts as code: templates, versions, tests and failure modes"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer, plus an API key.",
+  "glossary": [
+    {"term": "Chain-of-thought", "def": "Prompting or training a model to produce intermediate reasoning before its final answer."},
+    {"term": "Few-shot prompting", "def": "Including worked examples of the task in the prompt."}
+  ]
+}
+-->
+<h2>What prompt engineering really is</h2>
+<p>Prompt engineering is writing a specification for a very capable colleague who knows a lot about the world and nothing about your situation. The model has no idea who your users are, what "good" looks like for your product, or which of several reasonable interpretations you meant. A prompt fills that gap.</p>
+<p>It is less about magic phrases than about clear writing and disciplined testing. The most reliable test of a prompt: <strong>would a smart new hire, given only this text, do the task the way you want?</strong> If they would need to ask questions, so does the model, except it will not ask; it will guess.</p>
+<h2>Principles</h2>
+<h3>1. Be explicit about the task, the audience and the output</h3>
+<p>Compare:</p>
+<pre data-file="Vague"><code class="language-text">Summarise this incident report.</code></pre>
+<pre data-file="Specific"><code class="language-text">Summarise the incident report below for the on-call engineering manager, who will
+decide within five minutes whether to wake up the hardware team.
+
+Write at most 5 bullet points:
+- what failed, where, and since when
+- current impact on data collection
+- what has already been tried
+- the single most likely cause, if the report supports one
+- the decision needed, phrased as a yes/no question
+
+If the report does not say something, write "not stated" rather than guessing.</code></pre>
+<p>The second prompt says who the reader is, why they need it, the format, the length, and what to do when information is missing. Each of those removes a guess.</p>
+<h3>2. Give context and explain why</h3>
+<p>Rules without reasons get applied rigidly or inconsistently. Reasons let the model generalise. "Never use abbreviations" is weaker than "Readers include non-specialist field staff, so spell out technical abbreviations the first time you use them."</p>
+<h3>3. Show examples</h3>
+<p>A couple of well-chosen examples often beat a paragraph of description, especially for format and tone. Make examples <strong>diverse</strong> (cover different cases, including edge cases), or the model will copy their surface features too closely.</p>
+<h3>4. Structure the prompt</h3>
+<p>Long prompts mix instructions, reference material and input data. Separate them clearly so the model never confuses data with instructions. XML-style tags work well and are easy to parse back out:</p>
+<pre><code class="language-text">&lt;instructions&gt;
+Classify the support email into exactly one category and explain briefly.
+&lt;/instructions&gt;
+
+&lt;categories&gt;
+hardware: physical faults, power, cables, sensors, enclosures
+software: firmware, drivers, the acquisition application, updates
+data: missing, corrupted or suspicious measurements, processing results
+other: anything else, including billing and scheduling
+&lt;/categories&gt;
+
+&lt;email&gt;
+{email_text}
+&lt;/email&gt;
+
+Answer in the form:
+&lt;category&gt;...&lt;/category&gt;
+&lt;reason&gt;one sentence&lt;/reason&gt;</code></pre>
+<p>Put long reference documents <strong>before</strong> the question; models tend to handle "documents first, question last" better, and it suits prompt caching (lesson <a data-ref="llm-apis"></a>).</p>
+<h3>5. Say what to do, not only what to avoid</h3>
+<p>"Don't be verbose" leaves the target vague. "Answer in at most three sentences" is actionable. Negative instructions also tend to put the unwanted thing in the model's mind. Prefer positive, concrete instructions, and keep "never do X" for genuine hard limits.</p>
+<h2>Techniques</h2>
+<h3>Few-shot prompting</h3>
+<p>Include worked input-output pairs. In a chat API you can write them as earlier conversation turns, which models treat as strong evidence of the desired behaviour.</p>
+<pre><code class="language-python">messages = [
+    {"role": "user", "content": "Reading: 'NO2 412 ppb at 03:00, all other hours 10-25 ppb'"},
+    {"role": "assistant", "content": "SUSPECT: isolated spike roughly 20x the surrounding values."},
+    {"role": "user", "content": "Reading: 'NO2 rises from 15 to 38 ppb between 07:00 and 09:00'"},
+    {"role": "assistant", "content": "PLAUSIBLE: gradual morning increase consistent with traffic."},
+    {"role": "user", "content": f"Reading: '{new_reading}'"},
+]</code></pre>
+<h3>Let the model reason before answering</h3>
+<p>For multi-step problems, asking the model to work through the problem before giving the final answer improves accuracy, because each generated token is extra computation the model can build on. This is <strong>chain-of-thought</strong> prompting. Ask for the reasoning in a separate section so your code can discard it and keep only the answer:</p>
+<pre><code class="language-text">Work out the answer step by step inside &lt;thinking&gt; tags.
+Then give only the final number inside &lt;answer&gt; tags.</code></pre>
+<p>Reasoning models (lesson <a data-ref="how-llms-are-built"></a>) do this internally, controlled by a thinking budget setting; with them, explicit "think step by step" instructions matter less, and over-prescribing the steps can even hurt. Either way, reasoning costs tokens and latency, so use it where accuracy on harder problems justifies it, not for simple lookups.</p>
+<h3>Control the output</h3>
+<ul>
+<li><strong>Specify the format exactly</strong>, with an example of it.</li>
+<li><strong>Use structured output features</strong> for machine-read results (lesson <a data-ref="llm-apis"></a>).</li>
+<li><strong>Prefill</strong> (where supported): with the Anthropic API you can end the message list with a partial assistant turn, for instance <code>{"role": "assistant", "content": "&lt;category&gt;"}</code>, and the model continues from there. This pins the format and skips preamble.</li>
+<li><strong>Stop sequences</strong> end generation at a delimiter such as <code>&lt;/answer&gt;</code>.</li>
+</ul>
+<h3>Prompt chaining</h3>
+<p>One giant prompt that researches, drafts, critiques and formats is hard to debug. Break the job into steps, each a separate call with a focused prompt, passing outputs forward:</p>
+<pre><code class="language-python">def answer_with_review(question: str, document: str) -&gt; str:
+    quotes = llm(f"&lt;doc&gt;{document}&lt;/doc&gt;\nList verbatim quotes relevant to: {question}")
+    draft = llm(f"&lt;quotes&gt;{quotes}&lt;/quotes&gt;\nAnswer '{question}' using only these quotes, citing them.")
+    review = llm(f"&lt;quotes&gt;{quotes}&lt;/quotes&gt;\n&lt;answer&gt;{draft}&lt;/answer&gt;\n"
+                 "List any claim in the answer not supported by the quotes, or reply NONE.")
+    if review.strip() != "NONE":
+        draft = llm(f"Rewrite the answer removing unsupported claims.\n&lt;problems&gt;{review}&lt;/problems&gt;\n&lt;answer&gt;{draft}&lt;/answer&gt;")
+    return draft</code></pre>
+<p>Each step can be tested, logged, cached and given a different (cheaper or stronger) model. The extract-then-answer pattern above is also a strong defence against hallucination over long documents.</p>
+<h3>Self-consistency and verification</h3>
+<p>For questions with a checkable answer, sample several responses at a moderate temperature and take the majority answer. Or have the model (or a second model) check the first answer against explicit criteria. Both trade cost for reliability.</p>
+<h3>Roles and personas</h3>
+<p>A system prompt that sets a role ("You are an experienced field technician writing for colleagues") shifts vocabulary, assumptions and tone. It works best alongside concrete instructions, not as a substitute for them.</p>
+<h2>Prompts as code</h2>
+<p>In a product, prompts are code: they need version control, review and tests.</p>
+<h3>Templates</h3>
+<p>Keep prompts in files or constants, separate from logic, and fill them with variables. Escape or delimit user input so it cannot break your structure.</p>
+<pre><code class="language-python">from string import Template
+
+CLASSIFY_V3 = Template("""&lt;instructions&gt;
+Classify the email into exactly one category: hardware, software, data or other.
+&lt;/instructions&gt;
+&lt;email&gt;
+$email
+&lt;/email&gt;
+Reply with only the category name, in lower case.""")
+
+def classify(email: str) -&gt; str:
+    prompt = CLASSIFY_V3.substitute(email=email.replace("&lt;/email&gt;", ""))
+    r = client.messages.create(model=MODEL, max_tokens=5, temperature=0,
+                               messages=[{"role": "user", "content": prompt}])
+    return r.content[0].text.strip().lower()</code></pre>
+<h3>Test prompts against examples, not vibes</h3>
+<p>A prompt that looks great on three examples you tried can fail on the fourth. Build a small labelled set (even 20 to 50 cases, including tricky ones), run every prompt version against it, and track the score. This is the seed of the evaluation discipline in lesson <a data-ref="evaluation"></a>, and the single habit that most separates professionals from tinkerers.</p>
+<pre><code class="language-python">cases = [
+    ("The fan in the enclosure is grinding loudly", "hardware"),
+    ("After updating to 2.4 the GUI crashes on start", "software"),
+    ("Yesterday's ozone column values are all exactly zero", "data"),
+    ("Can we move the calibration visit to March?", "other"),
+    # ... at least 20, including ambiguous ones
+]
+
+def score(classify_fn):
+    results = [(text, gold, classify_fn(text)) for text, gold in cases]
+    acc = sum(g == p for _, g, p in results) / len(results)
+    for text, gold, pred in results:
+        if gold != pred:
+            print(f"MISS  gold={gold:&lt;9} pred={pred:&lt;9} {text}")
+    return acc</code></pre>
+<p>Read the misses. They tell you exactly what the prompt fails to specify.</p>
+<h3>Common failure modes</h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inconsistent formats</td>
+<td>Format described, not shown</td>
+<td>Add an exact example; use structured output or prefill</td>
+</tr>
+<tr>
+<td>Ignores an instruction in a long prompt</td>
+<td>Buried among many others or contradicted elsewhere</td>
+<td>Shorten, move key instructions to the end, remove conflicts</td>
+</tr>
+<tr>
+<td>Makes up facts</td>
+<td>No source given, or no permission to say "unknown"</td>
+<td>Provide the source; instruct to answer "not stated" when absent</td>
+</tr>
+<tr>
+<td>Overly long, hedged answers</td>
+<td>No length or audience specified</td>
+<td>State length and reader; give an example</td>
+</tr>
+<tr>
+<td>Copies example content into new answers</td>
+<td>Examples too similar to each other</td>
+<td>Use diverse examples; label them clearly as examples</td>
+</tr>
+<tr>
+<td>Agrees with whatever the user asserts</td>
+<td>Leading phrasing</td>
+<td>Ask neutrally; ask the model to evaluate claims critically</td>
+</tr>
+<tr>
+<td>Follows instructions found inside the data</td>
+<td>Data and instructions not separated</td>
+<td>Delimit input; treat retrieved text as untrusted (lesson <a data-ref="safety-security"></a>)</td>
+</tr>
+</tbody>
+</table>
+<h3>Let the model help</h3>
+<p>Models are good at improving prompts. Paste your prompt and a few failing cases and ask: "Here is a prompt and examples where it produced the wrong output. Explain what in the prompt caused each failure and propose a revised prompt." Then test the revision on your full set; never accept it on the model's say-so.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: iterate a classifier prompt to 90%+</p>
+<ol>
+<li>Write 30 short support messages across the four categories above. Make at least 8 deliberately ambiguous ones (a firmware update that bricked a sensor; a data gap caused by a power cut).</li>
+<li>Write the simplest possible classification prompt and score it with <code>score()</code>.</li>
+<li>Iterate: add category definitions, add tie-break rules for the ambiguous cases ("classify by root cause if stated, otherwise by symptom"), add two or three examples. Score each version and keep a table in your log.</li>
+<li>Try a smaller, cheaper model with your best prompt. Is the accuracy loss acceptable for the cost saving?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what usually happens</summary>
+<p>A typical log looks something like this:</p>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Change</th>
+<th>Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td>"Classify into hardware, software, data or other"</td>
+<td>70%</td>
+</tr>
+<tr>
+<td>v2</td>
+<td>Added one-line definitions of each category</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>v3</td>
+<td>Added tie-break rule: root cause if stated, else the symptom the user reports</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>v4</td>
+<td>Added three diverse examples, including one ambiguous case</td>
+<td>93%</td>
+</tr>
+<tr>
+<td>v4 on small model</td>
+<td>Same prompt, cheaper model</td>
+<td>90%</td>
+</tr>
+</tbody>
+</table>
+<p>Your numbers will differ. What matters is the pattern: the biggest jumps come from <strong>removing ambiguity</strong> (definitions, tie-break rules), not from clever wording, and the ambiguous cases decide the final score. The remaining misses are often cases where <em>you</em> are not sure of the right label either, which is a sign to clarify the labelling policy itself. The small-model result is a business decision: if 3 points of accuracy cost a fifth of the price, many teams take it, perhaps routing low-confidence cases to the larger model.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>What is the best quick test of whether a prompt is clear enough?</p>
+<ul>
+<li>It is longer than 200 words</li>
+<li class="correct">A capable new colleague with only this text would do the task the way you want without asking questions</li>
+<li>It uses the word "please"</li>
+<li>It starts with "You are an expert"</li>
+</ul>
+<p class="why">If a person would need clarification, the model will guess instead of asking.</p>
+</div>
+<div class="q">
+<p>Why use XML-style tags to separate instructions from input data?</p>
+<ul>
+<li class="correct">So the model can tell instructions from data, and your code can parse sections back out</li>
+<li>Because models only understand XML</li>
+<li>To make the prompt shorter</li>
+<li>To enable streaming</li>
+</ul>
+<p class="why">Clear delimiters reduce confusion and make prompt injection harder (though not impossible).</p>
+</div>
+<div class="q">
+<p>Your prompt works on the three examples you tried but fails in production. What should you have done?</p>
+<ul>
+<li>Used a higher temperature</li>
+<li>Added "be accurate" to the prompt</li>
+<li class="correct">Tested every prompt version against a labelled set of realistic, including tricky, cases</li>
+<li>Used a longer system prompt</li>
+</ul>
+<p class="why">Prompts need tests just like code. Read the failures to learn what the prompt leaves unspecified.</p>
+</div>
+<div class="q">
+<p>When is asking the model to reason step by step most worthwhile?</p>
+<ul>
+<li>Always; it never hurts</li>
+<li>For simple factual lookups</li>
+<li class="correct">For multi-step problems where accuracy matters enough to justify extra tokens and latency</li>
+<li>Only when temperature is above 1</li>
+</ul>
+<p class="why">Reasoning costs tokens and time. Use it where it buys accuracy.</p>
+</div>
+<div class="q">
+<p>What is the main advantage of prompt chaining over one large prompt?</p>
+<ul>
+<li>It always uses fewer tokens</li>
+<li class="correct">Each step is focused, testable, debuggable and can use a different model</li>
+<li>It removes the need for evaluation</li>
+<li>Models cannot handle long prompts</li>
+</ul>
+<p class="why">Decomposition is software engineering applied to prompts.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>A prompt is a specification for a capable colleague who knows nothing of your situation: state the task, audience, format, length and what to do with missing information.</li>
+<li>Give context and reasons, diverse examples and clear structure. Documents first, question last.</li>
+<li>Use reasoning for hard multi-step problems, structured output and prefill for format control, chaining for complex jobs, and self-consistency where reliability matters.</li>
+<li>Treat prompts as code: templates, version control and a labelled test set. Iterate on the misses.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li><a href="https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview">Anthropic prompt engineering guide</a></li>
+<li><a href="https://platform.openai.com/docs/guides/prompt-engineering">OpenAI prompt engineering guide</a></li>
+<li>Wei et al., "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models" (arXiv 2201.11903)</li>
+<li>Wang et al., "Self-Consistency Improves Chain of Thought Reasoning in Language Models" (arXiv 2203.11171)</li>
+</ul>

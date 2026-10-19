@@ -1,0 +1,391 @@
+<!--
+{
+  "title": "Agents, tool use and MCP",
+  "short": "Agents and MCP",
+  "summary": "Give models the ability to act by writing the tool-use loop by hand, designing tools models use well, choosing between workflows and autonomous agents, and building an MCP server, then add the guardrails and evaluation that make agents safe to deploy.",
+  "sessions": [
+    "What an agent is, and the tool-use loop written by hand",
+    "Designing good tools, and handling results, errors and parallel calls",
+    "Patterns: workflows versus agents, planning, memory and multi-agent systems",
+    "The Model Context Protocol: build an MCP server for your own data",
+    "Build a research agent with guardrails, budgets and an evaluation"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer, plus an API key for the agent loop.",
+  "glossary": [
+    {"term": "Agent", "def": "A model using tools in a loop, deciding for itself what to do next until a task is done."},
+    {"term": "MCP (Model Context Protocol)", "def": "An open standard for exposing tools, resources and prompts to AI applications."},
+    {"term": "Tool use (function calling)", "def": "A model requesting structured calls to functions your code executes."}
+  ]
+}
+-->
+<h2>What makes something an agent</h2>
+<p>A chatbot produces text. An <strong>agent</strong> uses a model to decide on <em>actions</em>, takes them through <strong>tools</strong>, observes the results, and keeps going until the task is done. The model is no longer just answering; it is controlling a loop.</p>
+<p>A useful working definition: an agent is <strong>a model using tools in a loop, deciding for itself what to do next</strong>. A useful working caution: autonomy costs latency, money and predictability, so use the least autonomy that solves the problem.</p>
+<h2>Tool use: the mechanism</h2>
+<p>You describe tools to the model with a name, a description and a JSON schema for the inputs. The model cannot run anything itself. When it wants a tool, it replies with a structured <strong>tool call</strong> (name plus arguments) and stops. <em>Your code</em> runs the tool and sends back the result, and the model continues, possibly calling more tools, until it gives a final answer.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 620 210" role="img" aria-label="The agent loop: model decides, your code executes tools and returns results, repeat until the model answers">
+<rect class="box" x="20" y="80" width="120" height="50" rx="8"/><text x="80" y="102" text-anchor="middle">user task</text><text x="80" y="119" text-anchor="middle" font-size="11" class="muted">+ tool descriptions</text>
+<rect x="220" y="70" width="150" height="70" rx="8" class="accent" opacity="0.15"/><rect x="220" y="70" width="150" height="70" rx="8" class="accent-stroke"/>
+<text x="295" y="100" text-anchor="middle">model decides</text><text x="295" y="118" text-anchor="middle" font-size="11" class="muted">answer, or call a tool?</text>
+<rect class="box" x="450" y="20" width="150" height="50" rx="8"/><text x="525" y="42" text-anchor="middle">your code runs</text><text x="525" y="59" text-anchor="middle">the tool</text>
+<rect class="box" x="450" y="140" width="150" height="50" rx="8"/><text x="525" y="170" text-anchor="middle">final answer</text>
+<path class="wire" d="M140 105 H220"/>
+<path class="wire" d="M370 90 C 410 70, 420 50, 450 45"/>
+<text x="400" y="56" font-size="11" class="muted">tool call</text>
+<path class="wire" d="M450 60 C 400 75, 390 100, 370 108" stroke-dasharray="4 3"/>
+<text x="385" y="132" font-size="11" class="muted">result</text>
+<path class="wire" d="M370 125 C 410 150, 420 160, 450 165"/>
+<text x="400" y="175" font-size="11" class="muted">done</text>
+</svg>
+<figcaption>The loop lives in your code. The model only ever proposes actions.</figcaption>
+</figure>
+
+<h3>Define tools</h3>
+<pre><code class="language-python">import json, math, ast, operator as op
+import anthropic
+
+client = anthropic.Anthropic()
+MODEL = "claude-sonnet-5-5"
+
+# --- the actual tool implementations -------------------------------------------
+FLEET = {   # stand-in for a real database or API
+    "P-117": {"site": "coastal", "status": "offline", "last_data": "2026-10-18T02:00Z", "firmware": "2.3"},
+    "P-204": {"site": "urban", "status": "ok", "last_data": "2026-10-19T09:55Z", "firmware": "2.4"},
+}
+
+def get_instrument_status(instrument_id: str) -&gt; dict:
+    if instrument_id not in FLEET:
+        return {"error": f"unknown instrument '{instrument_id}'. Known ids: {sorted(FLEET)}"}
+    return FLEET[instrument_id]
+
+OPS = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul, ast.Div: op.truediv,
+       ast.Pow: op.pow, ast.Mod: op.mod, ast.USub: op.neg, ast.UAdd: op.pos}
+FUNCS = {"sqrt": math.sqrt, "log": math.log, "exp": math.exp, "abs": abs, "round": round}
+
+def calculate(expression: str) -&gt; float:
+    """Evaluate arithmetic safely: never call eval() on model output."""
+    def ev(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return node.value
+        if isinstance(node, ast.BinOp) and type(node.op) in OPS:
+            left, right = ev(node.left), ev(node.right)
+            if isinstance(node.op, ast.Pow) and abs(right) &gt; 100:
+                raise ValueError("exponent too large")
+            return OPS[type(node.op)](left, right)
+        if isinstance(node, ast.UnaryOp) and type(node.op) in OPS:
+            return OPS[type(node.op)](ev(node.operand))
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in FUNCS:
+            return FUNCS[node.func.id](*[ev(a) for a in node.args])
+        if isinstance(node, ast.Name) and node.id in ("pi", "e"):
+            return getattr(math, node.id)
+        raise ValueError("unsupported expression")
+    return ev(ast.parse(expression, mode="eval").body)
+
+# --- what the model sees ---------------------------------------------------------
+TOOLS = [
+    {
+        "name": "get_instrument_status",
+        "description": ("Look up the current status of one field instrument by its id (format 'P-123'). "
+                        "Returns site, status (ok/degraded/offline), time of last data (UTC) and firmware version."),
+        "input_schema": {
+            "type": "object",
+            "properties": {"instrument_id": {"type": "string", "description": "Instrument id, e.g. 'P-117'"}},
+            "required": ["instrument_id"],
+        },
+    },
+    {
+        "name": "calculate",
+        "description": "Evaluate an arithmetic expression exactly. Use for any calculation instead of mental arithmetic.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"expression": {"type": "string", "description": "e.g. '(17 - 2.5) * 3600'"}},
+            "required": ["expression"],
+        },
+    },
+]
+TOOL_FUNCS = {"get_instrument_status": get_instrument_status, "calculate": calculate}</code></pre>
+<h3>The loop</h3>
+<pre><code class="language-python">def run_agent(task: str, max_steps: int = 10, verbose: bool = True) -&gt; str:
+    messages = [{"role": "user", "content": task}]
+    for step in range(max_steps):
+        resp = client.messages.create(
+            model=MODEL, max_tokens=1500, tools=TOOLS, messages=messages,
+            system="You are an operations assistant for a fleet of field instruments. "
+                   "Use tools to check facts rather than guessing. Be concise.",
+        )
+        messages.append({"role": "assistant", "content": resp.content})   # keep the tool calls in history
+
+        if resp.stop_reason != "tool_use":                                 # the model has finished
+            return "".join(b.text for b in resp.content if b.type == "text")
+
+        results = []
+        for block in resp.content:                                         # may contain several calls
+            if block.type != "tool_use":
+                continue
+            if verbose:
+                print(f"  -&gt; {block.name}({block.input})")
+            try:
+                output = TOOL_FUNCS[block.name](**block.input)
+                results.append({"type": "tool_result", "tool_use_id": block.id,
+                                "content": json.dumps(output)})
+            except Exception as e:                                         # report errors to the model
+                results.append({"type": "tool_result", "tool_use_id": block.id,
+                                "content": f"Error: {e}", "is_error": True})
+        messages.append({"role": "user", "content": results})              # results go back as a user turn
+    return "Stopped: step limit reached before the task was finished."
+
+print(run_agent("Is P-117 healthy? If not, how many hours has it been without data as of 2026-10-19T10:00Z?"))
+#   -&gt; get_instrument_status({'instrument_id': 'P-117'})
+#   -&gt; calculate({'expression': '24 + 8'})
+# P-117 is offline. Its last data arrived at 02:00 UTC on 18 October, so it has been
+# without data for 32 hours as of 10:00 UTC today.</code></pre>
+<p>That is a complete agent. Every agent framework is this loop plus conveniences. Note three details that trip people up: the assistant's tool-call blocks must be kept in the history, each result must reference its <code>tool_use_id</code>, and results are sent in a <strong>user</strong> turn.</p>
+<h2>Designing tools models use well</h2>
+<p>Tools are a user interface whose user is a model. Most agent failures are tool design failures.</p>
+<ul>
+<li><strong>Write descriptions like documentation for a new colleague</strong>: what it does, when to use it, what it returns, the format of each argument, with an example. The description is the only thing the model knows about your tool.</li>
+<li><strong>Few, well-scoped tools beat many overlapping ones.</strong> If two tools could plausibly answer the same request, the model will sometimes pick the wrong one.</li>
+<li><strong>Return what the model needs, compactly.</strong> Not 5,000 rows of raw JSON; filter, paginate and summarise. Every returned token costs context.</li>
+<li><strong>Make errors instructive.</strong> "unknown instrument 'P117'. Known ids look like 'P-117'" lets the model fix its own mistake; a stack trace does not.</li>
+<li><strong>Make tools safe by construction.</strong> Validate inputs, use read-only credentials where possible, and never pass model output to <code>eval</code>, a shell or raw SQL. The calculator above parses an expression tree instead of calling <code>eval</code>.</li>
+<li><strong>Separate reading from acting.</strong> Tools that change the world (send email, restart an instrument, delete data) deserve confirmation steps, narrow permissions and logs.</li>
+</ul>
+<p>Models can request <strong>several tool calls in one turn</strong> (for example, checking five instruments at once). The loop above handles this; run independent calls concurrently when they are slow.</p>
+<h2>Workflows, agents and when to use which</h2>
+<p>Many "agent" problems are better solved with <strong>workflows</strong>: predefined code paths that call models at fixed points. They are cheaper, faster and easier to test. Anthropic's guide "Building effective agents" names a useful set of patterns:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>How it works</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prompt chaining</td>
+<td>Fixed sequence of calls, each using the previous output</td>
+<td>Extract facts, then draft, then check</td>
+</tr>
+<tr>
+<td>Routing</td>
+<td>A classifier sends input to a specialised prompt or model</td>
+<td>Hardware questions to one flow, billing to another</td>
+</tr>
+<tr>
+<td>Parallelisation</td>
+<td>Run independent calls at once, then combine (or vote)</td>
+<td>Review a document for five risks in parallel</td>
+</tr>
+<tr>
+<td>Orchestrator-workers</td>
+<td>A model breaks a task into subtasks and delegates them</td>
+<td>Research a topic across many sources</td>
+</tr>
+<tr>
+<td>Evaluator-optimiser</td>
+<td>One call drafts, another critiques, loop until good enough</td>
+<td>Translate, critique, revise</td>
+</tr>
+<tr>
+<td>Autonomous agent</td>
+<td>Model chooses tools and steps freely in a loop</td>
+<td>Open-ended debugging or research</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of thumb:</strong> if you can draw the flowchart in advance, write a workflow. Use an autonomous agent when the number and order of steps genuinely cannot be known beforehand, and when the value of the task justifies the cost and unpredictability.</p>
+<h3>Planning and ReAct</h3>
+<p>The <strong>ReAct</strong> pattern (reason, act, observe) interleaves short reasoning with tool calls: think about what to do, call a tool, read the result, think again. Modern models do this naturally inside the tool loop, especially with reasoning enabled. For long tasks, asking the agent to write an explicit plan first, then revise it as results come in, helps it stay on track.</p>
+<h3>Memory</h3>
+<ul>
+<li><strong>Short-term memory</strong> is the conversation and tool history in the context window. It fills up: summarise or drop old tool results in long runs.</li>
+<li><strong>Long-term memory</strong> is anything stored outside the context and retrieved when relevant: a database of facts about the user, notes files the agent writes and later reads, a vector store of past interactions. It is RAG (lesson <a data-ref="rag"></a>) applied to the agent's own history.</li>
+<li><strong>Scratchpads</strong>: letting an agent write intermediate results to files keeps its context small and makes its work inspectable.</li>
+</ul>
+<h3>Multi-agent systems</h3>
+<p>Splitting work across several agents (an orchestrator plus specialised sub-agents with their own context windows) can help on broad tasks such as deep research, because each sub-agent explores in parallel with a clean context. It also multiplies token use and adds coordination failure modes. Start with one agent and add more only when a single context demonstrably becomes the bottleneck.</p>
+<h2>The Model Context Protocol</h2>
+<p>Every application used to wire up its own tools. The <strong>Model Context Protocol (MCP)</strong> is an open standard, introduced by Anthropic in 2024 and since adopted widely, for connecting AI applications to tools and data. Write an <strong>MCP server</strong> once, and any MCP-capable client (Claude's apps, IDEs, agent frameworks, your own code) can use it. Think of it as USB for AI tools.</p>
+<p>An MCP server can expose:</p>
+<ul>
+<li><strong>Tools</strong>: functions the model can call (like the ones above).</li>
+<li><strong>Resources</strong>: data the application can read into context (files, records).</li>
+<li><strong>Prompts</strong>: reusable prompt templates.</li>
+</ul>
+<h3>Build a server</h3>
+<pre><code class="language-bash">uv add "mcp[cli]"</code></pre>
+<pre data-file="fleet_server.py"><code class="language-python">from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("instrument-fleet")
+
+FLEET = {
+    "P-117": {"site": "coastal", "status": "offline", "last_data": "2026-10-18T02:00Z", "firmware": "2.3"},
+    "P-204": {"site": "urban", "status": "ok", "last_data": "2026-10-19T09:55Z", "firmware": "2.4"},
+}
+
+@mcp.tool()
+def get_instrument_status(instrument_id: str) -&gt; dict:
+    """Current status of one instrument by id (format 'P-123'): site, status, last data time (UTC), firmware."""
+    return FLEET.get(instrument_id, {"error": f"unknown id; known ids: {sorted(FLEET)}"})
+
+@mcp.tool()
+def list_instruments(status: str | None = None) -&gt; list[str]:
+    """List instrument ids, optionally only those with a given status ('ok', 'degraded', 'offline')."""
+    return [i for i, v in FLEET.items() if status is None or v["status"] == status]
+
+@mcp.resource("fleet://firmware-notes")
+def firmware_notes() -&gt; str:
+    """Release notes for instrument firmware versions."""
+    return "2.4: fixes overnight logging stall on cellular modems. 2.3: adds GPS time sync."
+
+if __name__ == "__main__":
+    mcp.run()          # speaks MCP over stdin/stdout by default</code></pre>
+<p>The decorators turn type hints and docstrings into the tool schemas and descriptions, so write them carefully: they are what the model reads. Test the server interactively with the MCP Inspector (<code>uv run mcp dev fleet_server.py</code>), then register it with a client. For Claude Desktop, add it to the configuration file:</p>
+<pre data-file="claude_desktop_config.json"><code class="language-json">{
+  "mcpServers": {
+    "fleet": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/project", "fleet_server.py"]
+    }
+  }
+}</code></pre>
+<p>After a restart, you can ask in plain language which instruments are offline and whether a firmware update might help, and the client will call your tools and read your resource. Servers can also run remotely over HTTP for shared use, which brings authentication and permissions into play.</p>
+<div class="admonition warning">
+<p class="admonition-title">MCP servers are code you run with your permissions</p>
+<p>Only install servers you trust, give them the narrowest credentials that work, and remember that tool results are untrusted input to the model: a document or web page fetched by one tool can contain instructions trying to hijack the agent (prompt injection, lesson <a data-ref="safety-security"></a>).</p>
+</div>
+<h2>Guardrails, budgets and evaluation</h2>
+<p>An agent that loops forever, burns your budget or deletes the wrong thing is worse than no agent. Build in:</p>
+<ul>
+<li><strong>Hard limits</strong>: maximum steps, maximum tokens or cost per task, wall-clock timeouts.</li>
+<li><strong>Least privilege</strong>: read-only by default; separate credentials per tool; scope to the user's own data.</li>
+<li><strong>Human approval</strong> for consequential or irreversible actions: show the exact action and wait for a yes.</li>
+<li><strong>Validation</strong> of tool arguments before execution, and of outputs before they reach users.</li>
+<li><strong>Idempotency and dry-runs</strong> for actions that might be retried.</li>
+<li><strong>Full tracing</strong>: log every model call, tool call, argument, result, token count and latency. You cannot debug an agent from its final answer alone (lesson <a data-ref="deployment-llmops"></a> covers tracing tools).</li>
+</ul>
+<p><strong>Evaluating agents</strong> means more than checking the final answer:</p>
+<ul>
+<li><strong>Task success rate</strong> on a set of realistic tasks with checkable outcomes (the database ended up in the right state; the report contains the right numbers).</li>
+<li><strong>Trajectory quality</strong>: did it use sensible tools, avoid redundant calls, ask for confirmation where needed?</li>
+<li><strong>Cost and latency</strong> per task, and their spread: agents have long tails.</li>
+<li><strong>Safety cases</strong>: tasks that should be refused or escalated, and injected instructions that should be ignored.</li>
+</ul>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a research agent over your documents</p>
+<p>Combine lessons <a data-ref="rag"></a> and <a data-ref="agents"></a>.</p>
+<ol>
+<li>Wrap your <code>MiniRAG.retrieve</code> as a tool <code>search_docs(query: str, k: int = 5)</code> returning chunk ids, titles and text.</li>
+<li>Add a tool <code>read_chunk(chunk_id: str)</code> that returns a chunk with its neighbours for more context, and the <code>calculate</code> tool.</li>
+<li>Give the agent a system prompt that requires citations by chunk id and allows "not found".</li>
+<li>Add limits: 12 steps, and a running token count that stops the agent above 60,000 input tokens.</li>
+<li>Write 8 questions that need <em>several</em> searches (comparisons, multi-step lookups) and compare the agent's answers, cost and latency with plain <code>MiniRAG.answer</code>.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution sketch and typical findings</summary>
+<p><pre><code class="language-python">rag = MiniRAG(); rag.index(documents)
+by_id = {c["id"]: i for i, c in enumerate(rag.chunks)}
+
+def search_docs(query: str, k: int = 5) -&gt; list[dict]:
+    return [{"id": c["id"], "title": c["title"], "text": c["text"][:1200]}
+            for c in rag.retrieve(query, k_final=min(k, 8))]
+
+def read_chunk(chunk_id: str) -&gt; dict:
+    i = by_id.get(chunk_id)
+    if i is None:
+        return {"error": "unknown chunk id; use ids returned by search_docs"}
+    window = rag.chunks[max(0, i - 1): i + 2]
+    return {"id": chunk_id, "text": "\n\n".join(c["text"] for c in window)}
+
+TOOL_FUNCS.update(search_docs=search_docs, read_chunk=read_chunk)
+TOOLS += [
+    {"name": "search_docs",
+     "description": "Search the document collection. Returns the most relevant chunks with ids. "
+                    "Search several times with different wording for multi-part questions.",
+     "input_schema": {"type": "object",
+                      "properties": {"query": {"type": "string"}, "k": {"type": "integer", "default": 5}},
+                      "required": ["query"]}},
+    {"name": "read_chunk",
+     "description": "Read a chunk together with its neighbouring chunks, for more context.",
+     "input_schema": {"type": "object", "properties": {"chunk_id": {"type": "string"}},
+                      "required": ["chunk_id"]}},
+]
+# In run_agent: accumulate resp.usage.input_tokens and stop when the total exceeds 60_000.</code></pre>
+Typical findings: on simple lookups the agent matches plain RAG but costs several times more and takes longer. On comparison and multi-hop questions it often wins clearly, because it searches for each part separately and follows up on what it finds. Failures to look for: repeating near-identical searches, citing chunks it never read, and stopping too early. Each suggests a fix to the tool descriptions or system prompt. The cost and latency gap is why production systems often route: plain RAG first, the agent only for questions that need it.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Who actually executes a tool when a model "calls" it?</p>
+<ul>
+<li>The model, inside the provider's servers</li>
+<li class="correct">Your application code, which then sends the result back to the model</li>
+<li>The user</li>
+<li>The tool description</li>
+</ul>
+<p class="why">The model only proposes a structured call. Your code decides whether and how to run it.</p>
+</div>
+<div class="q">
+<p>In the Anthropic Messages API, how are tool results returned to the model?</p>
+<ul>
+<li>As a new system prompt</li>
+<li class="correct">As tool_result blocks in a user message, each referencing its tool_use_id</li>
+<li>As an assistant message</li>
+<li>By calling the tool endpoint</li>
+</ul>
+<p class="why">The assistant's tool_use blocks stay in history, followed by a user turn containing the matching results.</p>
+</div>
+<div class="q">
+<p>You can draw the full flowchart of a task in advance. What should you build?</p>
+<ul>
+<li class="correct">A workflow with fixed steps that call the model where needed</li>
+<li>A multi-agent system</li>
+<li>An autonomous agent with all tools available</li>
+<li>Nothing; models cannot handle fixed steps</li>
+</ul>
+<p class="why">Workflows are cheaper, faster and easier to test. Save autonomy for genuinely open-ended tasks.</p>
+</div>
+<div class="q">
+<p>What is the main benefit of the Model Context Protocol?</p>
+<ul>
+<li>It makes models smarter</li>
+<li class="correct">Tools and data exposed once as an MCP server can be used by any MCP-capable client</li>
+<li>It encrypts all model traffic</li>
+<li>It replaces the need for tool descriptions</li>
+</ul>
+<p class="why">It standardises the connection between AI applications and tools, like a common port.</p>
+</div>
+<div class="q">
+<p>Which is the strongest safeguard for an agent tool that can delete data?</p>
+<ul>
+<li>A longer system prompt asking the model to be careful</li>
+<li>A higher temperature</li>
+<li class="correct">Least-privilege credentials plus explicit human approval of the exact action, with logging</li>
+<li>Running more agents to double-check</li>
+</ul>
+<p class="why">Do not rely on the model's judgement alone for irreversible actions.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>An agent is a model using tools in a loop. The model proposes calls; your code executes them and returns results.</li>
+<li>Tool design decides agent quality: clear descriptions, few well-scoped tools, compact results, instructive errors, safe implementations.</li>
+<li>Prefer workflows (chaining, routing, parallelisation, orchestrator-workers, evaluator-optimiser) when steps are predictable; use autonomous agents when they are not.</li>
+<li>MCP standardises tools and data access across applications; treat servers and their outputs as untrusted.</li>
+<li>Guard agents with step and cost limits, least privilege, human approval for consequential actions and full tracing. Evaluate success, trajectory, cost and safety.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Anthropic, "Building effective agents" (engineering blog post, December 2024)</li>
+<li><a href="https://docs.claude.com/en/api/overview">Claude API documentation</a>, sections on tool use</li>
+<li><a href="https://modelcontextprotocol.io">Model Context Protocol</a> specification, SDKs and example servers</li>
+<li>Yao et al., "ReAct: Synergizing Reasoning and Acting in Language Models" (arXiv 2210.03629)</li>
+<li>Schick et al., "Toolformer: Language Models Can Teach Themselves to Use Tools" (arXiv 2302.04761)</li>
+</ul>

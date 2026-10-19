@@ -1,0 +1,418 @@
+<!--
+{
+  "title": "Attention and the transformer",
+  "short": "Attention and transformers",
+  "summary": "The architecture behind every modern LLM, built up piece by piece: self-attention in NumPy, masking and multiple heads, the transformer block, then a small GPT you train yourself in PyTorch.",
+  "sessions": [
+    "Self-attention: queries, keys and values, implemented in NumPy",
+    "Causal masking, multi-head attention and positional information",
+    "The transformer block: residuals, layer norm and the MLP; encoders versus decoders",
+    "Build and train a tiny GPT in PyTorch",
+    "Generation, the KV cache, and what attention costs"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "The NumPy sections run anywhere. Training the tiny GPT takes minutes on a GPU and much longer on a CPU.",
+  "glossary": [
+    {"term": "Attention", "def": "The mechanism by which each token computes a weighted mix of other tokens' information, using query-key similarity: softmax(QKᵀ/√d)V."},
+    {"term": "Decoder-only", "def": "A transformer with causal attention trained to predict the next token. The architecture of GPT-style LLMs."},
+    {"term": "FlashAttention", "def": "An exact attention algorithm that avoids materialising the full attention matrix in slow GPU memory, making long contexts faster."},
+    {"term": "Grouped-query attention (GQA)", "def": "Many query heads sharing fewer key-value heads, shrinking the KV cache."},
+    {"term": "KV cache", "def": "Stored keys and values of previous tokens that make generation efficient at the cost of memory."},
+    {"term": "Multi-head attention", "def": "Several attention operations in parallel on smaller subspaces, then combined."},
+    {"term": "Positional encoding", "def": "Information about token order added to a transformer, which is otherwise order-blind (learned, sinusoidal or RoPE)."},
+    {"term": "RoPE", "def": "Rotary position embeddings, which encode relative position by rotating queries and keys."},
+    {"term": "Transformer", "def": "The architecture of stacked attention and MLP blocks with residual connections and normalisation behind modern LLMs."}
+  ]
+}
+-->
+<h2>The idea in one paragraph</h2>
+<p>Every token in a sequence looks at every other token and decides how much each one matters to it right now. It then pulls in a weighted mix of their information. "It" in "the animal didn't cross the street because it was too tired" should pull heavily from "animal"; in "...because it was too wide", from "street". That operation, <strong>self-attention</strong>, repeated in many layers with small neural networks in between, is the transformer. Everything else is engineering to make it train well and run fast.</p>
+<h2>Self-attention, step by step</h2>
+<p>Each token's vector \(x_i\) is projected three ways by learned matrices:</p>
+<ul>
+<li>a <strong>query</strong> \(q_i = x_i W_Q\): what am I looking for?</li>
+<li>a <strong>key</strong> \(k_j = x_j W_K\): what do I contain, for others to match against?</li>
+<li>a <strong>value</strong> \(v_j = x_j W_V\): what do I hand over if someone attends to me?</li>
+</ul>
+<p>Token \(i\) scores every token \(j\) by the dot product \(q_i\cdot k_j\) (high when they match), turns the scores into weights with softmax, and outputs the weighted sum of values. For all tokens at once, in matrix form:</p>
+\[
+\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
+\]
+<p>That one line is the heart of every LLM. Here it is in NumPy:</p>
+<pre><code class="language-python">import numpy as np
+
+rng = np.random.default_rng(0)
+
+def softmax(z, axis=-1):
+    z = z - z.max(axis=axis, keepdims=True)
+    e = np.exp(z)
+    return e / e.sum(axis=axis, keepdims=True)
+
+T, d_model, d_k = 4, 8, 8                    # 4 tokens, 8-dim vectors
+X = rng.normal(size=(T, d_model))            # stand-in for 4 token embeddings
+Wq, Wk, Wv = (rng.normal(0, d_model ** -0.5, (d_model, d_k)) for _ in range(3))
+
+Q, K, V = X @ Wq, X @ Wk, X @ Wv             # each (4, 8)
+scores = Q @ K.T / np.sqrt(d_k)              # (4, 4): token i's score for token j
+weights = softmax(scores)                    # each row sums to 1
+out = weights @ V                            # (4, 8): a new vector for each token
+print(weights.round(2))</code></pre>
+<pre><code class="language-text">[[0.34 0.13 0.33 0.2 ]
+ [0.78 0.   0.05 0.17]
+ [0.25 0.28 0.29 0.18]
+ [0.22 0.28 0.21 0.29]]</code></pre>
+<p>Row 1 says token 1 takes 78% of its new representation from token 0. With random weights the pattern is meaningless; training shapes \(W_Q\), \(W_K\) and \(W_V\) so the patterns become useful: pronouns attending to their referents, verbs to their subjects, a closing bracket to its opening one.</p>
+<h3>Why divide by √d_k?</h3>
+<p>The dot product of two random vectors with \(d\) independent unit-variance components has standard deviation \(\sqrt{d}\). With large \(d\), scores get huge, softmax saturates into a near one-hot distribution, and its gradients vanish. Dividing by \(\sqrt{d_k}\) keeps scores at unit scale whatever the dimension.</p>
+<pre><code class="language-python">for d in [4, 64, 1024]:
+    q, k = rng.normal(size=d), rng.normal(size=(1000, d))
+    print(d, (k @ q).std().round(1), (k @ q / np.sqrt(d)).std().round(1))
+# 4 1.8 0.9    64 8.6 1.1    1024 31.5 1.0</code></pre>
+<h2>Masking, heads and positions</h2>
+<h3>Causal masking: no peeking at the future</h3>
+<p>A language model predicts the next token, so position \(i\) must not see positions after it. Set those scores to \(-\infty\) before softmax; they become exactly zero weight.</p>
+<pre><code class="language-python">mask = np.triu(np.ones((T, T), dtype=bool), k=1)   # True above the diagonal = the future
+weights = softmax(np.where(mask, -np.inf, scores))
+print(weights.round(2))
+# [[1.   0.   0.   0.  ]     token 0 can only see itself
+#  [1.   0.   0.   0.  ]
+#  [0.31 0.34 0.35 0.  ]
+#  [0.22 0.28 0.21 0.29]]    the last token sees everything</code></pre>
+<p>A neat consequence: one forward pass over a sequence of length \(T\) gives \(T\) training examples at once (predict token 1 from token 0, token 2 from tokens 0 and 1, and so on), all computed in parallel. That parallelism is why transformers train so much faster than RNNs.</p>
+<h3>Multi-head attention</h3>
+<p>One attention pattern per layer is limiting: a token may need to track its syntactic head, the topic, and a matching quotation mark all at once. <strong>Multi-head attention</strong> splits the model dimension into \(h\) smaller heads, runs attention independently in each, concatenates the results and mixes them with an output projection \(W_O\). Same cost, many different "views".</p>
+<pre><code class="language-python">def multi_head(X, Wq, Wk, Wv, Wo, n_heads, causal=True):
+    T, d_model = X.shape
+    d_head = d_model // n_heads
+    # (T, d_model) -&gt; (n_heads, T, d_head)
+    split = lambda M: M.reshape(T, n_heads, d_head).transpose(1, 0, 2)
+    Q, K, V = split(X @ Wq), split(X @ Wk), split(X @ Wv)
+    s = Q @ K.transpose(0, 2, 1) / np.sqrt(d_head)          # (n_heads, T, T)
+    if causal:
+        s = np.where(np.triu(np.ones((T, T), dtype=bool), 1), -np.inf, s)
+    out = softmax(s) @ V                                      # (n_heads, T, d_head)
+    out = out.transpose(1, 0, 2).reshape(T, d_model)          # concatenate heads
+    return out @ Wo
+
+d_model, H = 16, 4
+X = rng.normal(size=(6, d_model))
+Ws = [rng.normal(0, d_model ** -0.5, (d_model, d_model)) for _ in range(4)]
+print(multi_head(X, *Ws, n_heads=H).shape)                    # (6, 16)</code></pre>
+<p>Modern LLMs often use <strong>grouped-query attention (GQA)</strong>: many query heads share a smaller number of key and value heads. Quality barely changes, and the memory needed to cache keys and values during generation drops several-fold.</p>
+<h3>Position: attention alone is order-blind</h3>
+<p>Look at the attention formula again: shuffle the tokens and each token's output is the same, just shuffled. Attention treats its input as a set. Order has to be injected.</p>
+<ul>
+<li><strong>Learned absolute positions</strong> (GPT-2): add a trainable vector for each position 0, 1, 2, ... to the token embeddings.</li>
+<li><strong>Sinusoidal positions</strong> (original transformer): add fixed sine and cosine waves of different frequencies.</li>
+<li><strong>Rotary position embeddings, RoPE</strong> (most current open LLMs): rotate query and key vectors by an angle proportional to their position, so the dot product \(q_i\cdot k_j\) depends on the <em>relative</em> offset \(i-j\). It generalises better and can be stretched to longer contexts.</li>
+</ul>
+<h2>The transformer block</h2>
+<p>Attention lets tokens exchange information. A per-token <strong>MLP</strong> (two linear layers with a non-linearity, typically expanding the dimension fourfold in between) then processes what each token gathered. Wrap both in residual connections and layer normalisation, the stabilisers from lesson <a data-ref="neural-networks"></a>, and you have a block:</p>
+\[
+\begin{aligned}
+x &\leftarrow x + \mathrm{MultiHeadAttention}(\mathrm{LayerNorm}(x)) \\
+x &\leftarrow x + \mathrm{MLP}(\mathrm{LayerNorm}(x))
+\end{aligned}
+\]
+<figure>
+<svg class="diagram" viewBox="0 0 580 330" role="img" aria-label="Decoder-only transformer: embeddings, a stack of blocks with attention and MLP sublayers and residual connections, then a final layer norm and output projection">
+<rect class="box" x="150" y="290" width="280" height="30" rx="6"/><text x="290" y="310" text-anchor="middle">token embedding + position</text>
+<rect x="100" y="70" width="380" height="200" rx="10" class="accent" opacity="0.08"/>
+<rect x="100" y="70" width="380" height="200" rx="10" class="accent-stroke"/>
+<text x="490" y="175" class="muted">× N</text>
+<rect class="box" x="140" y="215" width="300" height="34" rx="6"/><text x="290" y="237" text-anchor="middle">LayerNorm → masked multi-head attention</text>
+<rect class="box" x="140" y="125" width="300" height="34" rx="6"/><text x="290" y="147" text-anchor="middle">LayerNorm → MLP (expand 4×, GELU)</text>
+<circle class="box" cx="290" cy="190" r="10"/><text x="290" y="195" text-anchor="middle">+</text>
+<circle class="box" cx="290" cy="100" r="10"/><text x="290" y="105" text-anchor="middle">+</text>
+<path class="wire" d="M290 290 V249 M290 215 V200 M290 180 V159 M290 125 V110 M290 90 V59"/>
+<path class="wire" d="M290 266 H118 V190 H280" stroke-dasharray="4 3"/>
+<path class="wire" d="M290 172 H118 V100 H280" stroke-dasharray="4 3"/>
+<text x="92" y="150" class="muted" font-size="11" text-anchor="end">residual</text>
+<rect class="box" x="140" y="25" width="300" height="34" rx="6"/><text x="290" y="47" text-anchor="middle">LayerNorm → linear → logits over vocab</text>
+</svg>
+<figcaption>A decoder-only (GPT-style) transformer. The dashed lines are residual connections: each sub-layer adds its output to a running "residual stream".</figcaption>
+</figure>
+
+<p>Two useful mental models:</p>
+<ul>
+<li><strong>The residual stream.</strong> Think of \(x\) as a shared workspace flowing up through the network. Each attention and MLP sub-layer reads from it and writes an update back. Interpretability research uses this picture heavily.</li>
+<li><strong>Attention moves information between tokens; MLPs process it within a token.</strong> Much of a model's factual knowledge appears to be stored in the MLP weights.</li>
+</ul>
+<h3>Encoders, decoders and both</h3>
+<table>
+<thead>
+<tr>
+<th>Architecture</th>
+<th>Attention</th>
+<th>Trained to</th>
+<th>Examples</th>
+<th>Good for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Encoder-only</td>
+<td>Bidirectional (sees all tokens)</td>
+<td>Fill in masked-out words</td>
+<td>BERT, RoBERTa</td>
+<td>Classification, embeddings, search ranking</td>
+</tr>
+<tr>
+<td>Decoder-only</td>
+<td>Causal (sees the past only)</td>
+<td>Predict the next token</td>
+<td>GPT, Claude, Llama, Mistral, Qwen</td>
+<td>Text generation, chat, essentially all modern LLMs</td>
+</tr>
+<tr>
+<td>Encoder-decoder</td>
+<td>Encoder bidirectional, decoder causal plus cross-attention</td>
+<td>Map input sequence to output sequence</td>
+<td>Original transformer, T5, Whisper</td>
+<td>Translation, speech recognition, summarisation</td>
+</tr>
+</tbody>
+</table>
+<p>Decoder-only models won the generality race: with enough scale, "predict the next token" covers translation, classification and everything else as special cases.</p>
+<h2>Build a tiny GPT</h2>
+<p>Now the real thing, in about a hundred lines of PyTorch. It is a character-level model, so the "tokens" are single characters and you need no tokenizer yet (that comes in the next lesson). Train it on any plain-text file; the classic choice is Tiny Shakespeare, about 1 MB of plays. Run this on a Colab GPU for speed, although a modern laptop CPU will finish a shorter run.</p>
+<h3>Data</h3>
+<pre><code class="language-python">import math, torch, torch.nn as nn, torch.nn.functional as F
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+torch.manual_seed(0)
+
+# wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
+text = open("input.txt", encoding="utf-8").read()
+chars = sorted(set(text))
+vocab_size = len(chars)                                   # 65 for Tiny Shakespeare
+stoi = {c: i for i, c in enumerate(chars)}
+itos = {i: c for c, i in stoi.items()}
+encode = lambda s: [stoi[c] for c in s]
+decode = lambda ids: "".join(itos[i] for i in ids)
+
+data = torch.tensor(encode(text), dtype=torch.long)
+n = int(0.9 * len(data))
+train_data, val_data = data[:n], data[n:]
+
+block_size, batch_size = 128, 64                           # context length, sequences per batch
+
+def get_batch(split):
+    d = train_data if split == "train" else val_data
+    ix = torch.randint(len(d) - block_size - 1, (batch_size,))
+    x = torch.stack([d[i : i + block_size] for i in ix])          # (B, T)
+    y = torch.stack([d[i + 1 : i + block_size + 1] for i in ix])  # targets: shifted by one
+    return x.to(device), y.to(device)</code></pre>
+<h3>Model</h3>
+<pre><code class="language-python">class CausalSelfAttention(nn.Module):
+    def __init__(self, d_model, n_heads, dropout):
+        super().__init__()
+        assert d_model % n_heads == 0
+        self.n_heads = n_heads
+        self.qkv = nn.Linear(d_model, 3 * d_model)        # W_Q, W_K, W_V in one matrix
+        self.proj = nn.Linear(d_model, d_model)           # W_O
+        self.attn_drop = nn.Dropout(dropout)
+        self.resid_drop = nn.Dropout(dropout)
+
+    def forward(self, x):
+        B, T, C = x.shape
+        q, k, v = self.qkv(x).split(C, dim=2)
+        # (B, T, C) -&gt; (B, n_heads, T, head_dim)
+        q, k, v = (t.view(B, T, self.n_heads, C // self.n_heads).transpose(1, 2) for t in (q, k, v))
+        att = (q @ k.transpose(-2, -1)) / math.sqrt(k.size(-1))           # (B, H, T, T)
+        mask = torch.triu(torch.ones(T, T, dtype=torch.bool, device=x.device), diagonal=1)
+        att = att.masked_fill(mask, float("-inf")).softmax(dim=-1)
+        y = self.attn_drop(att) @ v                                        # (B, H, T, head_dim)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)                   # re-join heads
+        return self.resid_drop(self.proj(y))
+        # Production code replaces the four attention lines with
+        # F.scaled_dot_product_attention(q, k, v, is_causal=True), which uses FlashAttention kernels.
+
+
+class Block(nn.Module):
+    def __init__(self, d_model, n_heads, dropout):
+        super().__init__()
+        self.ln1 = nn.LayerNorm(d_model)
+        self.attn = CausalSelfAttention(d_model, n_heads, dropout)
+        self.ln2 = nn.LayerNorm(d_model)
+        self.mlp = nn.Sequential(
+            nn.Linear(d_model, 4 * d_model), nn.GELU(),
+            nn.Linear(4 * d_model, d_model), nn.Dropout(dropout),
+        )
+
+    def forward(self, x):
+        x = x + self.attn(self.ln1(x))       # tokens talk to each other
+        x = x + self.mlp(self.ln2(x))        # each token thinks on its own
+        return x
+
+
+class TinyGPT(nn.Module):
+    def __init__(self, vocab_size, block_size, d_model=256, n_heads=4, n_layers=4, dropout=0.1):
+        super().__init__()
+        self.block_size = block_size
+        self.tok_emb = nn.Embedding(vocab_size, d_model)
+        self.pos_emb = nn.Embedding(block_size, d_model)          # learned absolute positions
+        self.drop = nn.Dropout(dropout)
+        self.blocks = nn.ModuleList([Block(d_model, n_heads, dropout) for _ in range(n_layers)])
+        self.ln_f = nn.LayerNorm(d_model)
+        self.head = nn.Linear(d_model, vocab_size, bias=False)
+        self.head.weight = self.tok_emb.weight                    # weight tying: input and output share embeddings
+        self.apply(self._init)
+
+    def _init(self, m):
+        if isinstance(m, (nn.Linear, nn.Embedding)):
+            nn.init.normal_(m.weight, mean=0.0, std=0.02)         # small init keeps the initial loss near ln(vocab)
+        if isinstance(m, nn.Linear) and m.bias is not None:
+            nn.init.zeros_(m.bias)
+
+    def forward(self, idx, targets=None):
+        B, T = idx.shape
+        pos = torch.arange(T, device=idx.device)
+        x = self.drop(self.tok_emb(idx) + self.pos_emb(pos))      # (B, T, C)
+        for block in self.blocks:
+            x = block(x)
+        logits = self.head(self.ln_f(x))                          # (B, T, vocab)
+        loss = None
+        if targets is not None:
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+        return logits, loss
+
+    @torch.no_grad()
+    def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
+        for _ in range(max_new_tokens):
+            logits, _ = self(idx[:, -self.block_size:])          # crop to the context window
+            logits = logits[:, -1, :] / temperature               # only the last position matters
+            if top_k is not None:
+                v, _ = torch.topk(logits, top_k)
+                logits[logits &lt; v[:, [-1]]] = float("-inf")
+            next_id = torch.multinomial(F.softmax(logits, dim=-1), num_samples=1)
+            idx = torch.cat([idx, next_id], dim=1)
+        return idx</code></pre>
+<h3>Train and sample</h3>
+<pre><code class="language-python">model = TinyGPT(vocab_size, block_size).to(device)
+print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")   # about 3.2M
+opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.1)
+
+@torch.no_grad()
+def estimate_loss(iters=50):
+    model.eval()
+    out = {}
+    for split in ["train", "val"]:
+        out[split] = sum(model(*get_batch(split))[1].item() for _ in range(iters)) / iters
+    model.train()
+    return out
+
+for step in range(5001):
+    if step % 500 == 0:
+        print(step, estimate_loss())          # step 0 should show about ln(65) = 4.17
+    x, y = get_batch("train")
+    _, loss = model(x, y)
+    opt.zero_grad(set_to_none=True)
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+
+start = torch.tensor([encode("ROMEO:")], device=device)
+print(decode(model.generate(start, 400, temperature=0.8, top_k=40)[0].tolist()))</code></pre>
+<p>The validation loss should fall from about 4.17 to roughly 1.5 in a few thousand steps. The samples go from random characters, to word-shaped gibberish, to recognisably Shakespearean formatting: speaker names in capitals, line breaks, archaic-sounding words, invented but plausible. Nobody told the model about any of that. It learned it all from predicting the next character, which is the same objective, at vastly smaller scale, that produces modern LLMs.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: experiments on your GPT</p>
+<ol>
+<li>Remove the causal mask and retrain for a few hundred steps. The training loss drops suspiciously fast. Why, and what happens to generation?</li>
+<li>Delete the position embedding. How does the validation loss and the sample quality change?</li>
+<li>Double <code>n_layers</code> to 8, then separately double <code>d_model</code> to 512. Record parameters, validation loss and time per step. Which gave more improvement per parameter?</li>
+<li>Train on a different text: your own notes, a public-domain book, or Python source code.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<ol>
+<li>Without the mask, each position can see the very token it is asked to predict, so the model learns to copy it and the training loss collapses towards zero. At generation time there is no future token to copy, so samples are garbage. This is the most instructive bug in the course: <strong>a loss that looks too good usually means leakage</strong>, the same lesson as in lesson <a data-ref="ml-fundamentals"></a>.</li>
+<li>Without positions the model only knows <em>which</em> characters are in the context, not their order. Loss ends noticeably higher and text loses structure (words and line layout degrade), though it still learns some local statistics through the causal mask.</li>
+<li>Both help a little at this scale. Wider models tend to be faster per parameter on a GPU (bigger matrix multiplications); deeper models can represent more compositional structure. Scaling laws (next lesson) study exactly these trade-offs at large scale.</li>
+<li>On Python code the model quickly learns indentation and keywords, and soon produces plausible-looking, non-working code: a miniature version of why code LLMs work and why their output needs testing.</li>
+</ol>
+</details>
+<h2>Generation, the KV cache and the cost of attention</h2>
+<h3>Generation is a loop</h3>
+<p>An LLM produces text one token at a time: run the model on the context, sample a token from the last position's distribution, append it, repeat. Our <code>generate</code> method does exactly that, and so does every chat model, which is why responses stream in word by word.</p>
+<h3>The KV cache</h3>
+<p>Our naive <code>generate</code> recomputes keys and values for the whole context at every step, which is wasteful: past tokens' keys and values never change. Real inference engines store them in a <strong>KV cache</strong> and compute only the new token's query, key and value per step. This turns generation from quadratic to linear work per token, at the cost of memory. For an 8-billion-parameter model with 32 layers, 8 key-value heads of dimension 128, in 16-bit precision, the cache is</p>
+\[
+2 \times 32 \times 8 \times 128 \times 2\ \text{bytes} \approx 131\ \text{KB per token}
+\]
+<p>which is about 1 GB for one 8,000-token conversation. KV cache memory, not model weights, often limits how many users a GPU can serve at once (lesson <a data-ref="deployment-llmops"></a>), and it is why grouped-query attention matters.</p>
+<h3>Attention is quadratic in sequence length</h3>
+<p>Every token attends to every other, so the score matrix is \(T \times T\). Doubling the context quadruples attention compute. Long-context models rely on optimised kernels such as <strong>FlashAttention</strong>, which computes exact attention without ever materialising the full matrix in slow GPU memory, plus position schemes like RoPE that extend gracefully. The quadratic cost is also why "just put everything in the context" is not free, which you will weigh against retrieval in lesson <a data-ref="rag"></a>.</p>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>In self-attention, what determines how much token i attends to token j?</p>
+<ul>
+<li>The distance between i and j</li>
+<li class="correct">The softmax-normalised dot product of token i's query with token j's key</li>
+<li>The value vector of token j</li>
+<li>A fixed pattern chosen before training</li>
+</ul>
+<p class="why">Scores are q_i · k_j / √d_k, normalised by softmax across j.</p>
+</div>
+<div class="q">
+<p>Why is the causal mask necessary when training a GPT-style model?</p>
+<ul>
+<li>To speed up training</li>
+<li>To reduce memory</li>
+<li class="correct">So each position can only use earlier tokens; otherwise it could see the token it must predict</li>
+<li>To make attention symmetric</li>
+</ul>
+<p class="why">Without it the model cheats by copying the answer, and the low training loss means nothing.</p>
+</div>
+<div class="q">
+<p>Self-attention without any positional information treats its input as...</p>
+<ul>
+<li>A sequence read left to right</li>
+<li class="correct">An unordered set: shuffling the tokens just shuffles the outputs</li>
+<li>A tree</li>
+<li>A sequence read right to left</li>
+</ul>
+<p class="why">Order must be injected, by learned positions, sinusoids or rotary embeddings.</p>
+</div>
+<div class="q">
+<p>What is the KV cache?</p>
+<ul>
+<li class="correct">Stored keys and values of previous tokens, so each generation step only computes the new token's projections</li>
+<li>A cache of previous user prompts</li>
+<li>A compressed copy of the model weights</li>
+<li>The vocabulary lookup table</li>
+</ul>
+<p class="why">It trades memory for speed, and its size often limits how many concurrent users a GPU can serve.</p>
+</div>
+<div class="q">
+<p>Doubling a transformer's context length roughly does what to the cost of the attention score computation?</p>
+<ul>
+<li>Leaves it unchanged</li>
+<li>Doubles it</li>
+<li class="correct">Quadruples it</li>
+<li>Halves it</li>
+</ul>
+<p class="why">The score matrix is T × T, so attention compute grows with the square of sequence length.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Self-attention: \(\mathrm{softmax}(QK^\top/\sqrt{d_k})V\). Tokens score each other with query-key dot products and mix their values.</li>
+<li>Causal masking makes a next-token predictor and gives \(T\) training examples per sequence in parallel. Multi-head attention runs several patterns at once; positions must be injected (learned, sinusoidal or RoPE).</li>
+<li>A block is attention then MLP, each wrapped in layer norm and a residual connection. Decoder-only stacks of these blocks are today's LLMs.</li>
+<li>You built and trained one. The objective is the same as for frontier models; the difference is scale, data and post-training.</li>
+<li>Generation is a sampling loop; the KV cache makes it efficient but costs memory; attention cost grows quadratically with context.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Vaswani et al., "Attention Is All You Need" (arXiv 1706.03762)</li>
+<li>Andrej Karpathy, "Let's build GPT: from scratch, in code, spelled out" (video) and the nanoGPT repository</li>
+<li>Jay Alammar, "The Illustrated Transformer" (blog post)</li>
+<li>3Blue1Brown, deep learning chapters 5 and 6 on transformers and attention</li>
+<li>Su et al., "RoFormer: Enhanced Transformer with Rotary Position Embedding" (arXiv 2104.09864)</li>
+</ul>

@@ -1,0 +1,230 @@
+<!--
+{
+  "title": "Text as numbers, sequences and embeddings",
+  "short": "Sequences and embeddings",
+  "summary": "How text becomes vectors whose geometry captures meaning, how recurrent networks read sequences one step at a time, and the bottleneck that motivated attention.",
+  "sessions": [
+    "Representing text: one-hot vectors, the distributional hypothesis and word embeddings",
+    "Recurrent networks, LSTMs, sequence-to-sequence models and their bottleneck"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU). The last cells use PyTorch.",
+  "glossary": []
+}
+-->
+<h2>The problem: models need numbers</h2>
+<p>Neural networks multiply matrices, so text has to become numbers. How you do that decides what the model can learn. This lesson follows the historical path from naive encodings to learned embeddings and recurrent networks, because each step explains a design choice in the transformer you will build next.</p>
+<h2>One-hot vectors and their limits</h2>
+<p>Give every word in the vocabulary an index, and represent a word as a vector of zeros with a single 1 at its index. With a 50,000-word vocabulary, each word is a 50,000-dimensional vector.</p>
+<p>Two problems. The vectors are huge and almost entirely zeros. Worse, every pair of words is equally different: the dot product of "cat" and "kitten" is 0, the same as "cat" and "carburettor". The representation knows nothing about meaning.</p>
+<h2>The distributional hypothesis</h2>
+<blockquote>
+<p>"You shall know a word by the company it keeps." (J. R. Firth, 1957)</p>
+</blockquote>
+<p>Words that appear in similar contexts tend to have similar meanings. "Cat" and "dog" both show up near "sat", "ate", "the", "chased"; "Paris" and "Berlin" both show up near "capital". If we describe each word by the contexts it appears in, similar words get similar descriptions automatically.</p>
+<h3>Embeddings from counting, in twenty lines</h3>
+<p>Before neural networks, you could build word vectors by counting co-occurrences and compressing the counts with the SVD from lesson <a data-ref="math-for-ai"></a>. Doing it yourself makes the idea concrete.</p>
+<pre><code class="language-python">import numpy as np
+
+corpus = """the cat sat on the mat . the dog sat on the rug . a cat chased a mouse .
+a dog chased a cat . the mouse ate the cheese . the cat ate the fish .
+the dog ate the bone . a kitten is a young cat . a puppy is a young dog .
+the kitten sat on the rug . the puppy sat on the mat . the mouse ran from the cat .
+the dog ran in the park . the cat slept on the mat . the dog slept on the rug .
+paris is the capital of france . berlin is the capital of germany . rome is the capital of italy .
+france exports wine . germany exports cars . italy exports wine .""".split()
+
+vocab = sorted(set(corpus))
+idx = {w: i for i, w in enumerate(vocab)}
+V = len(vocab)
+
+# 1. count how often each word appears within 2 positions of each other word
+C = np.zeros((V, V))
+for i, w in enumerate(corpus):
+    for j in range(max(0, i - 2), min(len(corpus), i + 3)):
+        if i != j:
+            C[idx[w], idx[corpus[j]]] += 1
+
+# 2. positive pointwise mutual information: how much more often than chance do they co-occur?
+total = C.sum()
+pw = C.sum(1, keepdims=True) / total
+pc = C.sum(0, keepdims=True) / total
+with np.errstate(divide="ignore"):
+    ppmi = np.maximum(np.log((C / total) / (pw * pc)), 0)
+
+# 3. compress with the SVD: keep 10 dimensions, normalise for cosine similarity
+U, S, _ = np.linalg.svd(ppmi)
+E = U[:, :10] * S[:10]
+E /= np.linalg.norm(E, axis=1, keepdims=True)
+
+def nearest(word, k=3):
+    sims = E @ E[idx[word]]
+    return [vocab[i] for i in np.argsort(-sims)[1 : k + 1]]
+
+print(nearest("cat"))      # ['mouse', 'dog', 'bone']
+print(nearest("mat"))      # ['slept', 'rug', 'sat']
+print(nearest("france"))   # ['germany', '.', 'of']: noisy, but germany is first</code></pre>
+<p>With 150 words of text the results are noisy, but the structure is already there: "rug" next to "mat", "dog" next to "cat", "germany" next to "france". Scale the corpus to billions of words and the geometry becomes remarkably rich.</p>
+<h3>word2vec: learning embeddings by prediction</h3>
+<p>In 2013, word2vec learned embeddings with a tiny neural network instead of counting. The skip-gram variant takes a word and tries to predict the words around it. The prediction task is a pretext; the useful output is the learned <strong>embedding matrix</strong>, one row of, say, 300 numbers per word. Training pushes words with similar contexts to similar rows.</p>
+<p>The famous result was that directions in this space carry meaning. Vector arithmetic such as</p>
+\[
+\vec{\text{king}} - \vec{\text{man}} + \vec{\text{woman}} \approx \vec{\text{queen}}
+\]
+<p>roughly works, because the "male to female" offset is approximately consistent across word pairs. The effect is real but often overstated in popular accounts; the cleaner lesson is that <strong>semantic similarity becomes geometric closeness</strong>, which is what every embedding-based system relies on.</p>
+<h3>Embeddings in PyTorch</h3>
+<p>An embedding layer is just a lookup table: a matrix of shape <code>(vocab_size, dim)</code> whose rows are trained by backprop along with the rest of the model. Indexing it with token ids is equivalent to multiplying one-hot vectors by the matrix, without wasting work on the zeros.</p>
+<pre><code class="language-python">import torch, torch.nn as nn
+
+emb = nn.Embedding(num_embeddings=50_000, embedding_dim=256)
+token_ids = torch.tensor([[12, 873, 4, 99], [5, 5, 31, 0]])   # (batch=2, seq_len=4)
+vectors = emb(token_ids)                                       # (2, 4, 256)</code></pre>
+<p>Every LLM starts with exactly this: token ids in, one learned vector per token out. In lesson <a data-ref="embeddings-vector-search"></a> you will use embeddings for whole sentences and documents, which is the foundation of semantic search and RAG.</p>
+<div class="admonition note">
+<p class="admonition-title">Static versus contextual embeddings</p>
+<p>word2vec gives "bank" one vector, whether it is a river bank or a savings bank. Transformers produce <strong>contextual</strong> embeddings: the vector for "bank" changes depending on the surrounding words. That is a large part of why they understand language so much better.</p>
+</div>
+<h2>Recurrent neural networks</h2>
+<p>Embeddings handle individual words; language is sequences. A feed-forward network takes a fixed-size input, but sentences vary in length and order matters ("dog bites man" is not "man bites dog").</p>
+<p>A <strong>recurrent neural network</strong> (RNN) reads a sequence one step at a time, carrying a <strong>hidden state</strong> \(h_t\) that summarises everything so far:</p>
+\[
+h_t = \tanh(x_t W_x + h_{t-1} W_h + b)
+\]
+<p>The same weights are used at every step, so the network handles any length.</p>
+<pre><code class="language-python">rng = np.random.default_rng(0)
+d_in, d_h = 8, 16
+Wx = rng.normal(0, 0.3, (d_in, d_h))
+Wh = rng.normal(0, 0.3, (d_h, d_h))
+b = np.zeros(d_h)
+
+xs = rng.normal(size=(5, d_in))        # a sequence of 5 input vectors (e.g. word embeddings)
+h = np.zeros(d_h)                      # start with an empty memory
+for x in xs:
+    h = np.tanh(x @ Wx + h @ Wh + b)   # update the memory with each new input
+print(h.shape)                         # (16,): a summary of the whole sequence</code></pre>
+<h3>Why plain RNNs forget</h3>
+<p>Training an RNN backpropagates through every time step, multiplying by \(W_h\) (and the tanh derivative) again and again. Repeated multiplication either shrinks or explodes:</p>
+<pre><code class="language-python">for factor in [0.9, 1.0, 1.1]:
+    print(factor, factor ** 50)       # 0.0052, 1.0, 117.4</code></pre>
+<p>After 50 steps, a factor of 0.9 leaves half a percent of the gradient: the network effectively cannot learn that a word at the start of a paragraph matters for one at the end. This is the <strong>vanishing gradient problem</strong> in time.</p>
+<h3>LSTMs and GRUs</h3>
+<p>The <strong>LSTM</strong> (long short-term memory) adds a separate cell state that flows through time with only gentle, gated modifications, and three learned <strong>gates</strong> decide what to forget, what to write and what to output. Because the cell state is updated additively, gradients can flow across many more steps (the same insight as residual connections). The <strong>GRU</strong> is a simpler variant with two gates. From roughly 2014 to 2017, LSTMs were the state of the art for translation, speech recognition and language modelling.</p>
+<pre><code class="language-python">lstm = nn.LSTM(input_size=256, hidden_size=512, num_layers=2, batch_first=True)
+out, (h_n, c_n) = lstm(vectors)        # vectors: (2, 4, 256) from the embedding above
+print(out.shape)                       # (2, 4, 512): a hidden state for every position</code></pre>
+<h2>Sequence-to-sequence and the bottleneck</h2>
+<p>For translation, an <strong>encoder</strong> RNN reads the source sentence into a final hidden state, and a <strong>decoder</strong> RNN generates the target sentence word by word from it. This seq2seq design (2014) worked, but with a glaring problem: the entire meaning of the source sentence, whether five words or fifty, has to squeeze through one fixed-size vector. Long sentences degraded badly.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 640 170" role="img" aria-label="Encoder-decoder with a single context vector bottleneck">
+<g>
+<rect class="box" x="20" y="60" width="60" height="40" rx="6"/><rect class="box" x="100" y="60" width="60" height="40" rx="6"/><rect class="box" x="180" y="60" width="60" height="40" rx="6"/><rect class="box" x="260" y="60" width="60" height="40" rx="6"/>
+<text x="50" y="125" text-anchor="middle" class="muted">the</text><text x="130" y="125" text-anchor="middle" class="muted">cat</text><text x="210" y="125" text-anchor="middle" class="muted">sat</text><text x="290" y="125" text-anchor="middle" class="muted">down</text>
+<path class="wire" d="M80 80 H100 M160 80 H180 M240 80 H260"/>
+<path class="accent-stroke" d="M320 80 H360"/>
+<circle class="accent" cx="370" cy="80" r="11"/>
+<path class="accent-stroke" d="M381 80 H420"/>
+<rect class="box" x="420" y="60" width="60" height="40" rx="6"/><rect class="box" x="500" y="60" width="60" height="40" rx="6"/><rect class="box" x="580" y="60" width="50" height="40" rx="6"/>
+<path class="wire" d="M480 80 H500 M560 80 H580"/>
+<text x="450" y="125" text-anchor="middle" class="muted">le</text><text x="530" y="125" text-anchor="middle" class="muted">chat</text><text x="605" y="125" text-anchor="middle" class="muted">…</text>
+<text x="170" y="40" text-anchor="middle">encoder</text><text x="525" y="40" text-anchor="middle">decoder</text>
+<text x="370" y="150" text-anchor="middle" font-size="12">one fixed-size vector carries everything</text>
+</g>
+</svg>
+<figcaption>The bottleneck: the decoder sees the source sentence only through one vector.</figcaption>
+</figure>
+
+<h3>The fix that changed everything: attention</h3>
+<p>In 2014, Bahdanau and colleagues let the decoder <strong>look back at every encoder hidden state</strong> at each output step, computing a weighted average where the weights say which source words are relevant right now. Translating "chat", the decoder attends mostly to "cat". The bottleneck vanished, and long-sentence translation improved dramatically.</p>
+<p>Then, in 2017, "Attention Is All You Need" asked: if attention is doing the important work, why keep the recurrence at all? Recurrence forces you to process tokens one after another, which is slow and makes long-range connections hard. The <strong>transformer</strong> drops it entirely and lets every token attend to every other token directly, in parallel. That is the subject of the next lesson.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: explore real embeddings</p>
+<p>Install <code>gensim</code> and load small pretrained GloVe vectors (<code>gensim.downloader.load("glove-wiki-gigaword-50")</code>, about 66 MB).</p>
+<ol>
+<li>Find the nearest neighbours of "python", "spectrometer" and "transformer". What do the results tell you about the training corpus?</li>
+<li>Test analogies with <code>most_similar(positive=["king", "woman"], negative=["man"])</code>, plus three of your own. How many work?</li>
+<li>Compute cosine similarity between "doctor" and "nurse", and between "doctor" with "man" and "woman". What does this suggest about bias in data-driven representations?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what to look for</summary>
+<p><pre><code class="language-python">import gensim.downloader as api
+wv = api.load("glove-wiki-gigaword-50")
+for w in ["python", "spectrometer", "transformer"]:
+    print(w, [x for x, _ in wv.most_similar(w, topn=5)])
+print(wv.most_similar(positive=["king", "woman"], negative=["man"], topn=3))
+print(wv.similarity("doctor", "man"), wv.similarity("doctor", "woman"))</code></pre>
+1. "python" sits near other snakes as well as programming terms, because Wikipedia and news text from that era use both senses. "transformer" sits near electrical and toy-franchise words, not neural networks: these vectors predate the 2017 paper. Embeddings reflect their corpus and its date.
+2. "queen" typically comes out on top for the classic analogy, but many hand-made analogies fail or return near-synonyms of the input words. The geometry is suggestive, not a reliable reasoning engine.
+3. You will usually see measurable gender asymmetries for occupation words. Models absorb the statistical patterns of their training text, including social biases. Lesson <a data-ref="safety-security"></a> returns to how to measure and mitigate this.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>What is the main weakness of one-hot word vectors?</p>
+<ul>
+<li>They are too small</li>
+<li class="correct">Every pair of words is equally dissimilar, so the representation carries no information about meaning</li>
+<li>They cannot represent rare words</li>
+<li>They require a GPU</li>
+</ul>
+<p class="why">All one-hot vectors are orthogonal: the dot product between any two different words is 0.</p>
+</div>
+<div class="q">
+<p>What idea underlies both count-based embeddings and word2vec?</p>
+<ul>
+<li>Words with similar spellings have similar meanings</li>
+<li class="correct">Words that appear in similar contexts tend to have similar meanings</li>
+<li>Frequent words are more important</li>
+<li>Grammar determines meaning</li>
+</ul>
+<p class="why">The distributional hypothesis: you know a word by the company it keeps.</p>
+</div>
+<div class="q">
+<p>An nn.Embedding layer with 50,000 entries and dimension 256 receives token ids of shape (8, 128). What is the output shape?</p>
+<ul>
+<li>(8, 256)</li>
+<li>(50000, 256)</li>
+<li class="correct">(8, 128, 256)</li>
+<li>(8, 128)</li>
+</ul>
+<p class="why">Each id is replaced by its 256-dimensional row.</p>
+</div>
+<div class="q">
+<p>Why do plain RNNs struggle with long-range dependencies?</p>
+<ul>
+<li class="correct">Backpropagating through many time steps multiplies many factors together, so gradients vanish or explode</li>
+<li>They have too many parameters</li>
+<li>They can only read sequences backwards</li>
+<li>They cannot use embeddings</li>
+</ul>
+<p class="why">LSTMs ease this with additive cell-state updates; transformers avoid it by connecting every token directly.</p>
+</div>
+<div class="q">
+<p>What problem did attention originally solve in sequence-to-sequence models?</p>
+<ul>
+<li>Slow training on GPUs</li>
+<li class="correct">The fixed-size bottleneck vector between encoder and decoder</li>
+<li>The lack of a vocabulary</li>
+<li>Overfitting on small datasets</li>
+</ul>
+<p class="why">The decoder could look back at every encoder state and focus on the relevant ones.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Models need numbers; one-hot vectors carry no meaning. Embeddings place similar words close together.</li>
+<li>The distributional hypothesis (context defines meaning) underlies count-based vectors, word2vec and, ultimately, LLMs.</li>
+<li>An embedding layer is a trainable lookup table. Transformers make embeddings contextual.</li>
+<li>RNNs read sequences step by step with a hidden state, but suffer vanishing gradients through time; LSTMs mitigate this.</li>
+<li>Seq2seq models squeezed meaning through one vector. Attention removed the bottleneck, and the transformer kept only attention.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Mikolov et al., "Efficient Estimation of Word Representations in Vector Space" (word2vec, arXiv 1301.3781)</li>
+<li>Christopher Olah, "Understanding LSTM Networks" (blog post), the classic illustrated explanation</li>
+<li>Bahdanau, Cho and Bengio, "Neural Machine Translation by Jointly Learning to Align and Translate" (arXiv 1409.0473)</li>
+<li>Jurafsky and Martin, <em>Speech and Language Processing</em> (free draft online), chapters on embeddings and RNNs</li>
+</ul>

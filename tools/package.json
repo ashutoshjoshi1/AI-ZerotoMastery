@@ -1,0 +1,9 @@
+{
+  "name": "ai-zerotomastery-build",
+  "private": true,
+  "description": "Build-time maths rendering for the course site. Run `npm install` once in this folder.",
+  "type": "module",
+  "dependencies": {
+    "katex": "0.16.11"
+  }
+}

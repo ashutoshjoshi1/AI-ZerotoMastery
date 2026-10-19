@@ -1,0 +1,336 @@
+<!--
+{
+  "title": "Deep learning with PyTorch",
+  "short": "PyTorch",
+  "summary": "Move from hand-written NumPy to PyTorch, the framework behind most modern AI research and open models; learn tensors, autograd and the standard training loop, then train CNNs and fine-tune a pretrained network.",
+  "sessions": [
+    "Tensors, devices and autograd",
+    "nn.Module, Dataset, DataLoader and a clean training loop",
+    "Convolutional networks: train an image classifier on Fashion-MNIST",
+    "Transfer learning, checkpoints, mixed precision and debugging training"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "CPU works; a GPU runtime (for example Google Colab) makes the CNN sections much faster.",
+  "glossary": [
+    {"term": "Autograd", "def": "Automatic differentiation: a framework records operations and computes gradients by applying the chain rule backwards."},
+    {"term": "Mixed precision", "def": "Training or inference mostly in 16-bit floating point for speed and memory, keeping sensitive parts in 32-bit."},
+    {"term": "Tensor", "def": "A multi-dimensional array, the core data structure of deep learning frameworks."},
+    {"term": "Transfer learning", "def": "Reusing a model trained on one task as the starting point for another."}
+  ]
+}
+-->
+<h2>Setup</h2>
+<p>Install PyTorch from the selector on <a href="https://pytorch.org/get-started/locally/">pytorch.org</a>, which gives the right command for your OS and GPU. On Google Colab it is already installed; switch the runtime to a GPU for the CNN sessions.</p>
+<pre><code class="language-bash">uv add torch torchvision          # or: pip install torch torchvision</code></pre>
+<pre><code class="language-python">import torch
+print(torch.__version__, torch.cuda.is_available())
+device = ("cuda" if torch.cuda.is_available()
+          else "mps" if torch.backends.mps.is_available()     # Apple silicon
+          else "cpu")
+print(device)</code></pre>
+<h2>Tensors and autograd</h2>
+<h3>Tensors are NumPy arrays that can live on a GPU and remember gradients</h3>
+<pre><code class="language-python">x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+y = torch.randn(2, 3)                     # normal random, shape (2, 3)
+z = x @ y                                 # (2, 2) @ (2, 3) -&gt; (2, 3), same rules as NumPy
+print(z.shape, z.dtype)                   # torch.Size([2, 3]) torch.float32
+
+a = torch.from_numpy(np.arange(6.0))      # shares memory with the NumPy array
+b = z.detach().cpu().numpy()              # back to NumPy (must be on CPU, without grad tracking)
+
+x_gpu = x.to(device)                      # move to GPU; all operands must be on the same device</code></pre>
+<p>Everything you learned about shapes, broadcasting and reductions in lesson <a data-ref="python-for-ai"></a> carries straight over; mostly only the names change (<code>axis</code> becomes <code>dim</code>, <code>reshape</code> also has <code>view</code>).</p>
+<h3>Autograd: backprop for free</h3>
+<p>Mark a tensor with <code>requires_grad=True</code> and PyTorch records every operation on it. Calling <code>.backward()</code> on a scalar result walks that record backwards and fills in <code>.grad</code> for every leaf tensor, which is exactly what you did by hand in lesson <a data-ref="neural-networks"></a>.</p>
+<pre><code class="language-python">w = torch.tensor(2.0, requires_grad=True)
+b = torch.tensor(0.5, requires_grad=True)
+x = torch.tensor(3.0)
+loss = (w * x + b - 10) ** 2              # forward: (6.5 - 10)^2 = 12.25
+loss.backward()                           # backward
+print(w.grad, b.grad)                     # dL/dw = 2(wx+b-10)x = -21.0, dL/db = -7.0</code></pre>
+<p>Two rules prevent most autograd bugs:</p>
+<ul>
+<li><strong>Gradients accumulate.</strong> <code>.backward()</code> <em>adds</em> to <code>.grad</code>. You must zero gradients before each step (<code>optimizer.zero_grad()</code>).</li>
+<li><strong>Turn tracking off when you do not need it.</strong> Wrap evaluation and inference in <code>with torch.no_grad():</code> (or <code>torch.inference_mode()</code>) to save memory and time.</li>
+</ul>
+<h2>Modules, data and the training loop</h2>
+<h3>nn.Module</h3>
+<p>Layers and models are subclasses of <code>nn.Module</code>. You declare layers in <code>__init__</code> and describe the computation in <code>forward</code>. PyTorch tracks all their parameters for you.</p>
+<pre><code class="language-python">import torch.nn as nn
+import torch.nn.functional as F
+
+class MLP(nn.Module):
+    def __init__(self, n_in=2, hidden=64, n_out=1, p_drop=0.1):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_in, hidden), nn.ReLU(), nn.Dropout(p_drop),
+            nn.Linear(hidden, hidden), nn.ReLU(), nn.Dropout(p_drop),
+            nn.Linear(hidden, n_out),             # raw logits: no sigmoid here
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+model = MLP().to(device)
+print(sum(p.numel() for p in model.parameters()))  # 4,417 parameters</code></pre>
+<div class="admonition tip">
+<p class="admonition-title">Output logits, let the loss apply the squashing</p>
+<p>Use <code>nn.BCEWithLogitsLoss</code> for binary problems and <code>nn.CrossEntropyLoss</code> for multi-class, and feed them <strong>raw logits</strong>. They combine the sigmoid or softmax with the log in a numerically stable way. Applying softmax yourself and then <code>CrossEntropyLoss</code> is a classic silent bug: it still trains, just worse.</p>
+</div>
+<h3>Dataset and DataLoader</h3>
+<p>A <code>Dataset</code> knows how to return one example; a <code>DataLoader</code> batches, shuffles and loads in parallel.</p>
+<pre><code class="language-python">from torch.utils.data import Dataset, DataLoader, TensorDataset
+from sklearn.datasets import make_moons
+
+X, y = make_moons(2000, noise=0.2, random_state=0)
+X = torch.tensor(X, dtype=torch.float32)
+y = torch.tensor(y, dtype=torch.float32).unsqueeze(1)        # (2000, 1)
+train_ds = TensorDataset(X[:1600], y[:1600])
+val_ds = TensorDataset(X[1600:], y[1600:])
+train_dl = DataLoader(train_ds, batch_size=64, shuffle=True)
+val_dl = DataLoader(val_ds, batch_size=256)
+
+# a custom Dataset only needs __len__ and __getitem__
+class SensorWindows(Dataset):
+    def __init__(self, series, window=24):
+        self.s, self.w = torch.tensor(series, dtype=torch.float32), window
+    def __len__(self):
+        return len(self.s) - self.w
+    def __getitem__(self, i):
+        return self.s[i : i + self.w], self.s[i + self.w]      # past window -&gt; next value</code></pre>
+<h3>The canonical training loop</h3>
+<p>Memorise this shape. It is the same for a two-layer MLP and for a billion-parameter transformer.</p>
+<pre><code class="language-python">def train(model, train_dl, val_dl, epochs=30, lr=1e-3):
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
+    loss_fn = nn.BCEWithLogitsLoss()
+    for epoch in range(epochs):
+        model.train()                                   # enables dropout etc.
+        total = 0.0
+        for xb, yb in train_dl:
+            xb, yb = xb.to(device), yb.to(device)
+            logits = model(xb)                          # 1. forward
+            loss = loss_fn(logits, yb)                  # 2. loss
+            opt.zero_grad()                             # 3. clear old gradients
+            loss.backward()                             # 4. backward
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)   # optional safety
+            opt.step()                                  # 5. update
+            total += loss.item() * len(xb)
+
+        model.eval()                                    # disables dropout
+        correct = 0
+        with torch.no_grad():
+            for xb, yb in val_dl:
+                xb, yb = xb.to(device), yb.to(device)
+                correct += ((model(xb) &gt; 0).float() == yb).sum().item()
+        if epoch % 5 == 0:
+            print(f"epoch {epoch:2d} train loss {total / len(train_dl.dataset):.3f} "
+                  f"val acc {correct / len(val_dl.dataset):.3f}")
+
+train(MLP().to(device), train_dl, val_dl)    # val accuracy about 0.97</code></pre>
+<p>Note <code>model(xb) &gt; 0</code>: with logits, the sigmoid's 0.5 threshold is a logit threshold of 0.</p>
+<h2>Convolutional networks</h2>
+<p>Feeding a 28×28 image into a fully connected layer treats every pixel as unrelated to its neighbours and needs a separate weight for every pixel-neuron pair. <strong>Convolutions</strong> build in two facts about images: nearby pixels are related (local receptive fields), and a pattern means the same thing wherever it appears (weight sharing). A small filter, say 3×3, slides over the image computing a dot product at each position, producing a feature map. Early layers learn edges and textures; deeper layers combine them into parts and objects. <strong>Pooling</strong> downsamples between stages.</p>
+<p>Even if you mostly work with language, CNN ideas reappear: vision transformers split images into patches, and speech models often start with convolutions over audio.</p>
+<pre><code class="language-python">from torchvision import datasets, transforms
+
+tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.2860,), (0.3530,))])
+train_set = datasets.FashionMNIST("data", train=True, download=True, transform=tf)
+test_set = datasets.FashionMNIST("data", train=False, download=True, transform=tf)
+train_dl = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=2)
+test_dl = DataLoader(test_set, batch_size=512, num_workers=2)
+
+class SmallCNN(nn.Module):
+    def __init__(self, n_classes=10):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(),
+            nn.Conv2d(32, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(),
+            nn.MaxPool2d(2),                                   # 28 -&gt; 14
+            nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(),
+            nn.MaxPool2d(2),                                   # 14 -&gt; 7
+        )
+        self.head = nn.Sequential(nn.Flatten(), nn.Dropout(0.3), nn.Linear(64 * 7 * 7, n_classes))
+
+    def forward(self, x):                                      # x: (B, 1, 28, 28)
+        return self.head(self.features(x))                     # (B, 10) logits
+
+model = SmallCNN().to(device)
+opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+loss_fn = nn.CrossEntropyLoss()                                # expects logits and integer labels
+
+for epoch in range(5):
+    model.train()
+    for xb, yb in train_dl:
+        xb, yb = xb.to(device), yb.to(device)
+        loss = loss_fn(model(xb), yb)
+        opt.zero_grad(); loss.backward(); opt.step()
+    model.eval(); correct = 0
+    with torch.no_grad():
+        for xb, yb in test_dl:
+            correct += (model(xb.to(device)).argmax(1).cpu() == yb).sum().item()
+    print(epoch, correct / len(test_set))                      # about 0.91 to 0.92 after 5 epochs</code></pre>
+<p>On a free Colab GPU each epoch takes seconds. On a laptop CPU it takes a minute or two, which is still fine.</p>
+<h2>Transfer learning</h2>
+<p>Training from scratch needs lots of data. <strong>Transfer learning</strong> starts from a network already trained on a huge dataset and adapts it, which is the same idea that later lets you fine-tune LLMs instead of pretraining them. Two flavours:</p>
+<ul>
+<li><strong>Feature extraction</strong>: freeze the pretrained layers and train only a new final layer. Fast, works with a few hundred images.</li>
+<li><strong>Fine-tuning</strong>: unfreeze some or all layers and continue training with a small learning rate. Better with more data.</li>
+</ul>
+<pre><code class="language-python">from torchvision import models
+
+weights = models.ResNet18_Weights.DEFAULT
+backbone = models.resnet18(weights=weights)
+for p in backbone.parameters():
+    p.requires_grad = False                                 # freeze everything
+backbone.fc = nn.Linear(backbone.fc.in_features, 5)          # new head for 5 classes, trainable
+backbone = backbone.to(device)
+preprocess = weights.transforms()                            # the exact preprocessing it was trained with
+opt = torch.optim.AdamW(backbone.fc.parameters(), lr=1e-3)   # only the head's parameters</code></pre>
+<p>Using the model's own preprocessing (<code>weights.transforms()</code>) matters: a pretrained network expects inputs normalised the way it saw them in training.</p>
+<h2>Practicalities</h2>
+<h3>Saving and loading</h3>
+<p>Save the <code>state_dict</code> (a dictionary of parameter tensors), not the whole model object. Include the optimiser state if you want to resume training.</p>
+<pre><code class="language-python">torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "epoch": epoch}, "ckpt.pt")
+
+ckpt = torch.load("ckpt.pt", map_location=device)
+model = SmallCNN().to(device)
+model.load_state_dict(ckpt["model"])
+model.eval()</code></pre>
+<h3>Mixed precision</h3>
+<p>Modern GPUs are much faster at 16-bit floating point. Automatic mixed precision runs most operations in bfloat16 or float16 while keeping sensitive ones in float32, often nearly doubling speed and halving memory. LLMs are trained and usually served this way.</p>
+<pre><code class="language-python">for xb, yb in train_dl:
+    xb, yb = xb.to(device), yb.to(device)
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        loss = loss_fn(model(xb), yb)
+    opt.zero_grad(); loss.backward(); opt.step()</code></pre>
+<p>bfloat16 has the same exponent range as float32, so it does not need the loss scaling that float16 does. Use it whenever your GPU supports it (NVIDIA Ampere and newer).</p>
+<h3>Debugging training: a checklist</h3>
+<p>When a model will not learn, work through these in order. They catch the large majority of problems.</p>
+<ol>
+<li><strong>Check the initial loss</strong> matches chance level (about ln(number of classes)).</li>
+<li><strong>Overfit one batch.</strong> Train repeatedly on a single batch of 8 to 32 examples. The loss should go to nearly zero. If it cannot, there is a bug in the model, the loss or the data pipeline, not a lack of data.</li>
+<li><strong>Look at your data</strong> right before it enters the model: plot a few images with their labels after all transforms. Label/image misalignment and wrong normalisation are common.</li>
+<li><strong>Check <code>model.train()</code> / <code>model.eval()</code></strong> are called in the right places, and gradients are zeroed each step.</li>
+<li><strong>Sweep the learning rate</strong> over a few orders of magnitude (1e-4, 3e-4, 1e-3, 3e-3). It is the most sensitive hyperparameter.</li>
+<li><strong>Watch for <code>nan</code></strong>: lower the learning rate, add gradient clipping, check for division by zero or <code>log(0)</code> in custom code.</li>
+<li><strong>Plot curves</strong> of training and validation loss every run. Tools such as TensorBoard or Weights &amp; Biases make this effortless.</li>
+</ol>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: improve the Fashion-MNIST classifier</p>
+<p>Starting from <code>SmallCNN</code>:</p>
+<ol>
+<li>Run the "overfit one batch" test and confirm the loss goes near zero.</li>
+<li>Add data augmentation for training only: <code>transforms.RandomHorizontalFlip()</code> and <code>transforms.RandomCrop(28, padding=2)</code>.</li>
+<li>Train for 15 epochs with a cosine learning-rate schedule (<code>torch.optim.lr_scheduler.CosineAnnealingLR</code>).</li>
+<li>Print the confusion matrix on the test set. Which classes does the model confuse, and does that make sense?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python"># 1. overfit one batch
+xb, yb = next(iter(train_dl))
+xb, yb = xb[:32].to(device), yb[:32].to(device)
+m = SmallCNN().to(device); o = torch.optim.AdamW(m.parameters(), lr=1e-3)
+for i in range(200):
+    loss = loss_fn(m(xb), yb); o.zero_grad(); loss.backward(); o.step()
+print(loss.item())                                   # should be close to 0
+
+# 2. augmentation (train only)
+train_tf = transforms.Compose([
+    transforms.RandomHorizontalFlip(), transforms.RandomCrop(28, padding=2),
+    transforms.ToTensor(), transforms.Normalize((0.2860,), (0.3530,)),
+])
+train_set = datasets.FashionMNIST("data", train=True, download=True, transform=train_tf)
+train_dl = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=2)
+
+# 3. cosine schedule
+model = SmallCNN().to(device)
+opt = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-2)
+epochs = 15
+sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs * len(train_dl))
+for epoch in range(epochs):
+    model.train()
+    for xb, yb in train_dl:
+        xb, yb = xb.to(device), yb.to(device)
+        loss = loss_fn(model(xb), yb)
+        opt.zero_grad(); loss.backward(); opt.step(); sched.step()   # step per batch
+
+# 4. confusion matrix
+from sklearn.metrics import confusion_matrix
+model.eval(); preds, labels = [], []
+with torch.no_grad():
+    for xb, yb in test_dl:
+        preds.append(model(xb.to(device)).argmax(1).cpu()); labels.append(yb)
+print(confusion_matrix(torch.cat(labels), torch.cat(preds)))</code></pre>
+Expect about 93% test accuracy. The biggest confusions are among shirt, T-shirt, pullover and coat (classes 6, 0, 2 and 4), which look alike at 28×28 pixels even to people. Error analysis that "makes sense" is reassuring; confusions that do not are often a sign of label problems.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Why must you call optimizer.zero_grad() every step?</p>
+<ul>
+<li>To reset the learning rate</li>
+<li class="correct">Because backward() adds to existing .grad values, so old gradients would accumulate</li>
+<li>To free GPU memory</li>
+<li>To switch the model into training mode</li>
+</ul>
+<p class="why">Accumulation is deliberate (it enables gradient accumulation over several small batches) but must be cleared each step otherwise.</p>
+</div>
+<div class="q">
+<p>You apply softmax at the end of your model and then use nn.CrossEntropyLoss. What happens?</p>
+<ul>
+<li>An error is raised</li>
+<li>It works exactly the same</li>
+<li class="correct">It still trains, but worse, because CrossEntropyLoss applies log-softmax itself, so softmax is applied twice</li>
+<li>The loss becomes negative</li>
+</ul>
+<p class="why">Feed raw logits to CrossEntropyLoss and BCEWithLogitsLoss.</p>
+</div>
+<div class="q">
+<p>Your model cannot drive the loss near zero on a single batch of 16 examples. What does that tell you?</p>
+<ul>
+<li class="correct">There is probably a bug in the model, loss or data pipeline; capacity is not the issue</li>
+<li>You need more training data</li>
+<li>You need a bigger batch</li>
+<li>The model is overfitting</li>
+</ul>
+<p class="why">Any reasonable model should be able to memorise 16 examples. Failure to do so points to a bug.</p>
+</div>
+<div class="q">
+<p>What is the main benefit of transfer learning?</p>
+<ul>
+<li>It removes the need for a validation set</li>
+<li class="correct">You reuse features learned on a huge dataset, so you need far less data and compute for the new task</li>
+<li>It always outperforms training from scratch</li>
+<li>It makes models smaller</li>
+</ul>
+<p class="why">The same principle lets you fine-tune pretrained LLMs rather than pretraining your own.</p>
+</div>
+<div class="q">
+<p>What do model.train() and model.eval() change?</p>
+<ul>
+<li>Whether gradients are computed</li>
+<li class="correct">The behaviour of layers such as dropout and batch normalisation</li>
+<li>The device the model runs on</li>
+<li>The optimiser's learning rate</li>
+</ul>
+<p class="why">Gradient tracking is controlled separately, by torch.no_grad() or inference_mode().</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>PyTorch tensors are NumPy arrays that can live on a GPU and track gradients; autograd does backprop for you.</li>
+<li>The training loop is always: forward, loss, <code>zero_grad</code>, <code>backward</code>, <code>step</code>. Use <code>train()</code> and <code>eval()</code> modes and <code>no_grad()</code> for evaluation.</li>
+<li>Return logits and use <code>CrossEntropyLoss</code> or <code>BCEWithLogitsLoss</code>.</li>
+<li>CNNs exploit locality and weight sharing; transfer learning reuses pretrained networks and is the ancestor of LLM fine-tuning.</li>
+<li>Debug methodically: initial loss, overfit one batch, inspect data, sweep the learning rate, plot curves.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li><a href="https://pytorch.org/tutorials/beginner/basics/intro.html">PyTorch tutorials: Learn the Basics</a></li>
+<li>Jeremy Howard and Sylvain Gugger, <em>Practical Deep Learning for Coders</em> (fast.ai, free course and book)</li>
+<li>Andrej Karpathy, "A Recipe for Training Neural Networks" (blog post), the best short guide to debugging training</li>
+</ul>

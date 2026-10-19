@@ -1,0 +1,299 @@
+<!--
+{
+  "title": "Welcome and your AI workbench",
+  "short": "Welcome and workbench",
+  "summary": "What an AI engineer actually does, how the field fits together, how to study it an hour at a time, and a working Python setup you will use for the rest of the course.",
+  "sessions": [
+    "What AI engineers do, and how AI, ML, deep learning and LLMs nest together",
+    "Set up Python, a project template, Jupyter, Git and your API keys"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU).",
+  "glossary": []
+}
+-->
+<h2>What an AI engineer does</h2>
+<p>An AI engineer builds products and systems whose behaviour depends on a learned model. Most of the time today that model is a large language model (LLM) reached through an API or served from your own hardware, but the job also covers classical machine learning, embeddings, retrieval systems, evaluation pipelines and the plumbing that keeps all of it fast, cheap and safe.</p>
+<p>It helps to see how the role differs from its neighbours:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Main question</th>
+<th>Typical output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Research scientist</td>
+<td>Can we make a better model?</td>
+<td>Papers, new architectures, training recipes</td>
+</tr>
+<tr>
+<td>ML engineer</td>
+<td>Can we train and serve this model reliably?</td>
+<td>Training pipelines, feature stores, model servers</td>
+</tr>
+<tr>
+<td>Data scientist</td>
+<td>What does the data say, and what should we do?</td>
+<td>Analyses, experiments, forecasts, dashboards</td>
+</tr>
+<tr>
+<td><strong>AI engineer</strong></td>
+<td>Can we build a useful, dependable product on top of models?</td>
+<td>Applications, RAG systems, agents, eval suites, fine-tuned models</td>
+</tr>
+</tbody>
+</table>
+<p>The boundaries are blurry and the best AI engineers borrow from all three neighbours. You need enough maths and deep learning to understand <em>why</em> a model behaves the way it does, enough software engineering to ship it, and enough scientific discipline to measure whether it actually works. This course is built around that combination.</p>
+<h3>The work, concretely</h3>
+<p>A week in the life of an AI engineer might include:</p>
+<ul>
+<li>Designing a prompt and a retrieval pipeline so a support assistant answers from the company's own manuals, with citations.</li>
+<li>Writing an evaluation set of 200 real questions, then measuring how a model change moves accuracy, latency and cost.</li>
+<li>Giving an agent tools (a database query, a ticketing API) and making sure it cannot do anything destructive.</li>
+<li>Fine-tuning a small open model so it can run on cheap hardware for a narrow task.</li>
+<li>Debugging why answers got worse after a "harmless" change to the chunking code.</li>
+</ul>
+<p>Notice how much of this is engineering and measurement rather than model invention. That is the job.</p>
+<h2>How the field fits together</h2>
+<p>The vocabulary is nested, and people use the words loosely, so it is worth pinning them down once.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 640 300" role="img" aria-label="Nested fields: AI contains machine learning, which contains deep learning, which contains large language models">
+<rect class="box" x="10" y="10" width="620" height="280" rx="10"/>
+<text x="28" y="38">Artificial intelligence: any technique that makes machines act intelligently</text>
+<rect class="box" x="40" y="55" width="560" height="220" rx="10"/>
+<text x="58" y="82">Machine learning: behaviour learned from data, not hand-written rules</text>
+<rect class="box" x="70" y="100" width="500" height="160" rx="10"/>
+<text x="88" y="127">Deep learning: many-layered neural networks</text>
+<rect x="100" y="145" width="440" height="100" rx="10" class="accent" opacity="0.18"/>
+<rect x="100" y="145" width="440" height="100" rx="10" class="accent-stroke"/>
+<text x="118" y="175">Large language models: transformers trained on</text>
+<text x="118" y="195">huge text corpora to predict the next token, then</text>
+<text x="118" y="215">tuned to follow instructions</text>
+</svg>
+<figcaption>Each field is a subset of the one around it. Generative AI cuts across the inner two circles: any model that produces new text, images, audio or code.</figcaption>
+</figure>
+
+<p><strong>Artificial intelligence</strong> is the broadest term. A chess engine that searches moves with hand-written rules is AI, but it does not learn.</p>
+<p><strong>Machine learning (ML)</strong> means the behaviour comes from data. You show a spam filter thousands of labelled emails and it works out the rules itself. Classical ML (linear models, decision trees, gradient boosting) still powers a huge share of real systems, especially on tabular data.</p>
+<p><strong>Deep learning</strong> is ML with neural networks that have many layers. It took over around 2012 because, given enough data and GPU compute, deep networks learn their own features from raw pixels, audio or text.</p>
+<p><strong>Large language models</strong> are deep networks, almost always transformers, trained on trillions of tokens of text to predict the next token. That simple objective, at enormous scale, produces models that can write, summarise, translate, reason through problems and use tools.</p>
+<h3>A short history, so the names make sense</h3>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Milestone</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1950</td>
+<td>Turing's "Computing Machinery and Intelligence"</td>
+<td>Frames the question "can machines think?"</td>
+</tr>
+<tr>
+<td>1958</td>
+<td>Rosenblatt's perceptron</td>
+<td>The first trainable artificial neuron</td>
+</tr>
+<tr>
+<td>1986</td>
+<td>Backpropagation popularised (Rumelhart, Hinton, Williams)</td>
+<td>A practical way to train multi-layer networks</td>
+</tr>
+<tr>
+<td>1997</td>
+<td>LSTM (Hochreiter and Schmidhuber)</td>
+<td>Neural networks that can remember across long sequences</td>
+</tr>
+<tr>
+<td>2012</td>
+<td>AlexNet wins ImageNet</td>
+<td>GPUs plus deep networks beat hand-engineered vision features</td>
+</tr>
+<tr>
+<td>2013</td>
+<td>word2vec</td>
+<td>Words as vectors whose geometry captures meaning</td>
+</tr>
+<tr>
+<td>2017</td>
+<td>"Attention Is All You Need"</td>
+<td>The transformer: the architecture behind every modern LLM</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>BERT and GPT</td>
+<td>Pretrain once on lots of text, then adapt to many tasks</td>
+</tr>
+<tr>
+<td>2020</td>
+<td>GPT-3 and scaling laws</td>
+<td>Bigger models plus more data give predictable gains; prompting replaces task-specific training</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Instruction-tuned chat models reach the public</td>
+<td>RLHF turns raw predictors into helpful assistants</td>
+</tr>
+<tr>
+<td>2023 onward</td>
+<td>Open-weight models, tool use, agents, multimodality</td>
+<td>Models you can run yourself; models that act, see and hear</td>
+</tr>
+<tr>
+<td>2024 onward</td>
+<td>Reasoning models</td>
+<td>Spending more compute at inference time to think before answering</td>
+</tr>
+</tbody>
+</table>
+<p>You will meet most of these ideas again, in order, as you go through the course.</p>
+<h2>How to study this, an hour at a time</h2>
+<p>Learning a field this wide is a long game. Three habits matter more than any particular resource.</p>
+<p><strong>Retrieval beats rereading.</strong> At the end of each session, close the page and write a short summary from memory in a learning log. The effort of recall is what makes it stick. The quizzes at the end of each lesson exist for the same reason.</p>
+<p><strong>Build, then read.</strong> When an idea feels abstract, run the code, change a number, and watch what happens. Every lesson has at least one hands-on exercise with a hidden solution. Try the exercise for real before you open the solution, even if you only get halfway.</p>
+<p><strong>Spaced review.</strong> Once a week, skim the key takeaways of the last two or three lessons. Five minutes of review saves hours of relearning later.</p>
+<div class="admonition tip">
+<p class="admonition-title">Your learning log</p>
+<p>Create a repository called <code>ai-engineering-log</code> with one Markdown file per lesson. Each entry gets three things: what you learned in your own words, the code you wrote, and one question you still have. By the end of the course this repository is a portfolio, a reference manual and proof of work, all in one.</p>
+</div>
+<h2>Set up your workbench</h2>
+<p>You need Python, an isolated environment per project, a notebook for exploration, an editor for real code, Git, and a safe way to store API keys.</p>
+<h3>Python and environments</h3>
+<p>Use Python 3.11 or newer. The easiest modern way to manage Python versions and packages is <a href="https://docs.astral.sh/uv/">uv</a>, a fast replacement for <code>pip</code> and <code>venv</code>. The classic <code>venv</code> plus <code>pip</code> route works just as well; both are shown.</p>
+<div class="tabs">
+<section data-tab="uv (recommended)">
+<pre><code class="language-bash"># install uv (macOS / Linux); see the uv docs for Windows
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+mkdir ai-engineering-log &amp;&amp; cd ai-engineering-log
+uv init --python 3.12          # creates pyproject.toml and a .venv on first sync
+uv add numpy pandas matplotlib scikit-learn jupyterlab python-dotenv
+uv run jupyter lab             # runs inside the project's environment</code></pre>
+</section>
+<section data-tab="venv + pip">
+<pre><code class="language-bash">mkdir ai-engineering-log &amp;&amp; cd ai-engineering-log
+python3 -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install numpy pandas matplotlib scikit-learn jupyterlab python-dotenv
+jupyter lab</code></pre>
+</section>
+</div>
+<p>Why bother with environments? Every project pins its own library versions. Without isolation, upgrading a package for one project silently breaks another. AI libraries move fast and break compatibility often, so this matters more here than almost anywhere else.</p>
+<h3>Notebooks versus scripts</h3>
+<p>Jupyter notebooks are excellent for exploring data and trying ideas cell by cell. They are poor for anything you want to rerun, test or deploy, because hidden state builds up as you run cells out of order. A good rule: explore in a notebook, then move anything you want to keep into a <code>.py</code> file with functions you can import and test.</p>
+<p>For an editor, VS Code with the Python and Jupyter extensions is the common choice. It opens notebooks too, so you can stay in one tool.</p>
+<h3>GPUs without buying one</h3>
+<p>You will not need a GPU until part IV. When you do, <a href="https://colab.research.google.com">Google Colab</a> gives you a free NVIDIA GPU in the browser (Runtime, then Change runtime type). Kaggle notebooks offer similar free quotas. For heavier work later, cloud GPU providers rent by the hour.</p>
+<h3>Git</h3>
+<p>Initialise Git now and commit after every session. Small, frequent commits make your log readable and give you an undo button.</p>
+<pre><code class="language-bash">git init
+printf ".venv/\n.env\n__pycache__/\n.ipynb_checkpoints/\n*.pt\ndata/raw/\n" &gt; .gitignore
+git add . &amp;&amp; git commit -m "Lesson 00: workbench set up"</code></pre>
+<h3>API keys, safely</h3>
+<p>In part VI you will call hosted models. Their API keys are secrets that cost you money if leaked. <strong>Never paste a key into code or a notebook.</strong> Put it in a <code>.env</code> file that Git ignores, and load it at runtime.</p>
+<pre data-file=".env"><code class="language-bash">ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...</code></pre>
+<pre><code class="language-python">from dotenv import load_dotenv
+import os
+
+load_dotenv()                      # reads .env into environment variables
+key = os.environ.get("ANTHROPIC_API_KEY")
+print("key loaded" if key else "no key found")   # never print the key itself</code></pre>
+<div class="admonition warning">
+<p class="admonition-title">If a key leaks</p>
+<p>Revoke it in the provider's console immediately, then create a new one. Bots scan public GitHub repositories for keys within minutes of a push. Rewriting Git history afterwards is not enough, because the key has already been copied.</p>
+</div>
+<h3>A project layout that scales</h3>
+<pre><code class="language-text">ai-engineering-log/
+├── pyproject.toml        # dependencies (uv) or requirements.txt (pip)
+├── .env                  # secrets, git-ignored
+├── notes/                # one markdown file per lesson
+├── notebooks/            # exploration
+├── src/                  # reusable code you import from notebooks and scripts
+├── data/                 # small datasets; large ones stay out of git
+└── tests/                # yes, even for AI projects</code></pre>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: prove your workbench works</p>
+<p>Create <code>src/check_env.py</code> that prints your Python version and the versions of NumPy, pandas, scikit-learn and Matplotlib, then reports whether an API key is present (without printing it). Run it with <code>uv run python src/check_env.py</code> or <code>python src/check_env.py</code>. Commit the file and write your first log entry.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre data-file="src/check_env.py"><code class="language-python">import os
+import sys
+from importlib.metadata import version, PackageNotFoundError
+
+from dotenv import load_dotenv
+
+load_dotenv()
+print(f"Python {sys.version.split()[0]}")
+for pkg in ["numpy", "pandas", "scikit-learn", "matplotlib", "jupyterlab"]:
+    try:
+        print(f"{pkg:&lt;14}{version(pkg)}")
+    except PackageNotFoundError:
+        print(f"{pkg:&lt;14}MISSING: install it with uv add {pkg}")
+
+for var in ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"]:
+    status = "present" if os.environ.get(var) else "not set (fine until part VI)"
+    print(f"{var:&lt;20}{status}")</code></pre>
+<p><code>importlib.metadata.version</code> reads installed package metadata, which works even for packages whose import name differs from their install name (scikit-learn installs as <code>sklearn</code>).</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Which statement best describes the relationship between the fields?</p>
+<ul>
+<li>Deep learning and machine learning are separate fields that both belong to AI</li>
+<li class="correct">LLMs are a kind of deep learning model, which is a kind of machine learning, which is a kind of AI</li>
+<li>Machine learning is a subset of deep learning</li>
+<li>Generative AI and LLMs are the same thing</li>
+</ul>
+<p class="why">The fields nest. Generative AI is broader than LLMs: it also covers image, audio and video generators.</p>
+</div>
+<div class="q">
+<p>Why should every project have its own virtual environment?</p>
+<ul>
+<li>It makes Python run faster</li>
+<li class="correct">So each project can pin its own library versions without breaking other projects</li>
+<li>Because Jupyter only works inside virtual environments</li>
+<li>To keep API keys secret</li>
+</ul>
+<p class="why">Isolation stops one project's upgrades from silently breaking another. AI libraries change quickly, so this matters a lot.</p>
+</div>
+<div class="q">
+<p>You accidentally pushed an API key to a public repository. What is the first thing to do?</p>
+<ul>
+<li>Delete the file and push again</li>
+<li>Rewrite the Git history to remove the commit</li>
+<li class="correct">Revoke the key in the provider's console</li>
+<li>Make the repository private</li>
+</ul>
+<p class="why">Assume the key was copied the moment it was pushed. Revoke it first, then clean up the history.</p>
+</div>
+<div class="q">
+<p>What is the most effective way to make a session's learning stick?</p>
+<ul>
+<li>Reread the lesson twice</li>
+<li>Highlight the key sentences</li>
+<li class="correct">Close the page and write down what you learned from memory</li>
+<li>Watch a video on the same topic</li>
+</ul>
+<p class="why">Retrieval practice, the effort of recalling without looking, beats passive rereading in study after study.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>An AI engineer builds dependable products on top of learned models. Most of the work is engineering and measurement, not inventing models.</li>
+<li>AI contains machine learning, which contains deep learning, which contains LLMs.</li>
+<li>Use one isolated environment per project, keep secrets in a git-ignored <code>.env</code>, and commit after every session.</li>
+<li>Retrieval practice and building things beat rereading. Keep a learning log from day one.</li>
+</ul>
+</div>

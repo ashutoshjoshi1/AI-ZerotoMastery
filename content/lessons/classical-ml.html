@@ -1,0 +1,320 @@
+<!--
+{
+  "title": "Classical machine learning",
+  "short": "Classical ML",
+  "summary": "The algorithms that still run much of the world, from linear and logistic regression built by hand to random forests, gradient boosting, clustering and PCA, finishing with an end-to-end scikit-learn project.",
+  "sessions": [
+    "Linear and logistic regression, from scratch and in scikit-learn",
+    "Decision trees, random forests and gradient boosting",
+    "Unsupervised learning: k-means, PCA and anomaly detection",
+    "Feature engineering and an end-to-end pipeline: predicting instrument failures"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU). The cross-validation cells take a minute.",
+  "glossary": [
+    {"term": "Gradient boosting", "def": "An ensemble of shallow trees added one at a time, each correcting the errors of the ones before. Often the best model for tabular data."},
+    {"term": "Isolation Forest", "def": "An anomaly detector that isolates points with random splits; anomalies isolate quickly."},
+    {"term": "PCA", "def": "Projecting data onto its directions of greatest variance, for compression or visualisation."}
+  ]
+}
+-->
+<h2>Why classical ML still matters</h2>
+<p>LLMs get the headlines, but for <strong>tabular data</strong> (rows of measurements, transactions, sensor summaries, customer records) gradient-boosted trees still routinely beat deep learning, train in seconds on a laptop, and are easy to explain. Classical methods are also how you build baselines, and many AI products combine an LLM with a small classical model for routing, scoring or anomaly detection. An AI engineer who only knows LLMs is missing half the toolbox.</p>
+<p>All the models here share scikit-learn's interface, so once you learn one you know them all:</p>
+<pre><code class="language-python">model = SomeModel(hyperparameters)
+model.fit(X_train, y_train)          # learn parameters
+y_pred = model.predict(X_test)       # use them
+model.predict_proba(X_test)          # classifiers: class probabilities</code></pre>
+<h2>Linear and logistic regression</h2>
+<h3>Linear regression</h3>
+<p>Linear regression predicts a number as a weighted sum of features: \(\hat{y} = \mathbf{w}\cdot\mathbf{x} + b\). In lesson <a data-ref="math-for-ai"></a> you trained one with gradient descent. For least squares there is also an exact answer, the <strong>normal equation</strong>, which we can solve directly:</p>
+\[
+\boldsymbol{\theta} = (X^\top X)^{-1} X^\top \mathbf{y}
+\]
+<pre><code class="language-python">import numpy as np
+
+rng = np.random.default_rng(0)
+x = rng.uniform(0, 10, 200)
+y = 2.5 * x + 4 + rng.normal(0, 2, 200)
+
+Xb = np.c_[np.ones_like(x), x]                     # add a column of ones for the intercept
+theta = np.linalg.solve(Xb.T @ Xb, Xb.T @ y)       # solve rather than invert: faster and more stable
+print(theta)                                       # [4.19 2.48]  intercept, slope</code></pre>
+<p>Why bother with gradient descent at all, then? The exact solution costs roughly the cube of the number of features and needs everything in memory. Gradient descent scales to billions of parameters and streaming data, which is why deep learning uses it exclusively.</p>
+<p><strong>Reading the weights.</strong> Once features are standardised, the size of each weight shows how strongly that feature moves the prediction, and its sign shows the direction. This interpretability is a big reason linear models remain popular in science and finance.</p>
+<h3>Logistic regression: linear models for classification</h3>
+<p>To predict a probability, squash the linear score through the <strong>sigmoid</strong> function, which maps any number into (0, 1):</p>
+\[
+\sigma(z) = \frac{1}{1+e^{-z}}, \qquad p(y=1\mid\mathbf{x}) = \sigma(\mathbf{w}\cdot\mathbf{x} + b)
+\]
+<p>The loss is binary cross-entropy (lesson <a data-ref="math-for-ai"></a>), and its gradient turns out beautifully simple: the error times the input, exactly as in linear regression.</p>
+<pre><code class="language-python">def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+# two overlapping 2-D blobs
+n = 400
+X = np.vstack([rng.normal([-1, -1], 1.0, (n // 2, 2)),
+               rng.normal([1.5, 1.0], 1.0, (n // 2, 2))])
+y = np.r_[np.zeros(n // 2), np.ones(n // 2)]
+
+w, b, lr = np.zeros(2), 0.0, 0.1
+for step in range(1000):
+    p = sigmoid(X @ w + b)             # (400,) predicted probabilities
+    grad_w = X.T @ (p - y) / n         # (2,)
+    grad_b = (p - y).mean()
+    w -= lr * grad_w
+    b -= lr * grad_b
+
+print(w.round(2), round(b, 2), ((p &gt; 0.5) == y).mean())   # about [2.28 1.70] -0.4 0.94
+
+from sklearn.linear_model import LogisticRegression
+sk = LogisticRegression(penalty=None).fit(X, y)
+print(sk.coef_.round(2), sk.score(X, y))                  # about [[2.39 1.77]] 0.94</code></pre>
+<p>Our hand-written version lands close to scikit-learn's (it would match exactly with more steps). The <strong>decision boundary</strong> is where \(\mathbf{w}\cdot\mathbf{x}+b=0\): a straight line. That is the limitation of linear models: they can only separate classes with flat boundaries, unless you engineer features that bend the space for them.</p>
+<h2>Trees, forests and boosting</h2>
+<h3>Decision trees</h3>
+<p>A decision tree asks a sequence of yes/no questions about features ("is humidity above 70%?", "is the instrument older than 900 days?") and makes a prediction at each leaf. Training greedily picks, at each node, the question that best separates the targets (by Gini impurity or entropy for classification, variance for regression).</p>
+<p>Trees handle mixed feature types, need no scaling, capture interactions and non-linear effects naturally, and are readable. Their weakness is variance: a deep tree memorises its training data, and a small change in data can produce a completely different tree.</p>
+<h3>Random forests: many trees, averaged</h3>
+<p>A random forest trains hundreds of deep trees, each on a bootstrap sample of the rows and considering a random subset of features at each split, then averages their votes. Individual trees overfit in different directions, and averaging cancels much of that out. Random forests are robust, hard to break, and a superb default.</p>
+<h3>Gradient boosting: many small trees, in sequence</h3>
+<p>Boosting builds shallow trees one after another, each trained to correct the errors (strictly, to follow the negative gradient of the loss) of the ensemble so far. Each tree's contribution is scaled down by a learning rate, so the model improves in many small steps.</p>
+\[
+F_m(\mathbf{x}) = F_{m-1}(\mathbf{x}) + \eta\, h_m(\mathbf{x})
+\]
+<p>Gradient-boosted trees (XGBoost, LightGBM, CatBoost, and scikit-learn's <code>HistGradientBoostingClassifier</code>) win a large share of tabular-data competitions. They need more tuning than random forests: learning rate, number of trees, tree depth and minimum leaf size all interact.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Strengths</th>
+<th>Watch out for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linear / logistic</td>
+<td>Fast, interpretable, great with many features, strong baseline</td>
+<td>Only linear boundaries unless you engineer features</td>
+</tr>
+<tr>
+<td>Decision tree</td>
+<td>Readable, no scaling needed</td>
+<td>Overfits badly on its own</td>
+</tr>
+<tr>
+<td>Random forest</td>
+<td>Robust default, little tuning, parallel</td>
+<td>Larger and slower to predict; less accurate than tuned boosting</td>
+</tr>
+<tr>
+<td>Gradient boosting</td>
+<td>Often the most accurate on tabular data</td>
+<td>Needs tuning; can overfit; sequential training</td>
+</tr>
+<tr>
+<td>k-nearest neighbours</td>
+<td>No training, intuitive</td>
+<td>Slow on big data, suffers in high dimensions, needs scaling</td>
+</tr>
+<tr>
+<td>Support vector machine</td>
+<td>Strong on small to medium, high-dimensional data</td>
+<td>Slow on large datasets; kernel and scale sensitive</td>
+</tr>
+</tbody>
+</table>
+<h2>Unsupervised learning</h2>
+<h3>k-means clustering</h3>
+<p>k-means finds \(k\) cluster centres: assign each point to its nearest centre, move each centre to the mean of its points, repeat until nothing changes. You choose \(k\). The "elbow" method plots the within-cluster distance (inertia) against \(k\) and looks for where adding clusters stops helping much.</p>
+<pre><code class="language-python">from sklearn.datasets import load_digits
+from sklearn.cluster import KMeans
+from sklearn.metrics import adjusted_rand_score
+
+digits = load_digits()                 # 1,797 handwritten digits as 8x8 = 64 pixel features
+km = KMeans(n_clusters=10, n_init=10, random_state=0).fit(digits.data)
+print(adjusted_rand_score(digits.target, km.labels_))   # about 0.67: clusters align with digits fairly well, no labels used</code></pre>
+<h3>PCA: compressing features</h3>
+<p>Principal component analysis finds the directions of greatest variance in the data (via the SVD from lesson <a data-ref="math-for-ai"></a>) and projects onto the top few. Use it to visualise high-dimensional data in 2-D, to compress features, or to remove noise.</p>
+<pre><code class="language-python">from sklearn.decomposition import PCA
+
+pca = PCA(n_components=0.9).fit(digits.data)
+print(pca.n_components_)               # 21 of 64 dimensions keep 90% of the variance
+Z = PCA(n_components=2).fit_transform(digits.data)   # (1797, 2): ready to scatter-plot, coloured by digit</code></pre>
+<p>You will use exactly this trick later to look at embeddings from language models.</p>
+<h3>Anomaly detection</h3>
+<p>Many real problems have almost no labelled failures. Anomaly detectors learn what "normal" looks like and flag points that do not fit. <strong>Isolation Forest</strong> isolates points with random splits; anomalies are isolated in fewer splits because they are few and different.</p>
+<pre><code class="language-python">from sklearn.ensemble import IsolationForest
+
+rng = np.random.default_rng(3)
+normal = rng.normal(0, 1, (500, 3))
+anomalies = rng.uniform(-6, 6, (15, 3))
+X = np.vstack([normal, anomalies])
+
+iso = IsolationForest(contamination=0.03, random_state=0).fit(X)
+pred = iso.predict(X)                  # -1 = anomaly, 1 = normal
+print((pred == -1).sum(), (pred[-15:] == -1).sum())   # flags 16 points, 14 of the 15 real anomalies</code></pre>
+<h2>End-to-end project: predicting instrument failures</h2>
+<p>Time to put it together on a realistic tabular problem: a fleet of field instruments, and we want to predict which will fail in the next 90 days so technicians can visit them first. We generate the data so you can run it anywhere, and so we know the truth it hides.</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+
+rng = np.random.default_rng(7)
+n = 3000
+df = pd.DataFrame({
+    "age_days": rng.integers(10, 2000, n),
+    "site": rng.choice(["coastal", "urban", "desert", "alpine"], n, p=[0.3, 0.4, 0.2, 0.1]),
+    "mean_temp_c": rng.normal(20, 8, n).round(1),
+    "humidity_pct": rng.uniform(10, 95, n).round(1),
+    "power_cycles": rng.poisson(30, n),
+    "firmware": rng.choice(["v1", "v2", "v3"], n),
+})
+# the hidden truth: older, humid, coastal, often power-cycled units fail more;
+# firmware v3 helps; temperatures far from 20 °C hurt
+logit = (-4.5 + 0.0012 * df.age_days + 0.03 * (df.humidity_pct - 50) + 0.7 * (df.site == "coastal")
+         + 0.04 * df.power_cycles - 0.9 * (df.firmware == "v3") + 0.06 * (df.mean_temp_c - 20).abs())
+df["failed_90d"] = (rng.random(n) &lt; 1 / (1 + np.exp(-logit))).astype(int)
+print(df.failed_90d.mean())            # about 0.2: one in five units fails</code></pre>
+<h3>A pipeline that cannot leak</h3>
+<p>Numbers need scaling, categories need one-hot encoding, and both must be fitted on training data only. <code>ColumnTransformer</code> inside a <code>Pipeline</code> handles this, and cross-validation then refits the preprocessing on each fold automatically.</p>
+<pre><code class="language-python">from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+
+num = ["age_days", "mean_temp_c", "humidity_pct", "power_cycles"]
+cat = ["site", "firmware"]
+X, y = df[num + cat], df["failed_90d"]
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, stratify=y, random_state=0)
+
+pre = ColumnTransformer([
+    ("num", StandardScaler(), num),
+    ("cat", OneHotEncoder(handle_unknown="ignore"), cat),
+])
+models = {
+    "logistic": LogisticRegression(max_iter=2000),
+    "random_forest": RandomForestClassifier(n_estimators=300, min_samples_leaf=5, random_state=0, n_jobs=-1),
+    "grad_boost": HistGradientBoostingClassifier(learning_rate=0.05, max_iter=300, random_state=0),
+}
+cv = StratifiedKFold(5, shuffle=True, random_state=0)
+for name, model in models.items():
+    pipe = Pipeline([("prep", pre), ("model", model)])
+    s = cross_val_score(pipe, X_tr, y_tr, cv=cv, scoring="roc_auc")
+    print(f"{name:&lt;14} ROC-AUC {s.mean():.3f} ± {s.std():.3f}")</code></pre>
+<pre><code class="language-text">logistic       ROC-AUC 0.742 ± 0.027
+random_forest  ROC-AUC 0.733 ± 0.020
+grad_boost     ROC-AUC 0.694 ± 0.033</code></pre>
+<p><strong>The simple model wins.</strong> That is not a mistake; it is a lesson. We generated the data from an almost-linear rule, so logistic regression has exactly the right shape, while boosting with default settings chases noise in 2,400 rows. On real data you cannot know the truth in advance, which is why you always compare several model families under the same cross-validation instead of assuming the fanciest one is best. Notice too that the differences are not much larger than the spread across folds.</p>
+<h3>Which features matter?</h3>
+<p><strong>Permutation importance</strong> shuffles one feature at a time on held-out data and measures how much the score drops. It works for any model and reflects what the model actually relies on.</p>
+<pre><code class="language-python">from sklearn.inspection import permutation_importance
+
+best = Pipeline([("prep", pre), ("model", LogisticRegression(max_iter=2000))]).fit(X_tr, y_tr)
+imp = permutation_importance(best, X_te, y_te, scoring="roc_auc", n_repeats=10, random_state=0)
+print(pd.Series(imp.importances_mean, index=X.columns).sort_values(ascending=False).round(3))</code></pre>
+<p>Age and humidity come out on top, matching the rule we hid in the data. On real data this is how you sanity-check a model with domain experts: if the top features make no physical sense, suspect leakage.</p>
+<h3>Feature engineering</h3>
+<p>Models can only use what you give them. A <strong>feature</strong> that encodes domain knowledge often beats a fancier model. Our hidden rule penalises temperatures far from 20 °C in <em>either</em> direction, which a linear model cannot express from raw temperature. One engineered column fixes that.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: engineer, tune, decide</p>
+<ol>
+<li>Add a feature <code>temp_dev = abs(mean_temp_c - 20)</code> and rerun the logistic regression cross-validation. Does ROC-AUC improve?</li>
+<li>Tune the gradient-boosting model: try <code>max_depth=3</code>, <code>min_samples_leaf=40</code>, <code>l2_regularization=1.0</code>, <code>learning_rate=0.03</code>. How close does it get?</li>
+<li>Technicians can visit 100 units this quarter. Using the best model's <code>predict_proba</code> on the test set, how many of the 100 highest-risk units actually failed? Compare with picking 100 at random.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">df["temp_dev"] = (df.mean_temp_c - 20).abs()
+num2 = num + ["temp_dev"]
+X2 = df[num2 + cat]
+X2_tr, X2_te, y_tr, y_te = train_test_split(X2, y, test_size=0.2, stratify=y, random_state=0)
+pre2 = ColumnTransformer([("num", StandardScaler(), num2),
+                          ("cat", OneHotEncoder(handle_unknown="ignore"), cat)])
+logit_pipe = Pipeline([("prep", pre2), ("model", LogisticRegression(max_iter=2000))])
+print(cross_val_score(logit_pipe, X2_tr, y_tr, cv=cv, scoring="roc_auc").mean())   # about 0.752
+
+gb = HistGradientBoostingClassifier(learning_rate=0.03, max_iter=300, max_depth=3,
+                                    min_samples_leaf=40, l2_regularization=1.0, random_state=0)
+print(cross_val_score(Pipeline([("prep", pre), ("model", gb)]), X_tr, y_tr,
+                      cv=cv, scoring="roc_auc").mean())                         # about 0.73
+
+logit_pipe.fit(X2_tr, y_tr)
+risk = logit_pipe.predict_proba(X2_te)[:, 1]
+top100 = np.argsort(risk)[::-1][:100]
+print("failures in top 100:", y_te.iloc[top100].sum())
+print("expected at random:", round(100 * y_te.mean()))</code></pre>
+The engineered feature lifts the linear model, and regularising the boosted model closes most of its gap. The top-100 question is the one the business cares about: a ranked list that roughly doubles the hit rate of random visits is worth real money, whatever the AUC says. Always translate metrics into the decision they support.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Why does deep learning use gradient descent even though linear regression has an exact solution?</p>
+<ul>
+<li>The exact solution is less accurate</li>
+<li class="correct">Gradient descent scales to huge models and streaming data; the exact solution needs everything in memory and costs roughly cubic time in the number of features</li>
+<li>Gradient descent always finds a better minimum</li>
+<li>Exact solutions do not exist for linear models</li>
+</ul>
+<p class="why">For neural networks no closed form exists anyway, and even for linear models the normal equation does not scale.</p>
+</div>
+<div class="q">
+<p>What is the key difference between a random forest and gradient boosting?</p>
+<ul>
+<li>Forests use shallow trees; boosting uses deep trees</li>
+<li class="correct">Forests average many independent deep trees; boosting adds shallow trees in sequence, each correcting the errors so far</li>
+<li>Forests only do classification</li>
+<li>Boosting does not use trees</li>
+</ul>
+<p class="why">Averaging reduces variance; sequential correction reduces bias. That is also why boosting needs more careful tuning.</p>
+</div>
+<div class="q">
+<p>In the failure-prediction project, logistic regression beat gradient boosting. What is the right conclusion?</p>
+<ul>
+<li>Gradient boosting is a poor algorithm</li>
+<li>Always use logistic regression for tabular data</li>
+<li class="correct">Model choice depends on the data; compare several model families under the same cross-validation rather than assuming</li>
+<li>The cross-validation was wrong</li>
+</ul>
+<p class="why">The hidden rule was nearly linear. On other data boosting often wins. The process, not the favourite algorithm, is the lesson.</p>
+</div>
+<div class="q">
+<p>What does permutation importance measure?</p>
+<ul>
+<li>The size of each model weight</li>
+<li class="correct">How much the held-out score drops when one feature's values are shuffled</li>
+<li>How often a feature is used in tree splits</li>
+<li>The correlation between each feature and the target</li>
+</ul>
+<p class="why">It measures what the trained model actually relies on, and it works for any model.</p>
+</div>
+<div class="q">
+<p>Which method would you reach for to compress 64 pixel features into 2 for a scatter plot?</p>
+<ul>
+<li>k-means</li>
+<li>Isolation Forest</li>
+<li class="correct">PCA</li>
+<li>Logistic regression</li>
+</ul>
+<p class="why">PCA projects onto the directions of greatest variance. (t-SNE and UMAP are non-linear alternatives for visualisation.)</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Every scikit-learn model shares <code>fit</code>, <code>predict</code> and <code>predict_proba</code>, so you can compare many quickly.</li>
+<li>Linear and logistic regression are interpretable baselines; their gradients are "error times input".</li>
+<li>Random forests are a robust default; gradient boosting is often best on tabular data but needs tuning.</li>
+<li>k-means, PCA and Isolation Forest find structure, compress, and flag anomalies without labels.</li>
+<li>Put preprocessing in a <code>Pipeline</code>, compare model families under the same cross-validation, engineer features from domain knowledge, and translate metrics into the decision they support.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn user guide</a>, especially "Ensembles" and "Common pitfalls"</li>
+<li>James, Witten, Hastie and Tibshirani, <em>An Introduction to Statistical Learning</em> (free PDF, Python edition)</li>
+<li>The XGBoost, LightGBM and CatBoost documentation, for production-grade boosting</li>
+</ul>

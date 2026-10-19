@@ -1,0 +1,318 @@
+<!--
+{
+  "title": "Embeddings and vector search",
+  "short": "Embeddings and search",
+  "summary": "Turn sentences and documents into vectors that capture meaning, search them by similarity from scratch and with FAISS or a vector database, and understand the approximate-nearest-neighbour indexes that make it fast at scale.",
+  "sessions": [
+    "Sentence embeddings: what they capture, which model to use, and similarity",
+    "Semantic search from scratch, then with FAISS and a vector database",
+    "How approximate nearest-neighbour indexes work; clustering and visualising embeddings"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU). The first run downloads a small embedding model (about 90 MB).",
+  "glossary": [
+    {"term": "ANN (approximate nearest neighbour)", "def": "Index structures such as HNSW and IVF that find most of the nearest vectors far faster than exact search."},
+    {"term": "Contrastive learning", "def": "Training that pulls matching pairs together and pushes non-matching pairs apart in an embedding space."},
+    {"term": "Embedding", "def": "A learned vector representation whose geometry reflects meaning.", "also": ["sequences-embeddings"]},
+    {"term": "HNSW", "def": "A graph-based approximate nearest-neighbour index, the default in many vector databases."},
+    {"term": "Vector database", "def": "A database that stores embeddings with metadata and supports similarity search with filters."}
+  ]
+}
+-->
+<h2>From word vectors to text embeddings</h2>
+<p>In lesson <a data-ref="sequences-embeddings"></a> you saw word vectors whose geometry captures meaning. <strong>Text embedding models</strong> do the same for whole sentences, paragraphs or documents: a transformer encoder reads the text and outputs one fixed-length vector (typically 384 to 3,072 numbers). They are trained, usually with <strong>contrastive learning</strong>, so that texts with similar meaning land close together and unrelated texts land far apart. Training data is millions of pairs that should match: a question and its answer, a title and its article, two paraphrases.</p>
+<p>That gives you a superpower: <strong>search by meaning, not by keywords</strong>. "Instrument stopped recording overnight" matches "data logging halted after midnight" despite sharing almost no words. Embeddings power semantic search, RAG (next lesson), recommendation, de-duplication, clustering and classification with few labels.</p>
+<h2>Getting embeddings</h2>
+<div class="tabs">
+<section data-tab="Local model (sentence-transformers)">
+<pre><code class="language-python"># uv add sentence-transformers
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")   # small, fast, 384 dims; downloads once (~90 MB)
+texts = [
+    "The instrument stopped recording overnight.",
+    "Data logging halted shortly after midnight.",
+    "Calibrate the spectrometer before each campaign.",
+    "What is the capital of France?",
+]
+E = model.encode(texts, normalize_embeddings=True)  # (4, 384), unit length
+print(E.shape)
+print((E @ E.T).round(2))                           # cosine similarity matrix</code></pre>
+</section>
+<section data-tab="Hosted embedding API">
+<pre><code class="language-python">from openai import OpenAI
+import numpy as np
+
+client = OpenAI()
+r = client.embeddings.create(model="text-embedding-3-small", input=texts)
+E = np.array([d.embedding for d in r.data])          # (4, 1536)
+E /= np.linalg.norm(E, axis=1, keepdims=True)</code></pre>
+</section>
+</div>
+<p>In the similarity matrix the first two sentences score far higher with each other than with the others, even though they share almost no words. That is the whole point.</p>
+<h3>Choosing an embedding model</h3>
+<ul>
+<li><strong>Quality on <em>your</em> data matters more than leaderboard rank.</strong> The public MTEB leaderboard is a useful starting shortlist; your own retrieval test (below) decides.</li>
+<li><strong>Dimensions</strong> cost memory and search time. 384 dimensions is often plenty; some models support truncating to fewer dimensions with small quality loss.</li>
+<li><strong>Maximum input length</strong>: many small models only read 256 to 512 tokens. Longer text is silently truncated, which is one reason RAG splits documents into chunks.</li>
+<li><strong>Language and domain</strong>: multilingual models for mixed-language data; domain-tuned models (code, biomedical, legal) can help a lot.</li>
+<li><strong>Query versus document prefixes</strong>: some models expect instructions such as "query:" and "passage:" prepended. Read the model card; skipping this quietly lowers quality.</li>
+<li><strong>Never mix models</strong>: embeddings from different models (or versions) live in different spaces. Change the model, re-embed everything.</li>
+</ul>
+<h2>Semantic search from scratch</h2>
+<p>With normalised vectors, search is a matrix multiplication and a sort. Do it yourself once before reaching for tools.</p>
+<pre><code class="language-python">import numpy as np
+
+docs = [
+    "Replace the desiccant cartridge every six months in humid climates.",
+    "If the tracker loses the sun, check the GPS time and the level of the head.",
+    "Dark current increases with detector temperature; keep the cooler running.",
+    "The filter wheel position error usually means a slipping belt.",
+    "Upload data nightly over the cellular modem; retry on failure.",
+    # ... in practice, thousands of chunks from manuals, logs and tickets
+]
+doc_vecs = model.encode(docs, normalize_embeddings=True)          # (N, 384)
+
+def search(query: str, k: int = 3):
+    q = model.encode([query], normalize_embeddings=True)[0]       # (384,)
+    scores = doc_vecs @ q                                         # (N,) cosine similarities
+    top = np.argsort(-scores)[:k]
+    return [(round(float(scores[i]), 3), docs[i]) for i in top]
+
+for hit in search("why is the noise in my spectra higher when it's hot?"):
+    print(hit)
+# the dark-current/temperature document ranks first, despite little word overlap</code></pre>
+<p>Exact search over a few hundred thousand vectors this way takes milliseconds on a laptop. You may never need anything fancier for a prototype.</p>
+<h3>Semantic versus keyword search</h3>
+<p>Embeddings are not strictly better than keyword search. They are worse at <strong>exact identifiers</strong>: part numbers, error codes, function names, rare acronyms. A query for "error E-4071" wants documents containing exactly that string; an embedding may happily return other error codes that "feel" similar. Keyword methods such as <strong>BM25</strong> excel at this. Strong systems combine both (<strong>hybrid search</strong>), which you will build in lesson <a data-ref="rag"></a>.</p>
+<h2>FAISS and vector databases</h2>
+<h3>FAISS: a fast in-process index</h3>
+<p>FAISS (from Meta) is a library of highly optimised vector indexes. <code>IndexFlatIP</code> is exact inner-product search, the same maths as above, done fast.</p>
+<pre><code class="language-python"># uv add faiss-cpu
+import faiss
+
+d = doc_vecs.shape[1]
+index = faiss.IndexFlatIP(d)                 # exact search by inner product (= cosine for unit vectors)
+index.add(doc_vecs.astype("float32"))
+q = model.encode(["sun tracking problems"], normalize_embeddings=True).astype("float32")
+scores, ids = index.search(q, 3)             # both (1, 3)
+print([docs[i] for i in ids[0]])
+faiss.write_index(index, "manuals.faiss")    # save; faiss.read_index to load</code></pre>
+<p>FAISS stores only vectors and integer ids. You keep the texts and metadata elsewhere and look them up by id.</p>
+<h3>Vector databases</h3>
+<p>A vector database adds what an application needs around the index: storing text and metadata with each vector, <strong>filtering</strong> ("only documents for instrument model X, newer than 2024"), updates and deletes, persistence, access control and scaling. Options range from embedded libraries to managed services:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Shape</th>
+<th>Good for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NumPy / FAISS</td>
+<td>In-process library</td>
+<td>Prototypes, offline jobs, up to millions of vectors on one machine</td>
+</tr>
+<tr>
+<td>Chroma, LanceDB</td>
+<td>Embedded database</td>
+<td>Local apps and small services with metadata filtering</td>
+</tr>
+<tr>
+<td>pgvector</td>
+<td>Extension to PostgreSQL</td>
+<td>Teams already on Postgres; vectors next to relational data and SQL filters</td>
+</tr>
+<tr>
+<td>Qdrant, Weaviate, Milvus</td>
+<td>Dedicated vector database servers</td>
+<td>Large collections, heavy filtering, high query load</td>
+</tr>
+<tr>
+<td>Managed services (e.g. Pinecone, cloud search products)</td>
+<td>Hosted</td>
+<td>Teams that do not want to operate infrastructure</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python"># uv add chromadb
+import chromadb
+
+db = chromadb.PersistentClient(path="vector_db")
+col = db.get_or_create_collection("manuals", metadata={"hnsw:space": "cosine"})
+col.add(
+    ids=[f"doc-{i}" for i in range(len(docs))],
+    documents=docs,
+    embeddings=doc_vecs.tolist(),
+    metadatas=[{"source": "field-manual", "section": i} for i in range(len(docs))],
+)
+res = col.query(
+    query_embeddings=model.encode(["belt slipping"], normalize_embeddings=True).tolist(),
+    n_results=2,
+    where={"source": "field-manual"},          # metadata filter
+)
+print(res["documents"])</code></pre>
+<pre><code class="language-sql">-- the same idea in PostgreSQL with pgvector
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE chunks (id bigserial PRIMARY KEY, source text, body text, embedding vector(384));
+CREATE INDEX ON chunks USING hnsw (embedding vector_cosine_ops);
+SELECT body FROM chunks
+WHERE source = 'field-manual'
+ORDER BY embedding &lt;=&gt; $1      -- &lt;=&gt; is cosine distance; $1 is the query vector
+LIMIT 5;</code></pre>
+<div class="admonition tip">
+<p class="admonition-title">Start boring</p>
+<p>If you already run PostgreSQL, pgvector is usually the right first choice: one database, transactions, SQL filters and backups you already understand. Move to a dedicated vector database when you have measured a need.</p>
+</div>
+<h2>How approximate nearest-neighbour search works</h2>
+<p>Exact search compares the query with every vector: fine at a million, slow at a billion. <strong>Approximate nearest neighbour (ANN)</strong> indexes trade a little accuracy (<strong>recall</strong>: the fraction of true top-k results found) for enormous speed-ups.</p>
+<ul>
+<li><strong>HNSW</strong> (hierarchical navigable small world graphs): every vector is a node linked to its near neighbours, in layers from sparse to dense. A search starts at the sparse top layer, greedily hops towards the query, and descends. The default in most vector databases. Key knobs: <code>M</code> (links per node: memory versus recall) and <code>ef_search</code> (how many candidates to explore per query: speed versus recall).</li>
+<li><strong>IVF</strong> (inverted file): cluster the vectors with k-means; at query time search only the few clusters nearest the query (<code>nprobe</code> controls how many).</li>
+<li><strong>Product quantisation (PQ)</strong>: compress each vector into a few bytes by quantising sub-vectors. Cuts memory by 10 to 50 times at some cost in accuracy; often combined with IVF for billion-scale collections.</li>
+</ul>
+<h3>Measure it yourself</h3>
+<pre><code class="language-python">import numpy as np, time, faiss
+
+rng = np.random.default_rng(0)
+n, d = 50_000, 384
+# real embeddings have structure: simulate 200 "topics" in a lower-dimensional subspace
+centers = rng.normal(size=(200, 48))
+Z = centers[rng.integers(0, 200, n)] + 0.6 * rng.normal(size=(n, 48))
+X = (Z @ rng.normal(size=(48, d))).astype("float32")
+X /= np.linalg.norm(X, axis=1, keepdims=True)
+Q = X[rng.choice(n, 200, replace=False)] + 0.05 * rng.normal(size=(200, d)).astype("float32")
+Q /= np.linalg.norm(Q, axis=1, keepdims=True)
+
+exact = np.argsort(-(Q @ X.T), axis=1)[:, :10]                 # ground truth top-10
+
+hnsw = faiss.IndexHNSWFlat(d, 16, faiss.METRIC_INNER_PRODUCT)
+hnsw.add(X)
+for ef in [16, 64, 256]:
+    hnsw.hnsw.efSearch = ef
+    t = time.perf_counter(); _, I = hnsw.search(Q, 10); dt = time.perf_counter() - t
+    recall = np.mean([len(set(I[i]) &amp; set(exact[i])) / 10 for i in range(len(Q))])
+    print(f"ef_search={ef:&lt;4} recall@10={recall:.3f}  {dt * 1000 / len(Q):.3f} ms/query")</code></pre>
+<pre><code class="language-text">ef_search=16   recall@10=0.936  0.032 ms/query
+ef_search=64   recall@10=0.994  0.062 ms/query
+ef_search=256  recall@10=0.999  0.151 ms/query</code></pre>
+<p>Exact search on the same machine took about 1.3 ms per query, so HNSW is 20 to 40 times faster while finding over 99% of the true neighbours. The gap widens as collections grow. (Try the same test on unstructured random vectors and recall collapses: ANN works because real data has structure.)</p>
+<h2>Clustering and visualising embeddings</h2>
+<p>Embeddings also let you explore collections you have never read. Embed a few thousand support tickets, cluster them with k-means (lesson <a data-ref="classical-ml"></a>), and ask an LLM to name each cluster from a sample of its members. You get an instant map of what users complain about.</p>
+<pre><code class="language-python">from sklearn.cluster import KMeans
+
+ticket_vecs = model.encode(tickets, normalize_embeddings=True)
+km = KMeans(n_clusters=12, n_init=10, random_state=0).fit(ticket_vecs)
+for c in range(12):
+    members = [t for t, lab in zip(tickets, km.labels_) if lab == c][:8]
+    # name = llm("Give a 3-5 word label for these support tickets:\n" + "\n".join(members))
+    print(c, len([1 for lab in km.labels_ if lab == c]), members[0][:80])</code></pre>
+<p>To <em>see</em> the structure, project to 2-D with PCA, or with UMAP (<code>uv add umap-learn</code>), which preserves local neighbourhoods better, and scatter-plot coloured by cluster. Clusters of near-duplicates, mislabelled examples and unexpected topics jump out.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a search engine for your own notes</p>
+<ol>
+<li>Collect at least 200 paragraphs of text you know well: your learning log, documentation you use, or public-domain articles. Split into paragraphs.</li>
+<li>Embed them with <code>all-MiniLM-L6-v2</code> and build a FAISS index.</li>
+<li>Write 15 test queries, and for each note which paragraph should be found. Measure <strong>recall@5</strong> (the fraction of queries whose correct paragraph is in the top 5).</li>
+<li>Compare with a second embedding model (for example <code>BAAI/bge-small-en-v1.5</code>, which expects the query prefix "Represent this sentence for searching relevant passages: "). Which wins on <em>your</em> data?</li>
+<li>Find a query where keyword search would beat embeddings, and one where embeddings clearly win.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution sketch</summary>
+<p><pre><code class="language-python">import faiss, numpy as np
+from sentence_transformers import SentenceTransformer
+
+paras = [p.strip() for p in open("notes.txt").read().split("\n\n") if len(p.strip()) &gt; 40]
+tests = [("how do I stop overfitting", 17), ("what does the KV cache store", 88)]   # (query, correct index)
+
+def evaluate(model_name, query_prefix=""):
+    m = SentenceTransformer(model_name)
+    D = m.encode(paras, normalize_embeddings=True).astype("float32")
+    index = faiss.IndexFlatIP(D.shape[1]); index.add(D)
+    hits = 0
+    for q, gold in tests:
+        qv = m.encode([query_prefix + q], normalize_embeddings=True).astype("float32")
+        _, ids = index.search(qv, 5)
+        hits += gold in ids[0]
+    return hits / len(tests)
+
+print(evaluate("all-MiniLM-L6-v2"))
+print(evaluate("BAAI/bge-small-en-v1.5",
+               query_prefix="Represent this sentence for searching relevant passages: "))</code></pre>
+Typical findings: both models do well on paraphrased questions; the better one depends on your text, which is the point of measuring. Keyword search wins on exact strings such as error codes, version numbers and names; embeddings win on questions phrased differently from the text ("why is my model memorising the training data" finding a paragraph about overfitting). This small labelled query set is your first <strong>retrieval evaluation</strong>; you will grow it in lessons <a data-ref="rag"></a> and <a data-ref="evaluation"></a>.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>How are text embedding models typically trained?</p>
+<ul>
+<li>To predict the next token</li>
+<li class="correct">Contrastively, so matching pairs (question and answer, paraphrases) end up close and unrelated texts far apart</li>
+<li>With k-means clustering</li>
+<li>By hand-labelling each dimension</li>
+</ul>
+<p class="why">Contrastive training shapes the space so that distance reflects meaning.</p>
+</div>
+<div class="q">
+<p>Why normalise embeddings to unit length before indexing?</p>
+<ul>
+<li>To save memory</li>
+<li class="correct">So cosine similarity becomes a plain dot product, making search a fast matrix multiplication</li>
+<li>Because FAISS rejects non-normalised vectors</li>
+<li>To improve the embedding model's accuracy</li>
+</ul>
+<p class="why">For unit vectors, cosine similarity and inner product are identical.</p>
+</div>
+<div class="q">
+<p>A user searches for "error E-4071" and gets documents about other error codes. What is the best fix?</p>
+<ul>
+<li>Use a bigger embedding model</li>
+<li class="correct">Add keyword search (such as BM25) and combine it with embeddings in a hybrid search</li>
+<li>Increase the number of dimensions</li>
+<li>Lower the temperature</li>
+</ul>
+<p class="why">Embeddings blur exact identifiers. Keyword search handles them precisely.</p>
+</div>
+<div class="q">
+<p>You switch to a new embedding model. What must you do with your existing vectors?</p>
+<ul>
+<li>Nothing</li>
+<li>Normalise them again</li>
+<li class="correct">Re-embed every document, because different models produce incompatible vector spaces</li>
+<li>Average old and new vectors</li>
+</ul>
+<p class="why">Vectors from different models are not comparable.</p>
+</div>
+<div class="q">
+<p>In HNSW, what does increasing ef_search do?</p>
+<ul>
+<li class="correct">Explores more candidates per query, raising recall at the cost of speed</li>
+<li>Builds the index faster</li>
+<li>Reduces memory use</li>
+<li>Changes the similarity metric</li>
+</ul>
+<p class="why">It is the main query-time knob for trading speed against recall.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Text embeddings map meaning to geometry; similar texts have high cosine similarity. They enable search by meaning.</li>
+<li>Choose embedding models by testing on your own data; mind input length, query prefixes and never mix models.</li>
+<li>Semantic search is a normalised dot product plus a sort. FAISS makes it fast; vector databases add metadata, filtering and persistence (pgvector is a fine default).</li>
+<li>ANN indexes such as HNSW trade a little recall for large speed-ups; measure recall against exact search.</li>
+<li>Embeddings are weak on exact identifiers, which is why production search is usually hybrid.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Reimers and Gurevych, "Sentence-BERT" (arXiv 1908.10084)</li>
+<li>Malkov and Yashunin, "Efficient and robust approximate nearest neighbor search using HNSW graphs" (arXiv 1603.09320)</li>
+<li><a href="https://www.sbert.net">Sentence Transformers documentation</a></li>
+<li>The MTEB leaderboard on Hugging Face, for shortlisting embedding models</li>
+<li><a href="https://github.com/facebookresearch/faiss/wiki">FAISS wiki</a></li>
+</ul>

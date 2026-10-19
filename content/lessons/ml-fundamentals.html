@@ -1,0 +1,371 @@
+<!--
+{
+  "title": "Machine learning fundamentals",
+  "short": "ML fundamentals",
+  "summary": "What it means for a model to learn, the workflow every ML project follows, why models overfit and how to stop them, and how to measure performance honestly.",
+  "sessions": [
+    "Learning from data, the kinds of learning, and the ML workflow",
+    "Train, validation and test sets; overfitting, bias and variance; regularisation and cross-validation",
+    "Metrics that tell the truth, baselines, and data leakage"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU).",
+  "glossary": [
+    {"term": "Bias-variance trade-off", "def": "Simple models err through wrong assumptions (bias, underfitting); flexible models err through sensitivity to the training sample (variance, overfitting)."},
+    {"term": "Cross-validation", "def": "Training and validating k times on different splits of the data and averaging, for a more reliable estimate."},
+    {"term": "Data leakage", "def": "Information in training or evaluation data that would not be available at prediction time, producing falsely good scores."},
+    {"term": "F1 score", "def": "The harmonic mean of precision and recall."},
+    {"term": "Hyperparameter", "def": "A setting chosen rather than learned, such as learning rate, tree depth or LoRA rank."},
+    {"term": "Overfitting", "def": "Learning the noise in the training data; low training error, high validation error."},
+    {"term": "Precision and recall", "def": "Precision: of the positives predicted, the fraction that were right. Recall: of the real positives, the fraction found."},
+    {"term": "Regularisation", "def": "Techniques that discourage overly complex models, such as weight penalties, dropout and early stopping."},
+    {"term": "Self-supervised learning", "def": "Learning from labels derived from the data itself, such as the next word."},
+    {"term": "Underfitting", "def": "A model too simple to capture the pattern; high training and validation error."},
+    {"term": "Weight decay", "def": "An L2-style penalty that shrinks weights during training."}
+  ]
+}
+-->
+<h2>What "learning" means</h2>
+<p>Traditional programming takes rules and data and produces answers. Machine learning takes data and answers and produces the rules. You give a model many examples of inputs \(x\) paired with desired outputs \(y\), and an algorithm searches for a function \(f\) such that \(f(x) \approx y\), including for inputs it has never seen.</p>
+<p>That last clause is the whole game. A model that memorises its training examples is useless; we want one that <strong>generalises</strong>. Every technique in this lesson is about measuring and improving generalisation.</p>
+<h3>The kinds of learning</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>You provide</th>
+<th>The model learns</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Supervised</td>
+<td>Inputs and labels</td>
+<td>A mapping from input to label</td>
+<td>Spam detection, price prediction, image classification</td>
+</tr>
+<tr>
+<td>Unsupervised</td>
+<td>Inputs only</td>
+<td>Structure in the data</td>
+<td>Clustering customers, anomaly detection, compression</td>
+</tr>
+<tr>
+<td>Self-supervised</td>
+<td>Raw data; labels are made from the data itself</td>
+<td>Rich general-purpose representations</td>
+<td><strong>LLM pretraining</strong>: predict the next word of real text</td>
+</tr>
+<tr>
+<td>Reinforcement</td>
+<td>An environment and a reward signal</td>
+<td>A policy for acting</td>
+<td>Game playing, robotics, RLHF for chat models</td>
+</tr>
+</tbody>
+</table>
+<p>Supervised learning splits further into <strong>regression</strong> (predict a number: temperature, price) and <strong>classification</strong> (predict a category: spam or not, which of 1,000 objects).</p>
+<p>Self-supervised learning deserves a note because it is how LLMs are made. Nobody labels the internet. Instead, every sentence provides its own labels: hide the next word and ask the model to predict it. That trick turned the whole web into a training set.</p>
+<h2>The workflow</h2>
+<p>Almost every ML project follows the same loop. Skipping steps is the most common cause of failure.</p>
+<ol>
+<li><strong>Frame the problem.</strong> What decision will the prediction drive? What does a mistake cost? Which metric reflects that cost?</li>
+<li><strong>Get and understand the data.</strong> Explore it (lesson <a data-ref="python-for-ai"></a>). Check where labels come from and how noisy they are.</li>
+<li><strong>Split the data</strong> before you look at it too closely, so the test set stays honest.</li>
+<li><strong>Build a baseline.</strong> The simplest thing that could work: predict the mean, the most common class, or yesterday's value.</li>
+<li><strong>Train models</strong>, starting simple.</li>
+<li><strong>Evaluate on the validation set</strong>, analyse errors, iterate on features and models.</li>
+<li><strong>Test once</strong> on the held-out test set.</li>
+<li><strong>Deploy and monitor</strong>, because the world changes and models decay.</li>
+</ol>
+<h2>Splits, overfitting and generalisation</h2>
+<h3>Three sets, three jobs</h3>
+<ul>
+<li><strong>Training set</strong> (often 60 to 80%): the model learns its parameters here.</li>
+<li><strong>Validation set</strong> (10 to 20%): you compare models and tune settings such as learning rate or tree depth (the <strong>hyperparameters</strong>) here.</li>
+<li><strong>Test set</strong> (10 to 20%): touched once, at the end, to estimate real-world performance.</li>
+</ul>
+<p>Why a separate test set? Every time you check the validation score and make a change, you leak a little information about the validation set into your choices. After fifty experiments, your validation score is optimistic. The test set is your one unbiased measurement.</p>
+<div class="admonition warning">
+<p class="admonition-title">Split by what you will see in production</p>
+<p>If the model will predict the <em>future</em>, split by time: train on the past, validate on later data, never shuffle across time. If it will see <em>new users</em> or <em>new instruments</em>, make sure no user or instrument appears in both training and test sets. Random splits on such data give scores that look great and mean nothing.</p>
+</div>
+<h3>Overfitting, seen with your own eyes</h3>
+<p>Fit polynomials of increasing degree to 20 noisy points from a sine wave and compare training and test error.</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+rng = np.random.default_rng(1)
+x = rng.uniform(0, 1, 40)
+y = np.sin(2 * np.pi * x) + rng.normal(0, 0.25, 40)
+X = x.reshape(-1, 1)                                   # sklearn wants 2-D inputs: (samples, features)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.5, random_state=0)
+
+for degree in [1, 3, 9, 15]:
+    model = make_pipeline(PolynomialFeatures(degree), LinearRegression())
+    model.fit(X_tr, y_tr)
+    tr = mean_squared_error(y_tr, model.predict(X_tr))
+    te = mean_squared_error(y_te, model.predict(X_te))
+    print(f"degree {degree:&gt;2}: train MSE {tr:.3f}   test MSE {te:.3f}")</code></pre>
+<pre><code class="language-text">degree  1: train MSE 0.161   test MSE 0.145     underfitting: too simple
+degree  3: train MSE 0.027   test MSE 0.037     about right
+degree  9: train MSE 0.017   test MSE 0.118     starting to overfit
+degree 15: train MSE 0.006   test MSE 95408.7   memorised the noise</code></pre>
+<p>Training error keeps falling as the model gets more flexible. Test error falls, then rises. The gap between them is the signature of <strong>overfitting</strong>: the model has learned the noise in its particular training points rather than the underlying pattern.</p>
+<h3>Bias and variance</h3>
+<p>Two kinds of error pull in opposite directions:</p>
+<ul>
+<li><strong>Bias</strong>: error from wrong assumptions. A straight line cannot fit a sine wave however much data you give it. High bias means <strong>underfitting</strong>: high training error <em>and</em> high test error.</li>
+<li><strong>Variance</strong>: error from sensitivity to the particular training sample. A degree-15 polynomial changes wildly if you swap a few points. High variance means <strong>overfitting</strong>: low training error, high test error.</li>
+</ul>
+<figure>
+<svg class="diagram" viewBox="0 0 560 230" role="img" aria-label="Training error falls with model complexity while test error is U-shaped">
+<line class="wire" x1="50" y1="190" x2="530" y2="190"/>
+<line class="wire" x1="50" y1="190" x2="50" y2="20"/>
+<text x="290" y="220" text-anchor="middle" class="muted">model complexity</text>
+<text x="20" y="105" class="muted" transform="rotate(-90 20 105)" text-anchor="middle">error</text>
+<path class="wire" d="M60 60 C 150 120, 260 165, 520 178" stroke-dasharray="5 4"/>
+<path class="accent-stroke" d="M60 70 C 150 130, 220 150, 270 150 S 420 110, 520 40"/>
+<line class="wire" x1="270" y1="150" x2="270" y2="190" stroke-dasharray="2 3"/>
+<text x="470" y="168" class="muted">training</text>
+<text x="455" y="58">test</text>
+<text x="90" y="40" class="muted">underfitting</text>
+<text x="380" y="40" class="muted">overfitting</text>
+<text x="270" y="140" text-anchor="middle" font-size="12">sweet spot</text>
+</svg>
+<figcaption>The classic picture. Modern deep networks complicate it (very large models can generalise well again, a phenomenon called double descent), but the diagnosis still works: compare training and validation error.</figcaption>
+</figure>
+
+<p><strong>Diagnosis in practice:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Training error</th>
+<th>Validation error</th>
+<th>Diagnosis</th>
+<th>Try</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>High</td>
+<td>High</td>
+<td>Underfitting (bias)</td>
+<td>Bigger model, better features, train longer</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>High</td>
+<td>Overfitting (variance)</td>
+<td>More data, regularisation, simpler model, early stopping</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>Low</td>
+<td>Good</td>
+<td>Check the test set, then ship</td>
+</tr>
+</tbody>
+</table>
+<h3>Regularisation</h3>
+<p>Regularisation discourages complexity. The most common form adds a penalty on the size of the weights to the loss:</p>
+\[
+L_{\text{ridge}} = \text{MSE} + \alpha \sum_j w_j^2
+\qquad\qquad
+L_{\text{lasso}} = \text{MSE} + \alpha \sum_j |w_j|
+\]
+<p>L2 (ridge) shrinks all weights smoothly. L1 (lasso) pushes many weights to exactly zero, which also performs feature selection. In neural networks the same L2 idea appears as <strong>weight decay</strong>, alongside dropout and early stopping (lesson <a data-ref="neural-networks"></a>).</p>
+<pre><code class="language-python">for alpha in [1e-6, 1e-3, 1e-1, 10]:
+    model = make_pipeline(PolynomialFeatures(15), Ridge(alpha=alpha))
+    model.fit(X_tr, y_tr)
+    print(alpha, round(mean_squared_error(y_te, model.predict(X_te)), 3))
+# 1e-06 0.035   even a tiny penalty rescues the degree-15 model
+# 0.001 0.031   best
+# 0.1   0.083
+# 10    0.275   too much: now it underfits</code></pre>
+<p>The degree-15 model went from a test error of 95,000 to 0.031 with a small penalty. Regularisation strength is itself a hyperparameter, chosen on validation data.</p>
+<h3>Cross-validation</h3>
+<p>With small datasets, one validation split is noisy: you might get lucky or unlucky. <strong>k-fold cross-validation</strong> splits the data into \(k\) folds, trains \(k\) times, each time validating on a different fold, and averages the scores.</p>
+<pre><code class="language-python">from sklearn.model_selection import cross_val_score, KFold
+
+model = make_pipeline(PolynomialFeatures(3), LinearRegression())
+scores = cross_val_score(model, X, y, cv=KFold(5, shuffle=True, random_state=0),
+                         scoring="neg_mean_squared_error")
+print(f"MSE {-scores.mean():.3f} ± {scores.std():.3f}")</code></pre>
+<p>Report the spread, not just the mean. If two models differ by less than the standard deviation across folds, you have not shown that one is better.</p>
+<h2>Metrics that tell the truth</h2>
+<h3>Regression</h3>
+<ul>
+<li><strong>MAE</strong> (mean absolute error): average size of the error, in the target's units. Easy to explain.</li>
+<li><strong>RMSE</strong> (root mean squared error): punishes large errors more. Use when big misses are especially costly.</li>
+<li><strong>R²</strong>: fraction of variance explained, 1 is perfect, 0 is no better than predicting the mean.</li>
+</ul>
+<h3>Classification and the confusion matrix</h3>
+<p>Accuracy (fraction correct) is misleading whenever classes are imbalanced. If 1% of instruments are faulty, a model that always says "healthy" is 99% accurate and completely useless. Look at the confusion matrix instead:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Predicted positive</th>
+<th>Predicted negative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Actually positive</strong></td>
+<td>True positive (TP)</td>
+<td>False negative (FN)</td>
+</tr>
+<tr>
+<td><strong>Actually negative</strong></td>
+<td>False positive (FP)</td>
+<td>True negative (TN)</td>
+</tr>
+</tbody>
+</table>
+<p>From it come the metrics that matter:</p>
+\[
+\text{precision} = \frac{TP}{TP + FP}
+\qquad
+\text{recall} = \frac{TP}{TP + FN}
+\qquad
+F_1 = \frac{2\cdot\text{precision}\cdot\text{recall}}{\text{precision} + \text{recall}}
+\]
+<ul>
+<li><strong>Precision</strong>: of the alarms raised, how many were real? Low precision means alarm fatigue.</li>
+<li><strong>Recall</strong>: of the real problems, how many did we catch? Low recall means missed faults.</li>
+<li><strong>F1</strong>: the harmonic mean, a single number that is only high when both are.</li>
+</ul>
+<p>Which matters more depends on the cost of each mistake. Screening for a serious disease favours recall; flagging emails as spam favours precision (losing a real email is worse than seeing some spam).</p>
+<pre><code class="language-python">from sklearn.metrics import confusion_matrix, classification_report
+
+y_true = np.array([1, 0, 1, 1, 0, 0, 1, 0, 0, 0])
+y_pred = np.array([1, 0, 0, 1, 0, 1, 1, 0, 0, 0])
+print(confusion_matrix(y_true, y_pred))      # [[5 1] [1 3]]: TN=5 FP=1 FN=1 TP=3
+print(classification_report(y_true, y_pred))</code></pre>
+<h3>Thresholds, ROC and PR curves</h3>
+<p>Most classifiers output a score or probability, and <em>you</em> choose the threshold above which to say "positive". Lowering the threshold raises recall and lowers precision. The <strong>ROC curve</strong> plots true-positive rate against false-positive rate across all thresholds, and <strong>ROC-AUC</strong> summarises it (0.5 is random, 1.0 perfect). For rare positives, the <strong>precision-recall curve</strong> and its average precision are more informative, because ROC can look flattering when negatives vastly outnumber positives.</p>
+<h2>Baselines and leakage</h2>
+<h3>Always beat a baseline</h3>
+<p>Before training anything clever, compute what a trivial predictor scores: the mean for regression, the majority class for classification, "same as yesterday" for time series. scikit-learn's <code>DummyClassifier</code> and <code>DummyRegressor</code> do this in one line. If your model barely beats the baseline, it has not learned much, whatever the absolute number looks like.</p>
+<h3>Data leakage</h3>
+<p>Leakage is information in your training data that will not be available at prediction time. It produces models that score brilliantly in testing and fail in production. Common forms:</p>
+<ul>
+<li><strong>Target leakage</strong>: a feature that is computed from the label. Predicting equipment failure with a "repair cost" column that is only filled in after a failure.</li>
+<li><strong>Preprocessing leakage</strong>: fitting a scaler or imputer on the whole dataset before splitting, so test-set statistics leak into training. Fix it by putting preprocessing inside a scikit-learn <code>Pipeline</code> so it is fit on training folds only.</li>
+<li><strong>Temporal leakage</strong>: shuffling time series, so the model trains on the future to predict the past.</li>
+<li><strong>Duplicate leakage</strong>: the same or near-identical examples in train and test. This is a real concern for LLM benchmarks too, where test questions may have appeared on the web the model trained on (lesson <a data-ref="evaluation"></a>).</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">The leakage smell test</p>
+<p>If a result seems too good, it probably is. Ask of every feature: would I really know this value at the moment I need the prediction?</p>
+</div>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: an honest evaluation</p>
+<p>Use scikit-learn's built-in breast cancer dataset (<code>from sklearn.datasets import load_breast_cancer</code>).</p>
+<ol>
+<li>Split 80/20 with <code>stratify=y</code> so both sets keep the class balance.</li>
+<li>Score a <code>DummyClassifier(strategy="most_frequent")</code> baseline.</li>
+<li>Train a <code>LogisticRegression</code> inside a pipeline with <code>StandardScaler</code>, using 5-fold cross-validation on the training set to pick <code>C</code> from <code>[0.01, 0.1, 1, 10]</code>.</li>
+<li>Report precision, recall and F1 on the test set, once.</li>
+<li>In this problem, which error is worse, a false negative or a false positive? How would you change the threshold?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">from sklearn.datasets import load_breast_cancer
+from sklearn.dummy import DummyClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import classification_report
+
+X, y = load_breast_cancer(return_X_y=True)   # in this dataset 1 = benign, 0 = malignant
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, stratify=y, random_state=0)
+
+base = DummyClassifier(strategy="most_frequent").fit(X_tr, y_tr)
+print("baseline accuracy", base.score(X_te, y_te))        # about 0.63
+
+pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=5000))
+search = GridSearchCV(pipe, {"logisticregression__C": [0.01, 0.1, 1, 10]}, cv=5, scoring="f1")
+search.fit(X_tr, y_tr)
+print(search.best_params_)
+print(classification_report(y_te, search.predict(X_te)))   # accuracy around 0.96 to 0.97</code></pre>
+Missing a malignant tumour (a false negative for the malignant class) is far worse than an unnecessary follow-up test. You would lower the threshold for flagging "malignant", for example by using <code>predict_proba</code> and flagging anything with more than 10 to 20% malignancy probability, accepting more false alarms for higher recall. Note that the scaler lives inside the pipeline, so cross-validation never leaks test-fold statistics.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>A model has 2% training error and 25% validation error. What is the most likely diagnosis?</p>
+<ul>
+<li>Underfitting; use a bigger model</li>
+<li class="correct">Overfitting; get more data, regularise, or simplify the model</li>
+<li>The validation set is too large</li>
+<li>The learning rate is too low</li>
+</ul>
+<p class="why">A large gap between training and validation error is the signature of high variance.</p>
+</div>
+<div class="q">
+<p>Why keep a separate test set if you already have a validation set?</p>
+<ul>
+<li>To have more training data</li>
+<li class="correct">Because repeated tuning against the validation set makes its score optimistic; the test set gives one unbiased estimate</li>
+<li>Because scikit-learn requires three splits</li>
+<li>To measure training speed</li>
+</ul>
+<p class="why">Every decision informed by validation results leaks information about it. The test set is used once, at the end.</p>
+</div>
+<div class="q">
+<p>Only 1 in 200 transactions is fraud. Your model is 99.5% accurate. What should you conclude?</p>
+<ul>
+<li>The model is excellent</li>
+<li class="correct">Nothing yet; always predicting "not fraud" also scores 99.5%. Look at precision and recall for the fraud class</li>
+<li>The model is overfitting</li>
+<li>Accuracy is the right metric here</li>
+</ul>
+<p class="why">With heavy imbalance, accuracy hides everything. Compare against the majority-class baseline and use precision, recall or PR-AUC.</p>
+</div>
+<div class="q">
+<p>You standardise all features using the mean and standard deviation of the full dataset, then split. What is the problem?</p>
+<ul>
+<li>Standardisation is unnecessary for most models</li>
+<li class="correct">Test-set statistics leak into training; fit preprocessing on the training data only, ideally inside a Pipeline</li>
+<li>The features will no longer be normally distributed</li>
+<li>Nothing; this is correct</li>
+</ul>
+<p class="why">This is preprocessing leakage. Small here, but it is the same mistake that produces badly inflated scores in other settings.</p>
+</div>
+<div class="q">
+<p>Which kind of learning is LLM pretraining?</p>
+<ul>
+<li>Supervised, with human-written labels</li>
+<li>Unsupervised clustering</li>
+<li class="correct">Self-supervised: the next token in real text is the label</li>
+<li>Reinforcement learning</li>
+</ul>
+<p class="why">The labels come free from the data itself. RLHF, applied later, is the reinforcement learning part.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>The goal is generalisation to unseen data, not performance on the training set.</li>
+<li>Split into train, validation and test, matching how the model will be used (by time, by user, by instrument).</li>
+<li>Compare training and validation error to diagnose underfitting versus overfitting. Regularisation, more data and simpler models fight overfitting.</li>
+<li>Pick metrics that reflect the real cost of mistakes. Accuracy lies on imbalanced data; use precision, recall, F1 and PR curves.</li>
+<li>Beat a trivial baseline, and hunt for leakage whenever results look too good.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Aurélien Géron, <em>Hands-On Machine Learning with Scikit-Learn, Keras and TensorFlow</em>, chapters 1 to 3</li>
+<li><a href="https://scikit-learn.org/stable/modules/model_evaluation.html">scikit-learn user guide: model evaluation</a></li>
+<li>Andrew Ng's <em>Machine Learning Specialization</em> (Coursera), course 1 and the "advice for applying ML" week of course 2</li>
+</ul>

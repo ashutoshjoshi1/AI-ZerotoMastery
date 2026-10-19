@@ -1,0 +1,357 @@
+<!--
+{
+  "title": "Python for AI work",
+  "short": "Python for AI",
+  "summary": "The Python you actually need for AI, then NumPy for fast array maths and pandas plus Matplotlib for loading, cleaning and plotting real data.",
+  "sessions": [
+    "Python essentials for AI code: data structures, functions, classes, typing, generators",
+    "NumPy: arrays, shapes, broadcasting and vectorised maths",
+    "pandas and Matplotlib: clean, explore and plot a week of sensor data"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU).",
+  "glossary": [
+    {"term": "Broadcasting", "def": "NumPy and PyTorch rules for combining arrays of different shapes by virtually stretching size-1 dimensions."}
+  ]
+}
+-->
+<h2>Why Python, and which parts of it</h2>
+<p>Python won AI because it is pleasant to write and because the heavy lifting happens in fast compiled libraries underneath it: NumPy, PyTorch and friends are thin Python skins over C, C++ and CUDA. Your job is to describe <em>what</em> to compute in Python and let those libraries do it quickly.</p>
+<p>This lesson assumes you can already write a loop and a function in some language. If Python is new, work through the official <a href="https://docs.python.org/3/tutorial/">Python tutorial</a> sections 3 to 9 first, then come back.</p>
+<h2>Python essentials for AI code</h2>
+<h3>Data structures you will use daily</h3>
+<pre><code class="language-python"># lists: ordered, mutable. Batches of examples, histories of messages.
+messages = [{"role": "user", "content": "Hi"}]
+messages.append({"role": "assistant", "content": "Hello!"})
+
+# dicts: key to value. Configs, JSON payloads, token-to-id vocabularies.
+config = {"model": "small", "lr": 3e-4, "epochs": 10}
+lr = config.get("lr", 1e-3)            # default if the key is missing
+
+# tuples: fixed, immutable. Shapes, (input, label) pairs.
+shape = (32, 128)                      # batch of 32, 128 features
+
+# sets: unique items, fast membership tests. Vocabularies, de-duplication.
+seen = set()
+for word in "the cat sat on the mat".split():
+    seen.add(word)
+print(len(seen))                        # 5</code></pre>
+<h3>Comprehensions</h3>
+<p>Comprehensions build collections in one readable line. You will see them everywhere in data-preparation code.</p>
+<pre><code class="language-python">lengths = [len(w) for w in ["attention", "is", "all"]]            # [9, 2, 3]
+vocab = {word: i for i, word in enumerate(sorted(seen))}            # word -&gt; id
+long_words = [w for w in seen if len(w) &gt; 2]                        # filter
+pairs = [(x, y) for x in range(3) for y in range(2)]                # nested loops</code></pre>
+<h3>Functions with type hints and defaults</h3>
+<p>Type hints do not change how Python runs, but they make code self-documenting, let your editor catch mistakes, and they are how libraries such as Pydantic and FastAPI (which you will use in parts VI and VII) know what data to expect.</p>
+<pre><code class="language-python">def chunk_text(text: str, size: int = 500, overlap: int = 50) -&gt; list[str]:
+    """Split text into overlapping chunks of roughly `size` characters."""
+    if overlap &gt;= size:
+        raise ValueError("overlap must be smaller than size")
+    step = size - overlap
+    return [text[i : i + size] for i in range(0, len(text), step)]
+
+chunks = chunk_text("lorem ipsum " * 200, size=300)
+print(len(chunks), len(chunks[0]))</code></pre>
+<p>You will write a better chunker in the RAG lesson. This one is already useful.</p>
+<h3>Classes and dataclasses</h3>
+<p>Models, datasets and agents are naturally objects: some state plus methods that act on it. For plain data containers, <code>dataclass</code> writes the boilerplate for you.</p>
+<pre><code class="language-python">from dataclasses import dataclass, field
+
+@dataclass
+class Document:
+    id: str
+    text: str
+    metadata: dict = field(default_factory=dict)   # never use a bare {} default
+
+    def preview(self, n: int = 60) -&gt; str:
+        return self.text[:n] + ("…" if len(self.text) &gt; n else "")
+
+doc = Document(id="manual-3", text="Calibrate the spectrometer before each campaign.")
+print(doc)            # Document(id='manual-3', text='Calibrate ...', metadata={})
+print(doc.preview(20))</code></pre>
+<div class="admonition warning">
+<p class="admonition-title">The mutable default trap</p>
+<p><code>def f(x, cache={})</code> creates <strong>one</strong> dictionary when the function is defined and shares it across every call. Use <code>None</code> as the default and create the object inside, or <code>field(default_factory=dict)</code> in a dataclass.</p>
+</div>
+<h3>Generators: data that does not fit in memory</h3>
+<p>A generator produces values one at a time with <code>yield</code>. Training data and log files are often too large to load at once; generators let you stream them.</p>
+<pre><code class="language-python">def read_jsonl(path: str):
+    import json
+    with open(path) as f:
+        for line in f:
+            if line.strip():
+                yield json.loads(line)
+
+def batched(iterable, n: int):
+    batch = []
+    for item in iterable:
+        batch.append(item)
+        if len(batch) == n:
+            yield batch
+            batch = []
+    if batch:
+        yield batch
+
+# for batch in batched(read_jsonl("train.jsonl"), 32): ...</code></pre>
+<p>Python 3.12 also ships <code>itertools.batched</code>, which does the same thing.</p>
+<h3>Errors and retries</h3>
+<p>Calls to model APIs fail: networks drop, rate limits bite. Handle the errors you expect and let unexpected ones surface.</p>
+<pre><code class="language-python">import time, random
+
+def with_retries(fn, attempts: int = 5, base: float = 0.5):
+    for i in range(attempts):
+        try:
+            return fn()
+        except (TimeoutError, ConnectionError) as e:
+            if i == attempts - 1:
+                raise
+            wait = base * 2 ** i + random.uniform(0, 0.1)   # exponential backoff with jitter
+            print(f"attempt {i + 1} failed ({e}); retrying in {wait:.2f}s")
+            time.sleep(wait)</code></pre>
+<h2>NumPy: thinking in arrays</h2>
+<p>Everything in machine learning is an array of numbers: an image is a 3-D array of pixel intensities, a batch of sentences is a 2-D array of token ids, a model's weights are a pile of matrices. NumPy's <code>ndarray</code> is the shared language, and PyTorch tensors behave almost identically, so time spent here pays off twice.</p>
+<h3>Creating arrays and reading shapes</h3>
+<pre><code class="language-python">import numpy as np
+
+a = np.array([1.0, 2.0, 3.0])          # shape (3,)
+M = np.arange(12).reshape(3, 4)        # shape (3, 4): 3 rows, 4 columns
+Z = np.zeros((2, 3))
+rng = np.random.default_rng(0)         # the modern, reproducible way to get randomness
+X = rng.normal(size=(100, 5))          # 100 samples, 5 features
+
+print(M.shape, M.ndim, M.dtype)        # (3, 4) 2 int64
+print(M[1, 2])                         # row 1, column 2 -&gt; 6
+print(M[:, 0])                         # first column -&gt; [0 4 8]
+print(M[M &gt; 5])                        # boolean mask -&gt; [ 6  7  8  9 10 11]</code></pre>
+<div class="admonition tip">
+<p class="admonition-title">Shapes are your best debugging tool</p>
+<p>When something breaks in ML code, print the shapes first. Most bugs are a tensor with shape <code>(32, 1)</code> where you expected <code>(32,)</code>, or rows and columns swapped. Get in the habit of writing the expected shape as a comment next to each line.</p>
+</div>
+<h3>Vectorisation: stop writing loops over numbers</h3>
+<p>A Python <code>for</code> loop over a million numbers runs at Python speed. The same operation written as array maths runs in compiled code, often 50 to 200 times faster.</p>
+<pre><code class="language-python">import time
+x = rng.normal(size=1_000_000)
+
+t = time.perf_counter()
+total = 0.0
+for v in x:
+    total += v * v
+loop_time = time.perf_counter() - t
+
+t = time.perf_counter()
+total_vec = np.sum(x * x)              # or x @ x
+vec_time = time.perf_counter() - t
+print(f"loop {loop_time:.3f}s, vectorised {vec_time:.4f}s")</code></pre>
+<h3>Broadcasting</h3>
+<p>Broadcasting lets NumPy combine arrays of different shapes without copying data. The rule: compare shapes from the right; two dimensions are compatible if they are equal or one of them is 1.</p>
+<pre><code class="language-python">X = rng.normal(size=(100, 5))          # (100, 5)
+mu = X.mean(axis=0)                    # (5,)  mean of each column
+sigma = X.std(axis=0)                  # (5,)
+X_std = (X - mu) / sigma               # (100, 5) - (5,) -&gt; broadcast across rows
+print(X_std.mean(axis=0).round(6))     # ~0 for every column
+print(X_std.std(axis=0).round(6))      # ~1 for every column</code></pre>
+<p>That three-line standardisation is something you will do before training almost every classical model.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 620 150" role="img" aria-label="Broadcasting a row vector across a matrix">
+<text x="10" y="20" class="muted">X  shape (4, 3)</text>
+<g transform="translate(10,30)">
+<rect class="box" x="0" y="0" width="150" height="100"/>
+<line class="wire" x1="0" y1="25" x2="150" y2="25"/><line class="wire" x1="0" y1="50" x2="150" y2="50"/><line class="wire" x1="0" y1="75" x2="150" y2="75"/>
+<line class="wire" x1="50" y1="0" x2="50" y2="100"/><line class="wire" x1="100" y1="0" x2="100" y2="100"/>
+</g>
+<text x="185" y="85" font-size="22">−</text>
+<text x="215" y="20" class="muted">mu  shape (3,)</text>
+<g transform="translate(215,30)">
+<rect x="0" y="0" width="150" height="25" class="accent" opacity="0.35"/>
+<rect class="wire" x="0" y="0" width="150" height="25"/>
+<rect x="0" y="25" width="150" height="75" class="accent" opacity="0.12"/>
+<line class="wire" x1="50" y1="0" x2="50" y2="25"/><line class="wire" x1="100" y1="0" x2="100" y2="25"/>
+<text x="10" y="65" class="muted">virtually copied</text><text x="10" y="82" class="muted">down the rows</text>
+</g>
+<text x="390" y="85" font-size="22">=</text>
+<text x="420" y="20" class="muted">result  shape (4, 3)</text>
+<g transform="translate(420,30)">
+<rect class="box" x="0" y="0" width="150" height="100"/>
+<line class="wire" x1="0" y1="25" x2="150" y2="25"/><line class="wire" x1="0" y1="50" x2="150" y2="50"/><line class="wire" x1="0" y1="75" x2="150" y2="75"/>
+<line class="wire" x1="50" y1="0" x2="50" y2="100"/><line class="wire" x1="100" y1="0" x2="100" y2="100"/>
+</g>
+</svg>
+<figcaption>Broadcasting stretches the size-1 (or missing) dimensions to match, without actually copying memory.</figcaption>
+</figure>
+
+<h3>Axis, reductions and matrix multiplication</h3>
+<pre><code class="language-python">M = np.arange(6).reshape(2, 3)         # [[0 1 2], [3 4 5]]
+M.sum()                                # 15        everything
+M.sum(axis=0)                          # [3 5 7]   collapse rows, one value per column
+M.sum(axis=1)                          # [3 12]    collapse columns, one value per row
+
+W = rng.normal(size=(3, 4))
+out = M @ W                            # (2, 3) @ (3, 4) -&gt; (2, 4)</code></pre>
+<p>The <code>@</code> operator is matrix multiplication. The inner dimensions must match, and they disappear: <code>(a, b) @ (b, c)</code> gives <code>(a, c)</code>. A neural network layer is essentially <code>X @ W + b</code>, so you will write this a lot.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: vectorise a distance computation</p>
+<p>You have 1,000 query vectors <code>Q</code> of shape <code>(1000, 64)</code> and 5,000 database vectors <code>D</code> of shape <code>(5000, 64)</code>. Compute the matrix of Euclidean distances, shape <code>(1000, 5000)</code>, <strong>without any Python loops</strong>. Then find, for each query, the index of its nearest database vector. Hint: expand \(\lVert q - d\rVert^2 = \lVert q\rVert^2 - 2\,q\cdot d + \lVert d\rVert^2\).</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">rng = np.random.default_rng(0)
+Q = rng.normal(size=(1000, 64))
+D = rng.normal(size=(5000, 64))
+
+q2 = (Q ** 2).sum(axis=1, keepdims=True)      # (1000, 1)
+d2 = (D ** 2).sum(axis=1)                     # (5000,)
+sq = q2 - 2 * Q @ D.T + d2                    # (1000, 5000) via broadcasting
+dist = np.sqrt(np.maximum(sq, 0))             # clip tiny negatives from rounding
+nearest = dist.argmin(axis=1)                 # (1000,)
+print(dist.shape, nearest[:5])</code></pre>
+This is the core of nearest-neighbour search, which you will meet again in the embeddings and RAG lessons. <code>keepdims=True</code> keeps <code>q2</code> as a column so it broadcasts across columns.</p>
+</details>
+<h2>pandas and Matplotlib: real data is messy</h2>
+<p>NumPy handles numbers; pandas handles <em>tables</em>: named columns of mixed types, timestamps, missing values, group-bys and joins. Matplotlib draws the pictures. Together they are how you get to know a dataset before you model it, and skipping that step is the most common beginner mistake in ML.</p>
+<h3>A week of sensor data</h3>
+<p>To keep the course offline, we generate a realistic dataset: a week of five-minute readings from an air-quality station, with a daily temperature cycle, morning and evening NO₂ peaks from traffic, some missing values and a few faulty spikes.</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+
+rng = np.random.default_rng(42)
+times = pd.date_range("2026-06-01", periods=7 * 24 * 12, freq="5min")   # one week, every 5 minutes
+hours = times.hour + times.minute / 60
+temp = 18 + 6 * np.sin(2 * np.pi * (hours - 9) / 24) + rng.normal(0, 0.4, len(times))
+no2 = (12 + 10 * np.exp(-((hours - 8) ** 2) / 4)       # morning rush hour
+          + 8 * np.exp(-((hours - 18) ** 2) / 5)        # evening rush hour
+          + rng.normal(0, 1.5, len(times)))
+df = pd.DataFrame({"time": times, "temp_c": temp, "no2_ppb": no2})
+
+gaps = rng.choice(len(df), size=60, replace=False)      # simulate dropouts
+df.loc[gaps, "no2_ppb"] = np.nan
+spikes = rng.choice(len(df), size=8, replace=False)     # simulate faulty readings
+df.loc[spikes, "temp_c"] += rng.choice([-25, 30], size=8)
+df.to_csv("sensor.csv", index=False)</code></pre>
+<h3>Look before you model</h3>
+<pre><code class="language-python">df = pd.read_csv("sensor.csv", parse_dates=["time"])
+df.info()                      # column types and non-null counts
+print(df.describe().round(2))  # min / max reveal the spikes: temp max is ~54 °C
+print(df.isna().sum())         # 60 missing NO2 values</code></pre>
+<p><code>describe()</code> is the fastest sanity check there is. A summer temperature of 54 °C or −10 °C is not weather; it is a broken sensor.</p>
+<h3>Clean: outliers, gaps, resampling</h3>
+<pre><code class="language-python"># 1. Flag outliers as points far from a rolling median (robust to the spikes themselves)
+med = df["temp_c"].rolling(13, center=True, min_periods=1).median()
+outlier = (df["temp_c"] - med).abs() &gt; 5
+print("outliers:", outlier.sum())                     # 8
+df.loc[outlier, "temp_c"] = np.nan
+
+# 2. Fill short gaps by interpolating in time (but never invent long stretches)
+df = df.set_index("time").interpolate(method="time", limit=6)
+
+# 3. Resample to hourly means
+hourly = df.resample("1h").mean()
+
+# 4. Group by hour of day to see the daily cycle
+profile = df.groupby(df.index.hour)["no2_ppb"].mean()
+print(profile.idxmax())                               # 8: the morning peak</code></pre>
+<h3>Plot</h3>
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=False)
+hourly["temp_c"].plot(ax=axes[0], color="tab:red")
+axes[0].set_ylabel("Temperature (°C)")
+profile.plot(ax=axes[1], marker="o")
+axes[1].set_xlabel("Hour of day")
+axes[1].set_ylabel("Mean NO₂ (ppb)")
+fig.tight_layout()
+plt.show()</code></pre>
+<p>The lower panel should show two humps, at 08:00 and 18:00. You have just recovered the structure we hid in the data, which is exactly what exploratory analysis is for.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: extend the analysis</p>
+<p>Using the cleaned data:</p>
+<ol>
+<li>Add a column <code>is_weekend</code> (the week starts on a Monday) and compare the mean NO₂ on weekdays versus weekends. In our synthetic data there is no difference; in real data there would be. Why?</li>
+<li>Compute a 1-hour rolling mean of NO₂ and plot it over the raw series for one day.</li>
+<li>Find the three hours of the week with the highest mean NO₂ using <code>nlargest</code>.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">df["is_weekend"] = df.index.dayofweek &gt;= 5
+print(df.groupby("is_weekend")["no2_ppb"].mean())
+# No difference here, because our generator never used the day of week.
+# Real traffic drops at weekends, so real NO2 would too.
+
+day = df.loc["2026-06-03"]
+ax = day["no2_ppb"].plot(alpha=0.4, label="raw")
+day["no2_ppb"].rolling("1h").mean().plot(ax=ax, label="1 h rolling mean")
+ax.legend(); plt.show()
+
+print(df["no2_ppb"].resample("1h").mean().nlargest(3))</code></pre>
+The weekend question is the important one: a model can only learn patterns that are in its data. Synthetic or unrepresentative data quietly limits what any model can know.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Why is vectorised NumPy code so much faster than a Python loop over the same numbers?</p>
+<ul>
+<li>NumPy uses multiple threads for everything</li>
+<li class="correct">The arithmetic runs in compiled code over contiguous memory instead of the Python interpreter, one element at a time</li>
+<li>Python loops are limited to 1,000 iterations per second</li>
+<li>NumPy approximates the result</li>
+</ul>
+<p class="why">The interpreter overhead per element disappears. Some operations also use SIMD instructions and multithreaded BLAS libraries.</p>
+</div>
+<div class="q">
+<p>X has shape (64, 10) and b has shape (10,). What is the shape of X + b?</p>
+<ul>
+<li class="correct">(64, 10)</li>
+<li>(10, 64)</li>
+<li>(64,)</li>
+<li>An error is raised</li>
+</ul>
+<p class="why">Comparing from the right, 10 matches 10, and the missing leading dimension of b is broadcast across the 64 rows.</p>
+</div>
+<div class="q">
+<p>A has shape (8, 3) and B has shape (3, 5). What is the shape of A @ B?</p>
+<ul>
+<li>(3, 3)</li>
+<li>(8, 3, 5)</li>
+<li class="correct">(8, 5)</li>
+<li>(5, 8)</li>
+</ul>
+<p class="why">The inner dimensions (3 and 3) must match and disappear.</p>
+</div>
+<div class="q">
+<p>Why did we flag outliers using a rolling median rather than a rolling mean?</p>
+<ul>
+<li>Medians are faster to compute</li>
+<li class="correct">A median is barely moved by a few extreme spikes, so the spikes stand out against it</li>
+<li>pandas does not support rolling means</li>
+<li>Means only work on integers</li>
+</ul>
+<p class="why">A single 30-degree spike drags a rolling mean towards itself, making the spike look smaller. The median ignores it.</p>
+</div>
+<div class="q">
+<p>What is wrong with <code>def add_item(x, items=[])</code>?</p>
+<ul>
+<li>Lists cannot be default arguments</li>
+<li class="correct">The same list object is shared across every call, so items pile up between calls</li>
+<li>It needs a type hint</li>
+<li>Nothing; this is the recommended style</li>
+</ul>
+<p class="why">Default values are evaluated once, when the function is defined. Use <code>items=None</code> and create a new list inside.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Python describes the computation; compiled libraries (NumPy, PyTorch) do the work. Write array maths, not loops over numbers.</li>
+<li>Print shapes constantly. Matrix multiplication <code>(a, b) @ (b, c)</code> gives <code>(a, c)</code>; broadcasting aligns shapes from the right.</li>
+<li>Always explore data before modelling: <code>info</code>, <code>describe</code>, missing values, plots. Clean outliers robustly and never invent long gaps.</li>
+<li>Type hints, dataclasses and generators make AI code clearer and let it scale beyond memory.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li><a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy: the absolute basics for beginners</a></li>
+<li><a href="https://pandas.pydata.org/docs/user_guide/10min.html">pandas: 10 minutes to pandas</a></li>
+<li>Jake VanderPlas, <em>Python Data Science Handbook</em> (free online), chapters 2 to 4</li>
+</ul>

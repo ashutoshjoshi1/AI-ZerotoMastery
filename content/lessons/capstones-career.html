@@ -1,0 +1,299 @@
+<!--
+{
+  "title": "Capstone projects and your AI engineering career",
+  "short": "Capstones and career",
+  "summary": "Prove your skills by building one end-to-end system from five capstone specifications with rubrics, then turn the work into a portfolio, prepare for interviews with worked questions, and plan your next ninety days.",
+  "sessions": [
+    "Choose and scope a capstone; set up the repository and the evaluation set first",
+    "Build the core pipeline end to end",
+    "Evaluate, harden and deploy",
+    "Write it up: README, demo video and a technical write-up",
+    "Interview preparation: concepts, coding and system design",
+    "Career paths, continuous learning and your next ninety days"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer. This notebook is a capstone workbook.",
+  "glossary": []
+}
+-->
+<h2>Why a capstone</h2>
+<p>Courses build knowledge; projects build skill and evidence. One well-executed, end-to-end project, with an evaluation set, measured results and an honest write-up, says more to an employer or a team lead than a dozen certificates. It also exposes the gaps you did not know you had, which is the point.</p>
+<p>The six sessions of this lesson are a minimum. A good capstone takes two to six weeks of hour-a-day work. Let it.</p>
+<h2>How to run your capstone</h2>
+<ol>
+<li><strong>Scope narrowly.</strong> One user, one job, done well. "An assistant for everything about our instruments" fails; "answers calibration-procedure questions for model X from the service manual, with page citations" succeeds.</li>
+<li><strong>Evaluation set first.</strong> Before writing the system, write 30 to 50 test cases with expected outcomes (lesson <a data-ref="evaluation"></a>). This defines "done".</li>
+<li><strong>Walking skeleton.</strong> Get the crudest end-to-end version working in the first session, then improve the weakest stage, measuring each change.</li>
+<li><strong>Keep a decision log.</strong> For each significant choice, write what you chose, the alternatives and the evidence. This becomes the most impressive part of your write-up.</li>
+<li><strong>Finish.</strong> Deployed, documented and measured beats ambitious and half-built.</li>
+</ol>
+<h2>The five capstones</h2>
+<p>Pick one. Each has a core specification, stretch goals and a rubric. They are designed so that together they exercise everything in the course; if you do more than one later, choose ones that cover different parts.</p>
+<h3>Capstone A: technical documentation assistant (RAG)</h3>
+<p><strong>Build</strong> a question-answering assistant over a real document collection of at least 300 pages (manuals, standards, a project's documentation, public technical reports).</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>Parsing that handles the collection's real formats, including at least tables or scans.</li>
+<li>Hybrid retrieval with reranking; metadata filters (document type or product).</li>
+<li>Answers with inline citations to document and page or section; explicit "not in the documents" behaviour.</li>
+<li>An evaluation set of at least 60 questions (including 10 unanswerable), with retrieval and answer metrics reported for at least three configurations.</li>
+<li>A streaming API (FastAPI) and a minimal web or command-line interface; request tracing.</li>
+</ul>
+<p><strong>Stretch goals</strong>: contextual retrieval; conversational follow-ups with query rewriting; an agentic mode for multi-part questions with a cost comparison; offline mode with a local model.</p>
+<h3>Capstone B: operations agent with MCP tools</h3>
+<p><strong>Build</strong> an agent that helps operate something real or realistically simulated: a fleet of devices, a home lab, a cloud project, a data pipeline.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>An MCP server exposing at least four tools (mostly read-only) and one resource.</li>
+<li>At least one consequential tool protected by human approval showing the exact action.</li>
+<li>Step and cost limits; complete traces of every run.</li>
+<li>An evaluation of at least 25 tasks with checkable outcomes, reporting success rate, average steps, cost and latency.</li>
+<li>An attack set of at least 8 prompt-injection and misuse cases, with results before and after your defences.</li>
+</ul>
+<p><strong>Stretch goals</strong>: a planner that writes and updates an explicit plan; long-term memory of past incidents via retrieval; a comparison with a fixed workflow for the most common tasks.</p>
+<h3>Capstone C: anomaly detection with narrative reports</h3>
+<p><strong>Build</strong> a pipeline over time-series data (your own sensor data, public air-quality or weather station data, server metrics) that detects anomalies and explains them.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>Data cleaning and feature engineering (lesson <a data-ref="python-for-ai"></a>) with documented choices.</li>
+<li>At least two detection methods (rules plus a statistical or ML detector) evaluated against labelled or injected anomalies with precision and recall.</li>
+<li>An LLM step that turns each detection into a structured report (likely cause, evidence, confidence, recommended action), grounded in the data and any available logs.</li>
+<li>A judged evaluation of report quality on a sample, with a rubric.</li>
+<li>A daily scheduled run producing a readable summary.</li>
+</ul>
+<p><strong>Stretch goals</strong>: a chat interface for follow-up questions using tools over the data; forecasting to anticipate problems; a feedback loop where confirmed or dismissed alerts improve thresholds.</p>
+<h3>Capstone D: distil a small model for a structured task</h3>
+<p><strong>Build</strong> a fine-tuned small open model that performs a narrow extraction or classification task nearly as well as a frontier model at a fraction of the cost.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A task with a strict output schema and a held-out evaluation set of at least 100 human-checked examples.</li>
+<li>A training set of at least 500 examples (distilled from a large model, reviewed by sampling).</li>
+<li>LoRA or QLoRA fine-tuning of a model of 3 billion parameters or fewer, with training and validation curves.</li>
+<li>Comparison of four systems on the eval set: small model prompted, small model fine-tuned, large model prompted, and a routed combination; report accuracy per field, latency and cost per thousand requests.</li>
+<li>Deployment of the fine-tuned model behind an OpenAI-compatible server (vLLM, Ollama or llama.cpp).</li>
+</ul>
+<p><strong>Stretch goals</strong>: quantise to 4-bit and measure the quality change; a DPO round on preference pairs from your error analysis; run it on a CPU-only machine.</p>
+<h3>Capstone E: evaluation and observability for an LLM feature</h3>
+<p><strong>Build</strong> the evaluation and monitoring layer for an existing LLM feature: one from earlier in the course, an open-source project, or one at work (with permission).</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A golden dataset of at least 100 cases with slices, sourced from real or realistic usage.</li>
+<li>Code graders plus at least two LLM-judge graders, each calibrated against at least 40 human grades with agreement reported.</li>
+<li>A harness producing per-slice reports with confidence intervals and fixed/broken case lists between two versions.</li>
+<li>CI integration that blocks a change on per-slice thresholds.</li>
+<li>A tracing setup and a dashboard of cost, latency percentiles and judged quality on sampled traffic.</li>
+</ul>
+<p><strong>Stretch goals</strong>: an online feedback loop that turns low-rated traces into candidate eval cases; drift detection on input topics; a red-team suite run nightly.</p>
+<h3>Rubric (applies to every capstone)</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Developing</th>
+<th>Solid</th>
+<th>Excellent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Problem framing</td>
+<td>Vague goal</td>
+<td>Clear user, task and success criteria</td>
+<td>Criteria tied to the real cost of errors; scope deliberately narrow</td>
+</tr>
+<tr>
+<td>Evaluation</td>
+<td>A few manual checks</td>
+<td>Eval set with metrics, run on each change</td>
+<td>Sliced, statistically sound, judges calibrated, failures analysed</td>
+</tr>
+<tr>
+<td>Engineering</td>
+<td>Notebook only</td>
+<td>Clean repository, tests, reproducible setup</td>
+<td>Typed, tested, traced, containerised, configurable models</td>
+</tr>
+<tr>
+<td>Iteration</td>
+<td>One version</td>
+<td>Several measured improvements</td>
+<td>Decision log showing hypotheses, experiments and evidence</td>
+</tr>
+<tr>
+<td>Safety and cost</td>
+<td>Not considered</td>
+<td>Main risks addressed; cost estimated</td>
+<td>Attack tests, least privilege, cost per request measured and optimised</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td>Code only</td>
+<td>README with setup and results</td>
+<td>Write-up a stranger can follow, with honest limitations and next steps</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: scope your capstone</p>
+<p>Write a one-page project brief before writing any code:</p>
+<ol>
+<li>One sentence: who it is for and what it does.</li>
+<li>Three measurable success criteria.</li>
+<li>Your data sources and how you will build the eval set.</li>
+<li>The simplest architecture that could work, as a sketch.</li>
+<li>The three riskiest assumptions, and how you will test each in the first week.</li>
+<li>What you will deliberately <strong>not</strong> build.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show an example brief (Capstone A)</summary>
+<p><strong>Who and what</strong>: answers calibration and maintenance questions for one instrument model from its 420-page service manual and 60 service bulletins, with page citations, for field technicians.</p>
+<p><strong>Success criteria</strong>: (1) correct page in the top 6 retrieved for at least 90% of 60 answerable test questions; (2) faithful, correctly cited answers for at least 85% as judged by a calibrated judge; (3) says "not in the documents" for at least 9 of 10 unanswerable questions; median time to first token under 2 seconds.</p>
+<p><strong>Data and eval</strong>: the PDF manual and bulletins; 40 questions from two experienced technicians plus 20 reviewed synthetic questions and 10 unanswerable ones; gold page numbers recorded for each.</p>
+<p><strong>Architecture</strong>: Docling parsing, section-level chunks with title and section path, BM25 plus embeddings with RRF, cross-encoder reranking to 6, a mid-tier model with the grounded prompt, FastAPI streaming, JSON-line traces.</p>
+<p><strong>Riskiest assumptions</strong>: tables of torque values parse correctly (test 10 tables on day one); technicians phrase questions very differently from the manual (collect real questions early); bulletins that supersede manual sections can be detected (check metadata).</p>
+<p><strong>Not building</strong>: user accounts, a mobile app, multi-manual support, fine-tuning.</p>
+</details>
+<h2>Write it up</h2>
+<p>Your write-up is what most people will see. Structure it like a short engineering report:</p>
+<ol>
+<li><strong>The problem</strong> in two sentences, and a 60-second demo video or animated GIF at the top.</li>
+<li><strong>Results first</strong>: a table of your final metrics against the baseline.</li>
+<li><strong>Architecture</strong>: one diagram and a paragraph per component.</li>
+<li><strong>What I tried</strong>: the decision log, condensed. Include things that did not work and why; this is often the most impressive part.</li>
+<li><strong>Limitations and next steps</strong>, honestly.</li>
+<li><strong>How to run it</strong>: setup in under five commands.</li>
+</ol>
+<p>Publish the repository, and consider a blog post. Clear writing about a real project is one of the strongest signals of an engineer who can work on a team.</p>
+<h2>Interview preparation</h2>
+<p>AI engineering interviews typically combine coding, ML and LLM fundamentals, system design and a discussion of your projects. The concept questions below come up repeatedly. Answer each aloud in under two minutes before opening the suggested answer.</p>
+<details class="note">
+<summary>Explain the bias-variance trade-off and how you diagnose it.</summary>
+<p>Bias is error from overly simple assumptions (underfitting: high training and validation error); variance is error from sensitivity to the particular training data (overfitting: low training error, high validation error). Diagnose by comparing training and validation error; fix underfitting with more capacity or better features, overfitting with more data, regularisation, simpler models or early stopping (lesson <a data-ref="ml-fundamentals"></a>).</p>
+</details>
+<details class="note">
+<summary>Walk through scaled dot-product attention. Why divide by √d_k?</summary>
+<p>Each token's query is dotted with every key, scaled, softmaxed into weights, and used to average the values: softmax(QKᵀ/√d_k)V. Dot products of random d-dimensional vectors have standard deviation √d, so without scaling large dimensions push softmax into saturation and gradients vanish (lesson <a data-ref="transformers"></a>).</p>
+</details>
+<details class="note">
+<summary>What is the KV cache, and why does it matter for serving?</summary>
+<p>During generation, keys and values of previous tokens are stored so each step only computes the new token's projections. It makes generation efficient but consumes memory proportional to layers × KV heads × head dimension × context length × concurrent sequences, which often limits how many users a GPU can serve (lessons <a data-ref="transformers"></a> and <a data-ref="deployment-llmops"></a>).</p>
+</details>
+<details class="note">
+<summary>How would you reduce hallucinations in a customer-facing assistant?</summary>
+<p>Ground answers in retrieved sources with citations; instruct and allow abstention; use structured outputs and tools for facts and arithmetic; lower temperature for factual tasks; add a faithfulness check step for high-risk answers; evaluate faithfulness and abstention on a golden set and monitor them in production (lessons <a data-ref="rag"></a> and <a data-ref="evaluation"></a>).</p>
+</details>
+<details class="note">
+<summary>RAG versus fine-tuning versus long context: how do you choose?</summary>
+<p>RAG for knowledge that is large, changing, access-controlled or needs citations. Fine-tuning for behaviour, format, style, or making a small model do a narrow task cheaply. Long context with caching for small, stable collections where simplicity matters. Often combined (lessons <a data-ref="rag"></a> and <a data-ref="fine-tuning"></a>).</p>
+</details>
+<details class="note">
+<summary>Explain LoRA. Why does it work, and what does it save?</summary>
+<p>Freeze the pretrained weights and learn a low-rank update BA (rank r much smaller than the layer dimensions), scaled by α/r, with B initialised to zero. Weight updates during fine-tuning have low intrinsic rank, so this captures most of the benefit while training under 1% of the parameters, cutting optimiser memory dramatically and producing small swappable adapters; QLoRA also stores the base model in 4-bit (lesson <a data-ref="fine-tuning"></a>).</p>
+</details>
+<details class="note">
+<summary>How do you evaluate an LLM feature when outputs are open-ended?</summary>
+<p>A golden dataset from real usage with hard and negative cases; code graders for anything rule-based; LLM judges on specific criteria with clear rubrics, structured verdicts, order swapping for pairwise comparisons, and calibration against human grades; per-slice reporting with confidence intervals and fixed/broken case analysis; online signals in production (lesson <a data-ref="evaluation"></a>).</p>
+</details>
+<details class="note">
+<summary>What is prompt injection and how do you defend against it?</summary>
+<p>Instructions embedded in content the model reads (direct from users, or indirect via documents, web pages, tool results) that try to override the system's instructions. No complete fix exists, so defend in depth: separate and label untrusted content, but above all limit impact with least-privilege tools, human approval for consequential actions, output filtering, safe rendering and avoiding agents that combine untrusted input, private data and external communication (lesson <a data-ref="safety-security"></a>).</p>
+</details>
+<details class="note">
+<summary>Explain RLHF and DPO.</summary>
+<p>RLHF: collect human preference comparisons, train a reward model to predict them, then optimise the language model with reinforcement learning to maximise reward with a KL penalty that keeps it close to the supervised model. DPO: skip the reward model and RL, and optimise the preference pairs directly with a classification-style loss relative to a frozen reference model; simpler and more stable (lessons <a data-ref="how-llms-are-built"></a> and <a data-ref="fine-tuning"></a>).</p>
+</details>
+<details class="note">
+<summary>Your RAG system's answers got worse after a change. How do you debug it?</summary>
+<p>Reproduce on the eval set and list newly broken cases. For each, check the trace: was the right chunk retrieved (parsing, chunking, embedding, filters)? Was it ranked high enough (reranker)? Was it in the prompt but ignored or contradicted (prompt, model, context length)? Fix the stage responsible, re-run the full eval, and add the cases to the regression set (lessons <a data-ref="rag"></a>, <a data-ref="evaluation"></a> and <a data-ref="deployment-llmops"></a>).</p>
+</details>
+<h3>Coding interviews</h3>
+<p>Expect standard software engineering questions plus ML-flavoured ones. Practise implementing, without libraries and against a timer: softmax and cross-entropy; logistic regression with gradient descent; k-means; a cosine-similarity top-k search; scaled dot-product attention with a causal mask; a BPE merge step; a token-bucket rate limiter; and an async function that calls an API with retries and a concurrency limit. You have written versions of almost all of these in this course.</p>
+<h3>System design interviews</h3>
+<p>Use the eight-part framework from lesson <a data-ref="system-design"></a> and practise on prompts such as: a customer-support assistant for a software company; semantic search over a million product listings; a code-review bot; a meeting summariser; content moderation for a forum; an agent that books travel within a company policy. Talk in trade-offs, estimate costs and latency with rough numbers, and always say how you would evaluate it.</p>
+<h3>Talking about your projects</h3>
+<p>Prepare a three-minute story for your capstone: the problem, your approach, one hard decision and the evidence behind it, the results, and what you would do next. Interviewers listen for measurement and judgement more than for the fanciest technique.</p>
+<h2>Career paths and the next ninety days</h2>
+<h3>Where this course can take you</h3>
+<ul>
+<li><strong>AI engineer / LLM application engineer</strong>: building products on models. The direct target of this course.</li>
+<li><strong>ML engineer / MLOps</strong>: training pipelines, serving infrastructure, model platforms. Go deeper on lessons <a data-ref="pytorch"></a>, <a data-ref="fine-tuning"></a> and <a data-ref="deployment-llmops"></a>, plus distributed systems.</li>
+<li><strong>Applied scientist / research engineer</strong>: new methods and models. Go deeper on maths, papers and large-scale training.</li>
+<li><strong>Domain expert who builds with AI</strong>: often the most valuable profile of all. Deep knowledge of a field (atmospheric science, instrumentation, medicine, law, finance) combined with these skills lets you build things generalists cannot even specify. If you already have a domain, lean into it.</li>
+</ul>
+<h3>Keep growing</h3>
+<ul>
+<li><strong>Build in public</strong>: a project or write-up every month or two.</li>
+<li><strong>Contribute</strong> to open-source AI tools you use: documentation, examples and bug reports count.</li>
+<li><strong>Teach</strong>: explaining forces understanding. Write the post you wish you had found.</li>
+<li><strong>Revisit fundamentals yearly</strong>: reread your learning log and redo two or three hands-on exercises; you will be surprised what you now see.</li>
+</ul>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: your ninety-day plan</p>
+<p>Write a plan with three 30-day blocks. For each block: one thing to build, one topic to go deeper on, one thing to publish, and one way to get feedback from people more experienced than you. Put it at the top of your learning log, and schedule a review at day 30.</p>
+</div>
+<details class="solution">
+<summary>Show an example plan</summary>
+<p><strong>Days 1 to 30</strong>: build Capstone A on the service manuals you use at work (with permission, or on public equivalents); go deeper on retrieval evaluation; publish the repository with a results table; get feedback by demoing to two colleagues who would actually use it.</p>
+<p><strong>Days 31 to 60</strong>: extend it with an MCP server and an agent mode (Capstone B ideas); go deeper on security and prompt injection; publish a write-up of what worked and what did not; get feedback by asking a security-minded colleague to attack it.</p>
+<p><strong>Days 61 to 90</strong>: distil the most common query type into a fine-tuned small model running offline (Capstone D ideas); go deeper on quantisation and serving; publish a cost-and-quality comparison; get feedback through an open-source contribution or a talk at a local meetup.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>What should you build first in a capstone?</p>
+<ul>
+<li>The user interface</li>
+<li>The most advanced component</li>
+<li class="correct">The evaluation set, then a crude end-to-end walking skeleton</li>
+<li>A fine-tuned model</li>
+</ul>
+<p class="why">The eval set defines done; the skeleton exposes integration problems early.</p>
+</div>
+<div class="q">
+<p>What makes a capstone write-up most convincing?</p>
+<ul>
+<li>Using as many techniques as possible</li>
+<li class="correct">Measured results against a baseline, a decision log including what failed, and honest limitations</li>
+<li>A long list of libraries used</li>
+<li>Screenshots of the code</li>
+</ul>
+<p class="why">Evidence and judgement are what reviewers and interviewers look for.</p>
+</div>
+<div class="q">
+<p>In a system design interview, what should you always cover?</p>
+<ul>
+<li>Which programming language you prefer</li>
+<li class="correct">How you would evaluate the system, alongside trade-offs and rough cost and latency estimates</li>
+<li>The exact model name to use</li>
+<li>Only the happy path</li>
+</ul>
+<p class="why">Evaluation and trade-offs separate senior answers from junior ones.</p>
+</div>
+<div class="q">
+<p>Why is deep domain expertise valuable for an AI engineer?</p>
+<ul>
+<li class="correct">It lets you identify problems worth solving, specify what good looks like, and build evaluation sets generalists cannot</li>
+<li>Domain experts do not need to evaluate systems</li>
+<li>It replaces the need for engineering skills</li>
+<li>Models cannot work without it</li>
+</ul>
+<p class="why">Knowing the domain turns generic AI capability into specific, valuable systems.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>A narrow, finished, measured project is worth more than any number of half-built ambitious ones. Build the eval set first and keep a decision log.</li>
+<li>The five capstones together exercise RAG, agents and MCP, classical ML with LLM reporting, fine-tuning and distillation, and evaluation and observability.</li>
+<li>Write it up with results first, what you tried, honest limitations and easy setup.</li>
+<li>Interviews test fundamentals, coding, system design and judgement; you have built most of what they ask about.</li>
+<li>Keep building, publishing, teaching and revisiting fundamentals. If you have a domain, combine it with these skills.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>The <a href="../resources.html">further resources</a> page of this course</li>
+<li>Your own learning log, reread from lesson <a data-ref="welcome"></a></li>
+</ul>

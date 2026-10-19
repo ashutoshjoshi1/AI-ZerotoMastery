@@ -1,0 +1,316 @@
+<!--
+{
+  "title": "How large language models are built",
+  "short": "How LLMs are built",
+  "summary": "The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.",
+  "sessions": [
+    "Tokenization: implement byte-pair encoding and see its quirks",
+    "Pretraining: data, objective, compute and scaling laws",
+    "Post-training: instruction tuning, RLHF, DPO, reasoning models",
+    "Decoding, context windows, hallucination, and the model landscape"
+  ],
+  "objectives": [],
+  "prerequisites": [],
+  "runs_on": "Any computer (CPU).",
+  "glossary": [
+    {"term": "Base model", "def": "A model after pretraining only. It continues text rather than following instructions."},
+    {"term": "BPE (byte-pair encoding)", "def": "A tokenizer training method that repeatedly merges the most frequent adjacent pair of tokens into a new token."},
+    {"term": "Context window", "def": "The maximum number of tokens (input plus output) a model can attend to in one request."},
+    {"term": "FLOPs", "def": "Floating-point operations; training a transformer costs about 6 × parameters × tokens."},
+    {"term": "Hallucination", "def": "Fluent, confident output that is false or unsupported."},
+    {"term": "Mixture of experts (MoE)", "def": "Layers with many expert sub-networks and a router that sends each token to a few of them."},
+    {"term": "Pretraining", "def": "Training a model on a huge unlabelled corpus with next-token prediction."},
+    {"term": "Reasoning model", "def": "A model trained to produce extended reasoning before answering, improving with more test-time compute."},
+    {"term": "RLHF", "def": "Reinforcement learning from human feedback: optimising a model against a reward model trained on human preferences."},
+    {"term": "Scaling laws", "def": "Empirical power laws relating model loss to parameters, data and compute."},
+    {"term": "Temperature", "def": "Divides logits before softmax; low values make output more deterministic, high values more random."},
+    {"term": "Test-time compute", "def": "Spending more computation at inference (longer reasoning, sampling several answers) to improve accuracy."},
+    {"term": "Token", "def": "The unit of text a model reads and writes, typically a word piece of about four characters in English."},
+    {"term": "Top-p (nucleus) sampling", "def": "Sampling only from the smallest set of tokens whose probabilities sum to p."}
+  ]
+}
+-->
+<h2>From TinyGPT to a frontier model</h2>
+<p>Your TinyGPT from lesson <a data-ref="transformers"></a> has the same architecture as a frontier LLM, give or take some refinements. The differences are a proper tokenizer, about a million times more parameters, roughly a hundred million times more training data, and a long post-training phase that turns a text predictor into a helpful assistant. This lesson walks through each stage, because each one explains behaviour you will run into as an engineer: odd failures on spelling and arithmetic, the cost of long prompts, why temperature matters, and why models can be confidently wrong.</p>
+<h2>Tokenization</h2>
+<p>Characters make sequences long (attention is quadratic in length); whole words make the vocabulary enormous and cannot handle new words. Modern LLMs use <strong>subword tokens</strong>: frequent words get a single token, rare words are split into pieces, and anything at all can fall back to raw bytes. Vocabularies are typically 32,000 to 260,000 tokens. In English, one token is roughly four characters, or about three-quarters of a word.</p>
+<h3>Byte-pair encoding, implemented</h3>
+<p>BPE starts from the 256 possible byte values and repeatedly merges the most frequent adjacent pair into a new token. Real tokenizers first split text into word-like chunks with a regular expression, so merges never cross word boundaries.</p>
+<pre><code class="language-python">import re
+from collections import Counter
+
+PAT = re.compile(r" ?[A-Za-z]+| ?\d+| ?[^\sA-Za-z\d]+|\s+")   # pre-split into word-like chunks
+
+def merge(ids, pair, new_id):
+    out, i = [], 0
+    while i &lt; len(ids):
+        if i &lt; len(ids) - 1 and (ids[i], ids[i + 1]) == pair:
+            out.append(new_id); i += 2
+        else:
+            out.append(ids[i]); i += 1
+    return out
+
+def train_bpe(text, vocab_size):
+    chunks = [list(c.encode("utf-8")) for c in PAT.findall(text)]
+    merges = {}                                  # (id_a, id_b) -&gt; new_id, in the order learned
+    for new_id in range(256, vocab_size):
+        counts = Counter()
+        for ch in chunks:
+            counts.update(zip(ch, ch[1:]))
+        if not counts:
+            break
+        pair = max(counts, key=counts.get)       # most frequent adjacent pair
+        chunks = [merge(ch, pair, new_id) for ch in chunks]
+        merges[pair] = new_id
+    return merges
+
+def build_vocab(merges):
+    vocab = {i: bytes([i]) for i in range(256)}
+    for (a, b), new_id in merges.items():
+        vocab[new_id] = vocab[a] + vocab[b]
+    return vocab
+
+def encode(text, merges):
+    out = []
+    for chunk in PAT.findall(text):
+        ids = list(chunk.encode("utf-8"))
+        while len(ids) &gt;= 2:
+            # apply the earliest-learned merge available, exactly as in training
+            pair = min(set(zip(ids, ids[1:])), key=lambda p: merges.get(p, float("inf")))
+            if pair not in merges:
+                break
+            ids = merge(ids, pair, merges[pair])
+        out.extend(ids)
+    return out
+
+def decode(ids, vocab):
+    return b"".join(vocab[i] for i in ids).decode("utf-8", errors="replace")</code></pre>
+<p>Train it on a paragraph about tokenizers (repeated a few times) with a 400-token vocabulary, then look at what it does:</p>
+<pre><code class="language-text">'The tokenizer splits words.'   27 bytes -&gt;  6 tokens: 'T' 'he' ' tokenizer' ' splits' ' words' '.'
+'remodelling'                   11 bytes -&gt;  4 tokens: 're' 'model' 'l' 'ing'
+'Tokenization of 3.14159'       23 bytes -&gt; 18 tokens: 'T' 'o' 'k' 'en' 'i' 'z' 'at' 'i' 'on' ' of' ...
+'naïve 🚀'                      11 bytes -&gt; 11 tokens: raw bytes for ï and the emoji</code></pre>
+<p>Even this toy shows the real behaviours:</p>
+<ul>
+<li><strong>Frequent words are one token; rare ones fragment.</strong> " tokenizer" was common in training text, "Tokenization" with a capital T was not, so it shatters into letters.</li>
+<li><strong>Shared pieces carry meaning.</strong> "remodelling" reuses "model".</li>
+<li><strong>Numbers tokenize awkwardly.</strong> Digits are split inconsistently, which is one reason LLMs can be unreliable at arithmetic and at counting letters ("how many r's in strawberry?"): the model never sees individual characters, only tokens.</li>
+<li><strong>Unseen text falls back to bytes.</strong> Nothing is ever unknown, but non-English text and emoji cost many more tokens, which means more cost and less effective context.</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tokens are the unit of everything</p>
+<p>APIs charge per token, context windows are measured in tokens, and latency scales with tokens generated. Use the provider's token counter (or <code>tiktoken</code> for OpenAI-style tokenizers, or a Hugging Face tokenizer for open models) when you estimate costs. Never estimate from word counts in production.</p>
+</div>
+<h2>Pretraining</h2>
+<h3>The objective</h3>
+<p>Exactly what TinyGPT did: minimise cross-entropy on the next token, averaged over every position of every sequence. No labels, no task definitions. To predict the next token of a physics textbook, a chemistry paper, a Python repository and a legal contract, a model has to absorb grammar, facts, reasoning patterns and coding conventions. Capabilities emerge as a by-product of compression.</p>
+<h3>The data</h3>
+<p>Pretraining corpora are trillions of tokens. Meta reported training Llama 3 on over 15 trillion tokens, for example. Sources are mostly filtered web crawls (such as Common Crawl), plus code, books, scientific papers, encyclopaedias, and increasingly synthetic data generated by other models. Most of the work is in <strong>curation</strong>: removing duplicates, spam and boilerplate, filtering for quality (often with classifiers trained to spot educational text), removing personal information, balancing languages and domains, and deciding the mixture. Data quality is now widely regarded as one of the biggest levers on model quality.</p>
+<h3>Compute and scaling laws</h3>
+<p>A useful rule of thumb: training a dense transformer with \(N\) parameters on \(D\) tokens costs about</p>
+\[
+C \approx 6ND \ \text{floating-point operations}
+\]
+<p>(two for the forward pass and four for the backward pass, per parameter per token). A 70-billion-parameter model on 15 trillion tokens is about \(6.3\times10^{24}\) FLOPs: thousands of GPUs for months.</p>
+<p>In 2020, Kaplan and colleagues found that loss falls as a smooth <strong>power law</strong> in parameters, data and compute, over many orders of magnitude. That predictability is why labs can plan huge training runs from small experiments. In 2022 the Chinchilla paper refined the recipe: for a fixed compute budget, the loss-optimal split is roughly <strong>20 training tokens per parameter</strong>, so many earlier models were too big for their data. Today most models are trained on far more tokens than that ratio suggests, because a smaller model trained longer is cheaper to <em>serve</em>, and serving costs dominate over a model's lifetime.</p>
+<h3>Architecture refinements you will see in model cards</h3>
+<ul>
+<li><strong>RMSNorm</strong> instead of LayerNorm, applied before each sub-layer (pre-norm).</li>
+<li><strong>SwiGLU</strong> MLPs instead of a plain GELU MLP.</li>
+<li><strong>RoPE</strong> positions and <strong>grouped-query attention</strong> (lesson <a data-ref="transformers"></a>).</li>
+<li><strong>Mixture of experts (MoE)</strong>: each MLP is replaced by many "expert" MLPs and a small router that sends each token to only a few of them. Total parameters can be huge while the compute per token stays modest. Several leading open models use MoE.</li>
+</ul>
+<h2>Post-training: from predictor to assistant</h2>
+<p>A freshly pretrained <strong>base model</strong> continues text. Ask it "What is the capital of France?" and it may continue with "What is the capital of Germany?", because lists of quiz questions are common on the web. Post-training turns it into something that follows instructions, holds a conversation, refuses harmful requests and uses tools.</p>
+<h3>1. Supervised fine-tuning (SFT)</h3>
+<p>Train further, with the same next-token loss, on curated examples of the desired behaviour: prompts paired with high-quality responses, written by people or generated and filtered. Usually tens of thousands to millions of examples, formatted with a <strong>chat template</strong> that marks system, user and assistant turns with special tokens. SFT teaches the format and the style of being helpful.</p>
+<h3>2. Learning from preferences: RLHF</h3>
+<p>It is easier for people to <em>compare</em> two responses than to write a perfect one. <strong>Reinforcement learning from human feedback</strong> collects many comparisons ("A is better than B"), trains a <strong>reward model</strong> to predict which response people prefer, then optimises the LLM with reinforcement learning (classically PPO) to produce responses the reward model scores highly. A <strong>KL penalty</strong> (lesson <a data-ref="math-for-ai"></a>) keeps the model close to its SFT starting point, so it cannot drift into weird text that happens to fool the reward model. InstructGPT (2022) showed that a small RLHF-tuned model could be preferred over a much larger base model.</p>
+<h3>3. Direct preference optimisation (DPO)</h3>
+<p>DPO (2023) skips the separate reward model and the RL loop. It turns preference pairs directly into a classification-style loss that raises the likelihood of preferred responses relative to rejected ones, again anchored to a reference model. It is simpler and more stable, and widely used for open models. You will run it in lesson <a data-ref="fine-tuning"></a>.</p>
+<h3>4. AI feedback and principles</h3>
+<p>Human labelling is slow and costly. <strong>RLAIF</strong> uses a model to judge responses, often against a written set of principles. Anthropic's Constitutional AI is the best-known example: a model critiques and revises its own outputs according to a constitution of principles, and AI-generated preferences train the final model.</p>
+<h3>5. Reasoning models</h3>
+<p>A more recent shift: train models with reinforcement learning on problems whose answers can be <strong>checked automatically</strong> (maths with known answers, code with unit tests), rewarding correct final answers. Models learn to produce long chains of intermediate reasoning, to try approaches, notice mistakes and backtrack. At inference time these models spend extra tokens "thinking" before answering, and accuracy on hard problems improves as they are allowed to think longer. This <strong>test-time compute</strong> is a second scaling axis next to model size. As an engineer you will see it as a setting (a thinking or reasoning budget) that trades latency and cost for accuracy.</p>
+<h2>Decoding: turning distributions into text</h2>
+<p>At each step the model outputs a probability for every token in its vocabulary. How you pick from that distribution changes the output a lot.</p>
+<ul>
+<li><strong>Greedy</strong>: always take the most likely token. Deterministic, but prone to dull, repetitive text.</li>
+<li><strong>Temperature</strong>: divide logits by \(T\) before softmax (you explored this in lesson <a data-ref="math-for-ai"></a>). Below 1 sharpens, above 1 flattens.</li>
+<li><strong>Top-k</strong>: sample only among the \(k\) most likely tokens.</li>
+<li><strong>Top-p (nucleus)</strong>: sample from the smallest set of tokens whose probabilities add up to \(p\), so the candidate set adapts to how confident the model is.</li>
+</ul>
+<pre><code class="language-python">import numpy as np
+rng = np.random.default_rng(0)
+
+def softmax(z):
+    z = z - z.max(); e = np.exp(z); return e / e.sum()
+
+def sample(logits, temperature=1.0, top_k=None, top_p=None):
+    p = softmax(logits / max(temperature, 1e-6))
+    if top_k is not None:
+        p = np.where(p &gt;= np.sort(p)[-top_k], p, 0)
+    if top_p is not None:
+        order = np.argsort(-p)
+        keep = order[: np.searchsorted(np.cumsum(p[order]), top_p) + 1]
+        p = np.where(np.isin(np.arange(len(p)), keep), p, 0)
+    p = p / p.sum()
+    return rng.choice(len(p), p=p), p.round(3)
+
+logits = np.array([3.0, 2.5, 1.0, 0.2, -1.0])
+print(sample(logits))                    # full distribution [0.549 0.333 0.074 0.033 0.01 ]
+print(sample(logits, top_k=2))           # [0.622 0.378 0.    0.    0.   ]
+print(sample(logits, top_p=0.9))         # [0.574 0.348 0.078 0.    0.   ]
+print(sample(logits, temperature=0.1))   # [0.993 0.007 0.    0.    0.   ]  nearly greedy</code></pre>
+<p><strong>Practical defaults.</strong> For extraction, classification, code and anything with one right answer, use low temperature (0 to 0.3). For brainstorming and creative writing, use higher (0.7 to 1.0). Change one of temperature or top-p, not both at once. Note that temperature 0 is not a guarantee of identical outputs from a hosted API; batching and floating-point effects on GPUs can still introduce small differences.</p>
+<h3>Context windows</h3>
+<p>The context window is the maximum number of tokens (prompt plus output) the model can attend to. It grew from 2,048 tokens for GPT-3 to hundreds of thousands or more for current models. Three caveats matter in practice:</p>
+<ul>
+<li><strong>Cost and latency scale with input length.</strong> Every request pays for its whole prompt, every time (prompt caching, lesson <a data-ref="llm-apis"></a>, helps).</li>
+<li><strong>Use of long context is uneven.</strong> Models often retrieve information placed at the start or end of a long prompt more reliably than information buried in the middle ("lost in the middle"). Test this for your use case rather than assuming.</li>
+<li><strong>Output length is limited separately</strong>, by a maximum output token setting.</li>
+</ul>
+<h2>Why models make things up</h2>
+<p>LLMs are trained to produce plausible continuations. When the training data contained an answer and the model learned it well, plausible and true coincide. When it did not, the model can still produce something fluent and confident. This is <strong>hallucination</strong> (or confabulation). Contributing causes:</p>
+<ul>
+<li>The objective rewards plausibility, not truth, and pretraining text rarely says "I don't know".</li>
+<li>Knowledge has a <strong>cutoff date</strong>; the model knows nothing about later events unless you supply them.</li>
+<li>Rare facts (a specific paper's page numbers, an obscure API's parameters, a person's exact biography) are weakly learned.</li>
+<li>Long reasoning chains compound small errors.</li>
+</ul>
+<p>Post-training reduces it substantially, but no model eliminates it. Engineering mitigations, which fill much of part VI: give the model the facts (retrieval, lesson <a data-ref="rag"></a>), ask for citations and check them, let it use tools for lookups and arithmetic (lesson <a data-ref="agents"></a>), allow and reward "I don't know", and measure it with evaluations (lesson <a data-ref="evaluation"></a>).</p>
+<h2>The model landscape</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Closed, API-only (e.g. Claude, GPT, Gemini)</th>
+<th>Open-weight (e.g. Llama, Mistral, Qwen, DeepSeek, Gemma)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capability</td>
+<td>Usually the frontier</td>
+<td>Strong and improving fast, typically somewhat behind the frontier</td>
+</tr>
+<tr>
+<td>Setup</td>
+<td>An API key</td>
+<td>GPUs, a serving stack, operations work</td>
+</tr>
+<tr>
+<td>Data control</td>
+<td>Data leaves your network (check the provider's retention and training terms)</td>
+<td>Can run fully on-premise or offline</td>
+</tr>
+<tr>
+<td>Customisation</td>
+<td>Prompting, some fine-tuning options</td>
+<td>Full fine-tuning, quantisation, modification</td>
+</tr>
+<tr>
+<td>Cost shape</td>
+<td>Per token, no fixed cost</td>
+<td>Mostly fixed hardware cost; cheap at high volume</td>
+</tr>
+</tbody>
+</table>
+<p>Most real systems mix them: a frontier model for hard reasoning, a small open model for high-volume classification, an embedding model for search. Model names and rankings change every few months, so build systems where the model is a configuration value, and keep an evaluation set (lesson <a data-ref="evaluation"></a>) to tell you objectively when to switch.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: tokenizers in the wild</p>
+<p>Install <code>tiktoken</code> (<code>uv add tiktoken</code>) and load <code>tiktoken.get_encoding("cl100k_base")</code>, a real production tokenizer.</p>
+<ol>
+<li>Tokenize an English sentence, the same sentence translated into another language you know, a line of Python, and a long number. Compare token counts per character.</li>
+<li>Print the individual tokens for "strawberry", " strawberry" and "Strawberry". Why do these differ, and how does this relate to letter-counting failures?</li>
+<li>Remove the pre-split regex from the BPE code above (treat the whole text as one chunk) and retrain. Look at the longest learned tokens. What goes wrong?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p><pre><code class="language-python">import tiktoken
+enc = tiktoken.get_encoding("cl100k_base")
+for s in ["The instrument was calibrated yesterday.",
+          "Das Instrument wurde gestern kalibriert.",
+          "for i in range(10): print(i ** 2)",
+          "31415926535897932384"]:
+    ids = enc.encode(s)
+    print(len(s), len(ids), [enc.decode([t]) for t in ids])
+for s in ["strawberry", " strawberry", "Strawberry"]:
+    print(repr(s), [enc.decode([t]) for t in enc.encode(s)])</code></pre>
+1. English is the most token-efficient; other languages usually need more tokens per character, so they cost more and fit less into the context window. Long numbers are split into chunks of a few digits.
+2. A leading space and capitalisation produce different token sequences: " strawberry" and "strawberry" are distinct tokens or splits. The model sees a few opaque ids, not ten letters, so counting the r's requires knowledge it never directly observes.
+3. Without pre-splitting, frequent multi-word phrases (including the trailing space and the next word) merge into single tokens. The vocabulary fills with phrase fragments that generalise poorly, and the same word gets different tokens depending on its neighbours.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Why do LLMs often struggle to count the letters in a word?</p>
+<ul>
+<li>They are trained only on numbers</li>
+<li class="correct">They see tokens, multi-character chunks, rather than individual letters</li>
+<li>Their context window is too short</li>
+<li>Letter counting is disabled during post-training</li>
+</ul>
+<p class="why">The model has to infer spelling from tokens it never sees broken into characters.</p>
+</div>
+<div class="q">
+<p>Roughly how many FLOPs does it take to train a 7-billion-parameter model on 140 billion tokens, using C ≈ 6ND?</p>
+<ul>
+<li>5.9 × 10^12</li>
+<li class="correct">5.9 × 10^21</li>
+<li>9.8 × 10^20</li>
+<li>6 × 10^9</li>
+</ul>
+<p class="why">6 × 7e9 × 1.4e11 ≈ 5.9e21. That is the Chinchilla-style budget of 20 tokens per parameter.</p>
+</div>
+<div class="q">
+<p>What is the role of the KL penalty in RLHF?</p>
+<ul>
+<li>It speeds up training</li>
+<li class="correct">It keeps the tuned model close to its starting point so it cannot drift into exploiting the reward model</li>
+<li>It removes the need for human preferences</li>
+<li>It makes the model's outputs shorter</li>
+</ul>
+<p class="why">Without it the policy can find degenerate outputs that score highly on an imperfect reward model.</p>
+</div>
+<div class="q">
+<p>You need a model to extract invoice fields into JSON reliably. Which decoding setting fits best?</p>
+<ul>
+<li class="correct">Low temperature, such as 0 to 0.2</li>
+<li>Temperature 1.5 for variety</li>
+<li>High top-k with high temperature</li>
+<li>It makes no difference</li>
+</ul>
+<p class="why">Tasks with one right answer want the most likely tokens, not creative variation.</p>
+</div>
+<div class="q">
+<p>What distinguishes reasoning models from standard chat models?</p>
+<ul>
+<li>They have larger context windows</li>
+<li class="correct">They are trained with RL on checkable problems to produce long reasoning before answering, and improve with more thinking tokens</li>
+<li>They do not use transformers</li>
+<li>They cannot hallucinate</li>
+</ul>
+<p class="why">Test-time compute is a second scaling axis: more thinking, at higher latency and cost, for better accuracy on hard problems.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Text becomes subword tokens via BPE. Tokens are the unit of cost, context and latency, and they explain quirks with spelling, numbers and non-English text.</li>
+<li>Pretraining minimises next-token cross-entropy over trillions of curated tokens. Compute is about \(6ND\); loss follows predictable scaling laws.</li>
+<li>Post-training (SFT, then preference learning with RLHF or DPO, plus AI feedback) turns a text predictor into an assistant. Reasoning models add RL on verifiable tasks and spend test-time compute.</li>
+<li>Decoding settings matter: low temperature for one-right-answer tasks, higher for creative ones.</li>
+<li>Hallucination follows from the objective. Mitigate it with retrieval, tools, citations, abstention and evaluation.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Andrej Karpathy, "Let's build the GPT Tokenizer" and "Deep Dive into LLMs like ChatGPT" (videos)</li>
+<li>Hoffmann et al., "Training Compute-Optimal Large Language Models" (Chinchilla, arXiv 2203.15556)</li>
+<li>Ouyang et al., "Training language models to follow instructions with human feedback" (InstructGPT, arXiv 2203.02155)</li>
+<li>Rafailov et al., "Direct Preference Optimization" (arXiv 2305.18290)</li>
+<li>Bai et al., "Constitutional AI: Harmlessness from AI Feedback" (arXiv 2212.08073)</li>
+<li>Sebastian Raschka, <em>Build a Large Language Model (From Scratch)</em></li>
+</ul>
