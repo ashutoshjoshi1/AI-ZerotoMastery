@@ -8,21 +8,29 @@
     "Semantic search from scratch, then with FAISS and a vector database",
     "How approximate nearest-neighbour indexes work; clustering and visualising embeddings"
   ],
-  "objectives": [],
-  "prerequisites": [],
-  "runs_on": "Any computer (CPU). The first run downloads a small embedding model (about 90 MB).",
+  "objectives": [
+    "Embed texts with a local model or a hosted API and read a cosine-similarity matrix",
+    "Choose an embedding model for your data by testing it, minding input length, prefixes, dimensions and model mixing",
+    "Build semantic search from a normalised dot product, then with FAISS and a vector database with metadata filters",
+    "Explain how HNSW, IVF and product quantisation trade recall for speed, and measure recall against exact search",
+    "Say when keyword search beats embeddings and why production search is hybrid"
+  ],
+  "prerequisites": ["sequences-embeddings", "python-for-ai"],
+  "runs_on": "Any computer (CPU). The first run downloads a small embedding model (about 90 MB); the ANN benchmark runs on synthetic data without any download.",
   "glossary": [
     {"term": "ANN (approximate nearest neighbour)", "def": "Index structures such as HNSW and IVF that find most of the nearest vectors far faster than exact search."},
     {"term": "Contrastive learning", "def": "Training that pulls matching pairs together and pushes non-matching pairs apart in an embedding space."},
     {"term": "Embedding", "def": "A learned vector representation whose geometry reflects meaning.", "also": ["sequences-embeddings"]},
     {"term": "HNSW", "def": "A graph-based approximate nearest-neighbour index, the default in many vector databases."},
-    {"term": "Vector database", "def": "A database that stores embeddings with metadata and supports similarity search with filters."}
+    {"term": "Vector database", "def": "A database that stores embeddings with metadata and supports similarity search with filters."},
+    {"term": "Bi-encoder", "def": "An embedding model that encodes the query and each document separately, so documents can be indexed once and searched fast."},
+    {"term": "Matryoshka embeddings", "def": "Embeddings trained so that their first k dimensions already form a good smaller embedding, allowing truncation with little quality loss."}
   ]
 }
 -->
 <h2>From word vectors to text embeddings</h2>
 <p>In lesson <a data-ref="sequences-embeddings"></a> you saw word vectors whose geometry captures meaning. <strong>Text embedding models</strong> do the same for whole sentences, paragraphs or documents: a transformer encoder reads the text and outputs one fixed-length vector (typically 384 to 3,072 numbers). They are trained, usually with <strong>contrastive learning</strong>, so that texts with similar meaning land close together and unrelated texts land far apart. Training data is millions of pairs that should match: a question and its answer, a title and its article, two paraphrases.</p>
-<p>That gives you a superpower: <strong>search by meaning, not by keywords</strong>. "Instrument stopped recording overnight" matches "data logging halted after midnight" despite sharing almost no words. Embeddings power semantic search, RAG (next lesson), recommendation, de-duplication, clustering and classification with few labels.</p>
+<p>That gives you a superpower: <strong>search by meaning, not by keywords</strong>. "Instrument stopped recording overnight" matches "data logging halted after midnight" despite sharing almost no words. Embeddings power semantic search, RAG (lesson <a data-ref="rag"></a>), recommendation (the same two-tower idea drives recommender retrieval, lesson <a data-ref="time-series-recsys-graphs"></a>), de-duplication, clustering and classification with few labels.</p>
 <h2>Getting embeddings</h2>
 <div class="tabs">
 <section data-tab="Local model (sentence-transformers)">
@@ -54,12 +62,50 @@ E /= np.linalg.norm(E, axis=1, keepdims=True)</code></pre>
 <h3>Choosing an embedding model</h3>
 <ul>
 <li><strong>Quality on <em>your</em> data matters more than leaderboard rank.</strong> The public MTEB leaderboard is a useful starting shortlist; your own retrieval test (below) decides.</li>
-<li><strong>Dimensions</strong> cost memory and search time. 384 dimensions is often plenty; some models support truncating to fewer dimensions with small quality loss.</li>
+<li><strong>Dimensions</strong> cost memory and search time. 384 dimensions is often plenty. <strong>Matryoshka</strong> models are trained so that the first 128 or 256 dimensions already form a good embedding: you can truncate (and re-normalise) to shrink the index several-fold with little quality loss. Hosted APIs expose this as a <code>dimensions</code> parameter; in sentence-transformers it is <code>truncate_dim</code>. Check the model card: truncating a model that was not trained this way loses much more.</li>
+<li><strong>Binary and int8 quantisation</strong> go further: keep only the sign of each dimension (one bit instead of 32), search with Hamming distance, then rescore the top candidates with the full vectors. Memory drops by about 30 times and recall stays high for many models. <code>sentence_transformers.util.quantization.quantize_embeddings</code> does the conversion.</li>
 <li><strong>Maximum input length</strong>: many small models only read 256 to 512 tokens. Longer text is silently truncated, which is one reason RAG splits documents into chunks.</li>
 <li><strong>Language and domain</strong>: multilingual models for mixed-language data; domain-tuned models (code, biomedical, legal) can help a lot.</li>
-<li><strong>Query versus document prefixes</strong>: some models expect instructions such as "query:" and "passage:" prepended. Read the model card; skipping this quietly lowers quality.</li>
+<li><strong>Query versus document prefixes</strong>: some models expect instructions such as "query:" and "passage:" prepended. Read the model card; skipping this quietly lowers quality. Recent sentence-transformers versions add <code>encode_query</code> and <code>encode_document</code>, which apply the model's own prefixes for you.</li>
 <li><strong>Never mix models</strong>: embeddings from different models (or versions) live in different spaces. Change the model, re-embed everything.</li>
 </ul>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: explore the similarity matrix</p>
+<p>Build an intuition for what the geometry does and does not capture before you trust it in a search engine.</p>
+<ol>
+<li>Write 12 sentences in four groups of three: paraphrases of one fact, same topic but different facts, unrelated, and negations ("the cooler is running" against "the cooler is not running").</li>
+<li>Embed them with <code>all-MiniLM-L6-v2</code> and compute the full cosine matrix. Print, for each group, the mean similarity within the group and to the rest.</li>
+<li>Find the highest-scoring pair that you would <em>not</em> call similar, and the lowest-scoring pair that you would.</li>
+<li>You are done when you have the four group means and can state one kind of difference (negation is the usual one) that cosine similarity mostly ignores.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">import numpy as np
+
+groups = {
+    "paraphrase": ["The desiccant must be changed twice a year.", "Replace the desiccant every six months.",
+                   "Desiccant replacement is due semi-annually."],
+    "same topic": ["The desiccant turns pink when saturated.", "Humid sites need desiccant more often.",
+                   "The desiccant cartridge sits inside the enclosure."],
+    "unrelated":  ["The tracker lost the sun this morning.", "Invoices are paid within thirty days.",
+                   "Python lists are mutable."],
+    "negation":   ["The cooler is running.", "The cooler is not running.", "The cooler has stopped running."],
+}
+sents = [s for g in groups.values() for s in g]
+labels = [name for name, g in groups.items() for _ in g]
+E = model.encode(sents, normalize_embeddings=True)
+S = E @ E.T
+for name in groups:
+    inside = [S[i, j] for i in range(len(sents)) for j in range(len(sents)) if i &lt; j and labels[i] == labels[j] == name]
+    outside = [S[i, j] for i in range(len(sents)) for j in range(len(sents)) if labels[i] == name and labels[j] != name]
+    print(f"{name:&lt;11} within={np.mean(inside):.2f}  to others={np.mean(outside):.2f}")
+pairs = sorted(((S[i, j], sents[i], sents[j]) for i in range(len(sents)) for j in range(i + 1, len(sents))), reverse=True)
+print("most similar:", pairs[0])
+print("least similar:", pairs[-1])</code></pre>
+Paraphrases typically score 0.7 to 0.9 with each other, same-topic sentences 0.4 to 0.6, unrelated ones near 0, and the negation pair scores almost as high as a paraphrase: "running" and "not running" differ by one token that barely moves the vector. Embeddings capture <em>what a sentence is about</em> far better than <em>what it asserts</em>, which is why RAG hands the retrieved text to a model that can read it properly.</p>
+</details>
+<hr data-session="2">
 <h2>Semantic search from scratch</h2>
 <p>With normalised vectors, search is a matrix multiplication and a sort. Do it yourself once before reaching for tools.</p>
 <pre><code class="language-python">import numpy as np
@@ -86,6 +132,8 @@ for hit in search("why is the noise in my spectra higher when it's hot?"):
 <p>Exact search over a few hundred thousand vectors this way takes milliseconds on a laptop. You may never need anything fancier for a prototype.</p>
 <h3>Semantic versus keyword search</h3>
 <p>Embeddings are not strictly better than keyword search. They are worse at <strong>exact identifiers</strong>: part numbers, error codes, function names, rare acronyms. A query for "error E-4071" wants documents containing exactly that string; an embedding may happily return other error codes that "feel" similar. Keyword methods such as <strong>BM25</strong> excel at this. Strong systems combine both (<strong>hybrid search</strong>), which you will build in lesson <a data-ref="rag"></a>.</p>
+<h3>Two stages: retrieve fast, then rerank</h3>
+<p>An embedding model is a <strong>bi-encoder</strong>: it encodes the query and each document separately, which is what lets you index documents once and search them with one dot product each. The price is that the model never sees the query and the document together. A <strong>reranker</strong> (usually a cross-encoder) does exactly that for the top 20 to 50 candidates and reorders them, which is far more accurate and far too slow to run on everything. Retrieve with embeddings, rerank the shortlist: lesson <a data-ref="rag"></a> builds it.</p>
 <h2>FAISS and vector databases</h2>
 <h3>FAISS: a fast in-process index</h3>
 <p>FAISS (from Meta) is a library of highly optimised vector indexes. <code>IndexFlatIP</code> is exact inner-product search, the same maths as above, done fast.</p>
@@ -167,6 +215,54 @@ LIMIT 5;</code></pre>
 <p class="admonition-title">Start boring</p>
 <p>If you already run PostgreSQL, pgvector is usually the right first choice: one database, transactions, SQL filters and backups you already understand. Move to a dedicated vector database when you have measured a need.</p>
 </div>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: search with a metadata filter</p>
+<p>Filtering is where a vector database earns its keep, and it is worth seeing that it is nothing magic.</p>
+<ol>
+<li>Extend <code>docs</code> to about 15 short maintenance notes with a metadata dict each: <code>{"model": "X" or "Y", "year": 2023 to 2026}</code>.</li>
+<li>Write <code>search_filtered(query, k, where)</code> from scratch: build a boolean mask from <code>where</code> (equality on <code>model</code>, minimum on <code>year</code>), score only the masked rows with the dot product, and return the top <code>k</code> texts.</li>
+<li>Load the same notes into a Chroma collection with the same metadata and run the equivalent <code>where</code> query (Chroma uses <code>{"$and": [{"model": "X"}, {"year": {"$gte": 2025}}]}</code>).</li>
+<li>You are done when both return the same top 3 for three queries, and you can say what happens to a pre-filtered search when the filter leaves only a handful of rows (hint: it becomes exact and cheap, which is why "filter first" is the default for selective filters).</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">notes = [
+    ("Model X belt replaced; tighten mount screws to 0.8 N·m.", {"model": "X", "year": 2024}),
+    ("Model X desiccant changed at the coastal site.", {"model": "X", "year": 2025}),
+    ("Model Y modem firmware updated to fix upload stalls.", {"model": "Y", "year": 2025}),
+    ("Model X cooler fan replaced after noisy spectra.", {"model": "X", "year": 2026}),
+    ("Model Y GPS antenna moved for a clear sky view.", {"model": "Y", "year": 2023}),
+    ("Model Y belt slipping; wheel position errors logged.", {"model": "Y", "year": 2026}),
+    ("Model X calibration lamp check, factors within 1%.", {"model": "X", "year": 2023}),
+    ("Model X filter wheel home sensor cable repaired.", {"model": "X", "year": 2026}),
+]
+texts = [t for t, _ in notes]
+metas = [m for _, m in notes]
+V = model.encode(texts, normalize_embeddings=True)
+
+def search_filtered(query, k=3, model_is=None, year_min=None):
+    mask = np.ones(len(texts), dtype=bool)
+    if model_is is not None:
+        mask &amp;= np.array([m["model"] == model_is for m in metas])
+    if year_min is not None:
+        mask &amp;= np.array([m["year"] &gt;= year_min for m in metas])
+    q = model.encode([query], normalize_embeddings=True)[0]
+    scores = np.where(mask, V @ q, -np.inf)                 # masked rows can never win
+    top = [i for i in np.argsort(-scores)[:k] if mask[i]]
+    return [texts[i] for i in top]
+
+col = chromadb.Client().get_or_create_collection("notes", metadata={"hnsw:space": "cosine"})
+col.add(ids=[f"n{i}" for i in range(len(texts))], documents=texts, embeddings=V.tolist(), metadatas=metas)
+
+for query in ["belt problems", "fan noise", "firmware"]:
+    mine = search_filtered(query, model_is="X", year_min=2025)
+    theirs = col.query(query_embeddings=model.encode([query], normalize_embeddings=True).tolist(), n_results=3,
+                       where={"$and": [{"model": "X"}, {"year": {"$gte": 2025}}]})["documents"][0]
+    print(query, "| same:", mine == theirs)</code></pre>
+Both agree because, with a small collection, Chroma's filtered search is exact too. The interesting case is scale: a selective filter leaves few candidates, so the database can scan them exactly and skip the ANN index entirely; a loose filter is applied during the graph search instead. Knowing which one your database does explains many "why is this query slow" tickets.</p>
+</details>
+<hr data-session="3">
 <h2>How approximate nearest-neighbour search works</h2>
 <p>Exact search compares the query with every vector: fine at a million, slow at a billion. <strong>Approximate nearest neighbour (ANN)</strong> indexes trade a little accuracy (<strong>recall</strong>: the fraction of true top-k results found) for enormous speed-ups.</p>
 <ul>
@@ -301,17 +397,18 @@ Typical findings: both models do well on paraphrased questions; the better one d
 <div class="admonition takeaways">
 <p class="admonition-title">Key takeaways</p>
 <ul>
-<li>Text embeddings map meaning to geometry; similar texts have high cosine similarity. They enable search by meaning.</li>
-<li>Choose embedding models by testing on your own data; mind input length, query prefixes and never mix models.</li>
+<li>Text embeddings map meaning to geometry; similar texts have high cosine similarity. They enable search by meaning, and they capture topic far better than assertion.</li>
+<li>Choose embedding models by testing on your own data; mind input length, query prefixes and never mix models. Matryoshka truncation and binary quantisation shrink indexes cheaply.</li>
 <li>Semantic search is a normalised dot product plus a sort. FAISS makes it fast; vector databases add metadata, filtering and persistence (pgvector is a fine default).</li>
 <li>ANN indexes such as HNSW trade a little recall for large speed-ups; measure recall against exact search.</li>
-<li>Embeddings are weak on exact identifiers, which is why production search is usually hybrid.</li>
+<li>Embeddings are weak on exact identifiers, which is why production search is usually hybrid, and reranked.</li>
 </ul>
 </div>
 <h3>Go deeper</h3>
 <ul>
 <li>Reimers and Gurevych, "Sentence-BERT" (arXiv 1908.10084)</li>
 <li>Malkov and Yashunin, "Efficient and robust approximate nearest neighbor search using HNSW graphs" (arXiv 1603.09320)</li>
+<li>Kusupati et al., "Matryoshka Representation Learning" (arXiv 2205.13147)</li>
 <li><a href="https://www.sbert.net">Sentence Transformers documentation</a></li>
 <li>The MTEB leaderboard on Hugging Face, for shortlisting embedding models</li>
 <li><a href="https://github.com/facebookresearch/faiss/wiki">FAISS wiki</a></li>

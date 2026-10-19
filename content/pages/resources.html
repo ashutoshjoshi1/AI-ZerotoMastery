@@ -1,4 +1,4 @@
-<p>A short, opinionated list. Each item earns its place; you do not need all of them. Start with the one that matches the part of the course you found hardest. Model names, prices and library APIs change quickly, so for anything product-specific prefer the official documentation over books.</p>
+<p>A short, opinionated list. Each item earns its place; you do not need all of them. Start with the one that matches the part of the course you found hardest. Model names, prices and library APIs change quickly, so for anything product-specific prefer the official documentation over books. Part numbers are the ten parts of the course; part IX, the wider field, is where most of the newer entries sit.</p>
 <h2>Books</h2>
 <table>
 <thead>
@@ -12,15 +12,15 @@
 <tr>
 <td>Chip Huyen, <em>AI Engineering</em> (2025)</td>
 <td>Building applications on foundation models: evaluation, RAG, agents, inference</td>
-<td>VI to VIII</td>
+<td>VI to VIII, X</td>
 </tr>
 <tr>
 <td>Chip Huyen, <em>Designing Machine Learning Systems</em> (2022)</td>
 <td>Production ML: data, deployment, monitoring</td>
-<td>III, VII</td>
+<td>III, VIII</td>
 </tr>
 <tr>
-<td>Aurélien Géron, <em>Hands-On Machine Learning with Scikit-Learn, Keras and TensorFlow</em></td>
+<td>Aurélien Géron, <em>Hands-On Machine Learning with Scikit-Learn, Keras and TensorFlow</em> (3rd ed.)</td>
 <td>Practical classical ML and deep learning</td>
 <td>III, IV</td>
 </tr>
@@ -35,14 +35,29 @@
 <td>II</td>
 </tr>
 <tr>
+<td>Simon Prince, <em>Understanding Deep Learning</em> (<a href="https://udlbook.github.io/udlbook/">free online</a>)</td>
+<td>Modern deep learning with clear figures: transformers, diffusion, GANs and RL in one place</td>
+<td>IV, IX</td>
+</tr>
+<tr>
 <td>Sebastian Raschka, <em>Build a Large Language Model (From Scratch)</em></td>
 <td>Implementing a GPT and fine-tuning it</td>
-<td>V, VI</td>
+<td>V, VII</td>
+</tr>
+<tr>
+<td>Sebastian Raschka, <em>Build a Reasoning Model (From Scratch)</em></td>
+<td>Test-time scaling, reinforcement learning with verifiable rewards and evaluating reasoning, in plain PyTorch</td>
+<td>VI, VII</td>
 </tr>
 <tr>
 <td>Jay Alammar and Maarten Grootendorst, <em>Hands-On Large Language Models</em></td>
 <td>Visual, practical tour of LLM techniques</td>
-<td>V, VI</td>
+<td>V to VII</td>
+</tr>
+<tr>
+<td>Nathan Lambert, <em>Reinforcement Learning from Human Feedback</em> (<a href="https://rlhfbook.com">free online</a>)</td>
+<td>Post-training as practised: reward models, PPO and GRPO, DPO, data and evaluation</td>
+<td>V, VII</td>
 </tr>
 <tr>
 <td>Goodfellow, Bengio, Courville, <em>Deep Learning</em> (free online)</td>
@@ -54,6 +69,46 @@
 <td>NLP foundations, embeddings, transformers</td>
 <td>IV, V</td>
 </tr>
+<tr>
+<td>Russell and Norvig, <em>Artificial Intelligence: A Modern Approach</em> (4th ed.)</td>
+<td>Search, constraint satisfaction, logic, planning and probabilistic reasoning: the classical half of AI</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Sutton and Barto, <em>Reinforcement Learning: An Introduction</em> (2nd ed., <a href="http://incompleteideas.net/book/the-book-2nd.html">free online</a>)</td>
+<td>The reinforcement learning book; bandits to policy gradients</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Richard Szeliski, <em>Computer Vision: Algorithms and Applications</em> (2nd ed., <a href="https://szeliski.org/Book/">free online</a>)</td>
+<td>Vision beyond classifiers: geometry, features, segmentation, recognition</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Hyndman and Athanasopoulos, <em>Forecasting: Principles and Practice</em> (3rd ed., <a href="https://otexts.com/fpp3/">free online</a>)</td>
+<td>Forecasting done honestly: baselines, decomposition, ETS, ARIMA, evaluation</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>William Hamilton, <em>Graph Representation Learning</em> (<a href="https://www.cs.mcgill.ca/~wlh/grl_book/">free pre-print</a>)</td>
+<td>Node embeddings and graph neural networks, concisely</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Christoph Molnar, <em>Interpretable Machine Learning</em> (<a href="https://christophm.github.io/interpretable-ml-book/">free online</a>)</td>
+<td>Feature attribution, SHAP, counterfactuals and their limits</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Austin et al., <em>How to Scale Your Model</em> (<a href="https://jax-ml.github.io/scaling-book/">free online</a>)</td>
+<td>Rooflines, parallelism and inference arithmetic on TPUs and GPUs, with worked problems</td>
+<td>VII, IX</td>
+</tr>
+<tr>
+<td>Hugging Face, <em>The Ultra-Scale Playbook</em> (<a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook">free online</a>)</td>
+<td>Training on up to thousands of GPUs, with measurements: data, tensor and pipeline parallelism, ZeRO</td>
+<td>IX</td>
+</tr>
 </tbody>
 </table>
 <h2>Courses and video series</h2>
@@ -62,21 +117,27 @@
 <li><strong>3Blue1Brown</strong>: <em>Essence of Linear Algebra</em>, <em>Essence of Calculus</em>, and the neural networks series including transformers and attention.</li>
 <li><strong>fast.ai, <em>Practical Deep Learning for Coders</em></strong>: top-down, code-first deep learning.</li>
 <li><strong>Andrew Ng, <em>Machine Learning Specialization</em></strong> (Coursera) and the <strong>DeepLearning.AI short courses</strong> on LLM topics (RAG, agents, evaluation, fine-tuning).</li>
-<li><strong>Hugging Face courses</strong>: the LLM course, the diffusion course, the agents course; hands-on with the libraries you will use.</li>
-<li><strong>Stanford CS224N</strong> (NLP with deep learning) and <strong>CS336</strong> (language modelling from scratch): lecture videos and assignments online, for going deep.</li>
+<li><strong>Hugging Face courses</strong>: the LLM course, the agents course, the MCP course, the diffusion course and the <em>Deep RL course</em> (part IX); hands-on with the libraries you will use.</li>
+<li><strong>Stanford CS224N</strong> (NLP with deep learning) and <strong>CS336</strong> (language modelling from scratch): lecture videos and assignments online, for going deep on parts V and VII.</li>
+<li><strong>Stanford CS231n</strong> (deep learning for computer vision): the standard route into part IX's vision lesson, with assignments.</li>
+<li><strong>David Silver's reinforcement learning lectures</strong> (UCL and DeepMind, YouTube): the lecture companion to Sutton and Barto.</li>
+<li><strong>Stanford CS224W</strong> (machine learning with graphs): for the graph half of lesson <a data-ref="time-series-recsys-graphs"></a>.</li>
+<li><strong>ARENA</strong> (arena.education) and Neel Nanda's "getting started in mechanistic interpretability": exercise-driven material for lesson <a data-ref="interpretability"></a>.</li>
 </ul>
 <h2>Documentation worth reading end to end</h2>
 <ul>
 <li><a href="https://docs.claude.com/en/api/overview">Claude API documentation</a> and the <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview">prompt engineering guide</a></li>
+<li>Anthropic's guides to <a href="https://docs.claude.com/en/docs/build-with-claude/extended-thinking">extended thinking</a> (lesson <a data-ref="reasoning-models"></a>) and <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-caching">prompt caching</a> (lessons <a data-ref="llm-apis"></a>, <a data-ref="context-engineering"></a>)</li>
 <li><a href="https://platform.openai.com/docs">OpenAI API documentation</a></li>
 <li><a href="https://pytorch.org/tutorials/">PyTorch tutorials</a></li>
 <li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn user guide</a></li>
 <li><a href="https://huggingface.co/docs">Hugging Face Transformers, PEFT and TRL documentation</a></li>
 <li><a href="https://modelcontextprotocol.io">Model Context Protocol</a></li>
-<li><a href="https://docs.vllm.ai">vLLM documentation</a></li>
+<li><a href="https://docs.vllm.ai">vLLM</a> and <a href="https://docs.sglang.ai">SGLang</a> documentation (lesson <a data-ref="llm-inference"></a>)</li>
+<li><a href="https://gymnasium.farama.org">Gymnasium documentation</a> for reinforcement learning environments (lesson <a data-ref="reinforcement-learning"></a>)</li>
 </ul>
 <h2>Papers, in reading order</h2>
-<p>All are on arXiv; search for the title or the identifier.</p>
+<p>All are on arXiv; search for the title or the identifier. Part IX papers are included so that you can read the original of every idea the course teaches.</p>
 <table>
 <thead>
 <tr>
@@ -94,10 +155,22 @@
 <td><a data-ref="sequences-embeddings"></a></td>
 </tr>
 <tr>
-<td>Adam: A Method for Stochastic Optimization</td>
+<td>Playing Atari with Deep Reinforcement Learning (DQN)</td>
+<td>2013</td>
+<td>1312.5602</td>
+<td><a data-ref="reinforcement-learning"></a></td>
+</tr>
+<tr>
+<td>Auto-Encoding Variational Bayes (VAE)</td>
+<td>2013</td>
+<td>1312.6114</td>
+<td><a data-ref="generative-models"></a></td>
+</tr>
+<tr>
+<td>Generative Adversarial Networks</td>
 <td>2014</td>
-<td>1412.6980</td>
-<td><a data-ref="neural-networks"></a></td>
+<td>1406.2661</td>
+<td><a data-ref="generative-models"></a></td>
 </tr>
 <tr>
 <td>Neural Machine Translation by Jointly Learning to Align and Translate</td>
@@ -106,16 +179,58 @@
 <td><a data-ref="sequences-embeddings"></a></td>
 </tr>
 <tr>
+<td>Adam: A Method for Stochastic Optimization</td>
+<td>2014</td>
+<td>1412.6980</td>
+<td><a data-ref="neural-networks"></a></td>
+</tr>
+<tr>
+<td>You Only Look Once: Unified, Real-Time Object Detection</td>
+<td>2015</td>
+<td>1506.02640</td>
+<td><a data-ref="computer-vision"></a></td>
+</tr>
+<tr>
 <td>Deep Residual Learning for Image Recognition (ResNet)</td>
 <td>2015</td>
 <td>1512.03385</td>
-<td><a data-ref="neural-networks"></a></td>
+<td><a data-ref="neural-networks"></a>, <a data-ref="computer-vision"></a></td>
+</tr>
+<tr>
+<td>Wide &amp; Deep Learning for Recommender Systems</td>
+<td>2016</td>
+<td>1606.07792</td>
+<td><a data-ref="time-series-recsys-graphs"></a></td>
+</tr>
+<tr>
+<td>Semi-Supervised Classification with Graph Convolutional Networks</td>
+<td>2016</td>
+<td>1609.02907</td>
+<td><a data-ref="time-series-recsys-graphs"></a></td>
+</tr>
+<tr>
+<td>A Unified Approach to Interpreting Model Predictions (SHAP)</td>
+<td>2017</td>
+<td>1705.07874</td>
+<td><a data-ref="interpretability"></a></td>
 </tr>
 <tr>
 <td>Attention Is All You Need</td>
 <td>2017</td>
 <td>1706.03762</td>
 <td><a data-ref="transformers"></a></td>
+</tr>
+<tr>
+<td>Proximal Policy Optimization Algorithms</td>
+<td>2017</td>
+<td>1707.06347</td>
+<td><a data-ref="reinforcement-learning"></a>, <a data-ref="advanced-fine-tuning"></a></td>
+</tr>
+<tr>
+<td>Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm (AlphaZero)</td>
+<td>2017</td>
+<td>1712.01815</td>
+<td><a data-ref="classical-ai"></a>, <a data-ref="reinforcement-learning"></a></td>
 </tr>
 <tr>
 <td>BERT: Pre-training of Deep Bidirectional Transformers</td>
@@ -128,6 +243,18 @@
 <td>2019</td>
 <td>1908.10084</td>
 <td><a data-ref="embeddings-vector-search"></a></td>
+</tr>
+<tr>
+<td>Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism</td>
+<td>2019</td>
+<td>1909.08053</td>
+<td><a data-ref="training-at-scale"></a></td>
+</tr>
+<tr>
+<td>ZeRO: Memory Optimizations Toward Training Trillion Parameter Models</td>
+<td>2019</td>
+<td>1910.02054</td>
+<td><a data-ref="training-at-scale"></a></td>
 </tr>
 <tr>
 <td>Scaling Laws for Neural Language Models</td>
@@ -151,13 +278,19 @@
 <td>Denoising Diffusion Probabilistic Models</td>
 <td>2020</td>
 <td>2006.11239</td>
-<td><a data-ref="multimodal"></a></td>
+<td><a data-ref="generative-models"></a>, <a data-ref="multimodal"></a></td>
 </tr>
 <tr>
 <td>An Image is Worth 16x16 Words (ViT)</td>
 <td>2020</td>
 <td>2010.11929</td>
-<td><a data-ref="multimodal"></a></td>
+<td><a data-ref="computer-vision"></a>, <a data-ref="multimodal"></a></td>
+</tr>
+<tr>
+<td>Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</td>
+<td>2021</td>
+<td>2101.03961</td>
+<td><a data-ref="training-at-scale"></a></td>
 </tr>
 <tr>
 <td>Learning Transferable Visual Models From Natural Language Supervision (CLIP)</td>
@@ -181,13 +314,13 @@
 <td>High-Resolution Image Synthesis with Latent Diffusion Models</td>
 <td>2021</td>
 <td>2112.10752</td>
-<td><a data-ref="multimodal"></a></td>
+<td><a data-ref="generative-models"></a>, <a data-ref="multimodal"></a></td>
 </tr>
 <tr>
 <td>Chain-of-Thought Prompting Elicits Reasoning</td>
 <td>2022</td>
 <td>2201.11903</td>
-<td><a data-ref="prompt-engineering"></a></td>
+<td><a data-ref="prompt-engineering"></a>, <a data-ref="reasoning-models"></a></td>
 </tr>
 <tr>
 <td>Training Language Models to Follow Instructions with Human Feedback (InstructGPT)</td>
@@ -196,22 +329,40 @@
 <td><a data-ref="how-llms-are-built"></a></td>
 </tr>
 <tr>
+<td>Self-Consistency Improves Chain of Thought Reasoning</td>
+<td>2022</td>
+<td>2203.11171</td>
+<td><a data-ref="prompt-engineering"></a>, <a data-ref="reasoning-models"></a></td>
+</tr>
+<tr>
 <td>Training Compute-Optimal Large Language Models (Chinchilla)</td>
 <td>2022</td>
 <td>2203.15556</td>
 <td><a data-ref="how-llms-are-built"></a></td>
 </tr>
 <tr>
-<td>Self-Consistency Improves Chain of Thought Reasoning</td>
+<td>Are Transformers Effective for Time Series Forecasting?</td>
 <td>2022</td>
-<td>2203.11171</td>
-<td><a data-ref="prompt-engineering"></a></td>
+<td>2205.13504</td>
+<td><a data-ref="time-series-recsys-graphs"></a></td>
 </tr>
 <tr>
 <td>FlashAttention</td>
 <td>2022</td>
 <td>2205.14135</td>
-<td><a data-ref="transformers"></a>, <a data-ref="deployment-llmops"></a></td>
+<td><a data-ref="transformers"></a>, <a data-ref="training-at-scale"></a></td>
+</tr>
+<tr>
+<td>Toy Models of Superposition</td>
+<td>2022</td>
+<td>2209.10652</td>
+<td><a data-ref="interpretability"></a></td>
+</tr>
+<tr>
+<td>Flow Matching for Generative Modeling</td>
+<td>2022</td>
+<td>2210.02747</td>
+<td><a data-ref="generative-models"></a></td>
 </tr>
 <tr>
 <td>ReAct: Synergizing Reasoning and Acting</td>
@@ -220,16 +371,34 @@
 <td><a data-ref="agents"></a></td>
 </tr>
 <tr>
-<td>Constitutional AI: Harmlessness from AI Feedback</td>
+<td>GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers</td>
 <td>2022</td>
-<td>2212.08073</td>
-<td><a data-ref="how-llms-are-built"></a></td>
+<td>2210.17323</td>
+<td><a data-ref="llm-inference"></a></td>
+</tr>
+<tr>
+<td>Fast Inference from Transformers via Speculative Decoding</td>
+<td>2022</td>
+<td>2211.17192</td>
+<td><a data-ref="llm-inference"></a></td>
 </tr>
 <tr>
 <td>Robust Speech Recognition via Large-Scale Weak Supervision (Whisper)</td>
 <td>2022</td>
 <td>2212.04356</td>
 <td><a data-ref="multimodal"></a></td>
+</tr>
+<tr>
+<td>Constitutional AI: Harmlessness from AI Feedback</td>
+<td>2022</td>
+<td>2212.08073</td>
+<td><a data-ref="how-llms-are-built"></a></td>
+</tr>
+<tr>
+<td>Self-Instruct: Aligning Language Models with Self-Generated Instructions</td>
+<td>2022</td>
+<td>2212.10560</td>
+<td><a data-ref="advanced-fine-tuning"></a></td>
 </tr>
 <tr>
 <td>Toolformer</td>
@@ -244,16 +413,28 @@
 <td><a data-ref="safety-security"></a></td>
 </tr>
 <tr>
-<td>Direct Preference Optimization</td>
+<td>Segment Anything</td>
 <td>2023</td>
-<td>2305.18290</td>
-<td><a data-ref="how-llms-are-built"></a>, <a data-ref="fine-tuning"></a></td>
+<td>2304.02643</td>
+<td><a data-ref="computer-vision"></a></td>
 </tr>
 <tr>
 <td>QLoRA: Efficient Finetuning of Quantized LLMs</td>
 <td>2023</td>
 <td>2305.14314</td>
 <td><a data-ref="fine-tuning"></a></td>
+</tr>
+<tr>
+<td>Direct Preference Optimization</td>
+<td>2023</td>
+<td>2305.18290</td>
+<td><a data-ref="how-llms-are-built"></a>, <a data-ref="fine-tuning"></a></td>
+</tr>
+<tr>
+<td>Let's Verify Step by Step</td>
+<td>2023</td>
+<td>2305.20050</td>
+<td><a data-ref="reasoning-models"></a></td>
 </tr>
 <tr>
 <td>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</td>
@@ -265,24 +446,56 @@
 <td>Lost in the Middle: How Language Models Use Long Contexts</td>
 <td>2023</td>
 <td>2307.03172</td>
-<td><a data-ref="rag"></a></td>
+<td><a data-ref="rag"></a>, <a data-ref="context-engineering"></a></td>
 </tr>
 <tr>
 <td>Efficient Memory Management for LLM Serving with PagedAttention (vLLM)</td>
 <td>2023</td>
 <td>2309.06180</td>
-<td><a data-ref="deployment-llmops"></a></td>
+<td><a data-ref="llm-inference"></a></td>
+</tr>
+<tr>
+<td>MemGPT: Towards LLMs as Operating Systems</td>
+<td>2023</td>
+<td>2310.08560</td>
+<td><a data-ref="context-engineering"></a></td>
+</tr>
+<tr>
+<td>Mamba: Linear-Time Sequence Modeling with Selective State Spaces</td>
+<td>2023</td>
+<td>2312.00752</td>
+<td><a data-ref="training-at-scale"></a></td>
+</tr>
+<tr>
+<td>DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models (GRPO)</td>
+<td>2024</td>
+<td>2402.03300</td>
+<td><a data-ref="advanced-fine-tuning"></a></td>
+</tr>
+<tr>
+<td>Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters</td>
+<td>2024</td>
+<td>2408.03314</td>
+<td><a data-ref="reasoning-models"></a></td>
+</tr>
+<tr>
+<td>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</td>
+<td>2025</td>
+<td>2501.12948</td>
+<td><a data-ref="reasoning-models"></a></td>
 </tr>
 </tbody>
 </table>
 <h2>Blogs and writing by practitioners</h2>
 <ul>
-<li><strong>Anthropic engineering blog</strong>: "Building effective agents", "Introducing Contextual Retrieval" and posts on tool design and evaluation.</li>
-<li><strong>Lilian Weng</strong> (lilianweng.github.io): thorough surveys of agents, hallucination, diffusion and more.</li>
+<li><strong>Anthropic engineering blog</strong>: "Building effective agents", "Effective context engineering for AI agents", "Introducing Contextual Retrieval" and posts on tool design and evaluation.</li>
+<li><strong>Transformer Circuits</strong> (transformer-circuits.pub): Anthropic's interpretability research, from "Toy Models of Superposition" to the sparse-autoencoder and circuit-tracing work behind lesson <a data-ref="interpretability"></a>.</li>
+<li><strong>Lilian Weng</strong> (lilianweng.github.io): thorough surveys of agents, reinforcement learning, diffusion, hallucination and more.</li>
 <li><strong>Jay Alammar</strong>: illustrated explanations of transformers and LLMs.</li>
 <li><strong>Simon Willison</strong> (simonwillison.net): hands-on LLM tooling and prompt-injection security.</li>
 <li><strong>Eugene Yan</strong> (eugeneyan.com): patterns for building LLM products, evaluation, recommendation systems.</li>
 <li><strong>Hamel Husain</strong> (hamel.dev): evaluation and fine-tuning in practice.</li>
+<li><strong>Nathan Lambert, <em>Interconnects</em></strong> (interconnects.ai): post-training, reasoning models and open-model releases, read critically.</li>
 <li><strong>Sebastian Raschka</strong> (magazine.sebastianraschka.com): research summaries and implementation notes.</li>
 </ul>
 <h2>Tools you will keep meeting</h2>
@@ -307,7 +520,7 @@
 <td>PyTorch, Hugging Face Transformers, Accelerate</td>
 </tr>
 <tr>
-<td>Fine-tuning</td>
+<td>Fine-tuning and post-training</td>
 <td>PEFT, TRL, bitsandbytes, Unsloth, Axolotl</td>
 </tr>
 <tr>
@@ -323,7 +536,7 @@
 <td>promptfoo, Inspect, DeepEval, RAGAS</td>
 </tr>
 <tr>
-<td>Serving</td>
+<td>Serving and inference</td>
 <td>vLLM, SGLang, Ollama, llama.cpp, TensorRT-LLM</td>
 </tr>
 <tr>
@@ -334,13 +547,35 @@
 <td>Apps and APIs</td>
 <td>FastAPI, Pydantic, Gradio, Streamlit, Docker</td>
 </tr>
+<tr>
+<td>Search, planning and RL</td>
+<td>networkx, OR-Tools, Gymnasium, Stable-Baselines3, CleanRL</td>
+</tr>
+<tr>
+<td>Vision and generative models</td>
+<td>torchvision, timm, OpenCV, Ultralytics, diffusers</td>
+</tr>
+<tr>
+<td>Time series, recommenders and graphs</td>
+<td>statsmodels, sktime, statsforecast, implicit, PyTorch Geometric</td>
+</tr>
+<tr>
+<td>Training at scale</td>
+<td>PyTorch FSDP, DeepSpeed, Megatron-LM, Nanotron, JAX</td>
+</tr>
+<tr>
+<td>Interpretability</td>
+<td>SHAP, Captum, TransformerLens, SAELens</td>
+</tr>
 </tbody>
 </table>
 <h2>Datasets for practice</h2>
 <ul>
 <li><strong>scikit-learn built-ins</strong> (breast cancer, digits, diabetes) and <strong>OpenML</strong> for classical ML.</li>
-<li><strong>Fashion-MNIST</strong> and <strong>CIFAR-10</strong> for image classification.</li>
+<li><strong>Fashion-MNIST</strong> and <strong>CIFAR-10</strong> for image classification; <strong>Oxford-IIIT Pet</strong> and <strong>COCO</strong> for segmentation and detection.</li>
 <li><strong>Tiny Shakespeare</strong> and <strong>Project Gutenberg</strong> texts for language modelling.</li>
-<li><strong>Hugging Face Datasets</strong> hub for almost everything else, including instruction and preference datasets.</li>
-<li><strong>Public environmental data</strong> (air-quality networks, weather stations, satellite products) for time-series and anomaly-detection capstones.</li>
+<li><strong>Hugging Face Datasets</strong> hub for almost everything else, including instruction, preference and reasoning datasets.</li>
+<li><strong>Gymnasium environments</strong> (CartPole, LunarLander, the Atari games) for reinforcement learning.</li>
+<li><strong>MovieLens</strong> for recommenders, and <strong>Cora</strong> and the other datasets that ship with PyTorch Geometric for graphs.</li>
+<li><strong>Public environmental data</strong> (air-quality networks, weather stations, satellite products) and the <strong>M5 forecasting competition</strong> data for time series, forecasting and anomaly-detection capstones.</li>
 </ul>

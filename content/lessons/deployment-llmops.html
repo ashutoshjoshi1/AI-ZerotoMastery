@@ -2,23 +2,32 @@
 {
   "title": "Deployment, serving and LLMOps",
   "short": "Deployment and LLMOps",
-  "summary": "Take an AI system from notebook to production by building a streaming API service, serving open models efficiently with quantisation and the right memory budget, controlling latency and cost, and making everything observable.",
+  "summary": "Take an AI system from notebook to production by building a streaming API service, choosing how to serve open models within a GPU memory budget, controlling latency and cost, and making everything observable: tracing, drift monitoring, cost dashboards, and rollouts gated on evals.",
   "sessions": [
-    "The anatomy of an LLM application, and a streaming API with FastAPI",
-    "Serving open models: vLLM, Ollama, llama.cpp, quantisation and GPU memory arithmetic",
-    "Latency, throughput and cost: batching, caching, routing and budgets",
-    "Observability: tracing, metrics, monitoring, containers and CI/CD"
+    "The anatomy of an LLM application, a streaming API with FastAPI, and shipping it in a container",
+    "Serving open models: the serving landscape, quantisation choices and the GPU memory budget",
+    "Latency, throughput and cost: metrics, caching, routing, budgets and cost dashboards",
+    "Observability: tracing, monitoring and drift, A/B and shadow deployments, and CI/CD"
   ],
-  "objectives": [],
-  "prerequisites": [],
-  "runs_on": "Any computer (CPU). Running the service needs an API key and a terminal.",
+  "objectives": [
+    "Build and test a FastAPI service that streams model output, validates input, logs token usage and survives upstream errors",
+    "Choose between model APIs and self-hosting, and pick a serving tool and a quantisation level for a given workload",
+    "Budget GPU memory as weights plus KV cache and work out how many concurrent users a card can serve",
+    "Measure TTFT, time per output token and p95 latency, and apply the levers that cut latency and cost in order of payoff",
+    "Build cost and latency dashboards from request logs and detect drift in production traffic",
+    "Trace requests end to end, and roll out changes with canaries, A/B tests and shadow deployments gated on evals"
+  ],
+  "prerequisites": ["llm-apis", "rag", "evaluation"],
+  "runs_on": "Any computer (CPU). Running the live service needs an API key and a terminal; every notebook exercise runs offline.",
   "glossary": [
     {"term": "Inference", "def": "Using a trained model to make predictions or generate output."},
-    {"term": "PagedAttention", "def": "vLLM's technique of storing the KV cache in pages to avoid memory fragmentation."},
-    {"term": "Prefill", "def": "Processing the prompt before generating the first token; also, starting the assistant's reply with given text.", "also": ["prompt-engineering"]},
-    {"term": "Quantisation", "def": "Storing weights (or activations, or the KV cache) in fewer bits to save memory and speed up inference."},
+    {"term": "Prefill", "def": "Processing the prompt before generating the first token; also, starting the assistant's reply with given text.", "also": ["prompt-engineering", "llm-inference"]},
+    {"term": "Quantisation", "def": "Storing weights (or activations, or the KV cache) in fewer bits to save memory and speed up inference.", "also": ["llm-inference"]},
     {"term": "Tracing", "def": "Recording every step of a request (retrieval, model calls, tools) for debugging and monitoring."},
-    {"term": "TTFT (time to first token)", "def": "Latency until the first output token appears; dominated by prompt length."}
+    {"term": "TTFT (time to first token)", "def": "Latency until the first output token appears; dominated by prompt length.", "also": ["llm-inference"]},
+    {"term": "Semantic cache", "def": "A response cache that matches new questions to stored ones by embedding similarity rather than exact text."},
+    {"term": "Drift", "def": "A change over time in the inputs a deployed system receives or in the outputs it produces, which can degrade quality without any error."},
+    {"term": "Shadow deployment", "def": "Running a candidate system on live traffic in parallel without showing its outputs, to compare it with the current one."}
   ]
 }
 -->
@@ -60,6 +69,10 @@ client = anthropic.AsyncAnthropic(max_retries=3, timeout=60)
 class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
 
+def answer_text(message) -&gt; str:
+    """The reply may start with a thinking block, so pick the text block rather than content[0]."""
+    return "".join(b.text for b in message.content if b.type == "text")
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
@@ -71,7 +84,7 @@ async def ask(req: AskRequest):
                                      messages=[{"role": "user", "content": req.question}])
     log.info(json.dumps({"event": "ask", "latency_s": round(time.perf_counter() - t0, 3),
                          "in": r.usage.input_tokens, "out": r.usage.output_tokens}))
-    return {"answer": r.content[0].text}
+    return {"answer": answer_text(r)}
 
 @app.post("/ask/stream")
 async def ask_stream(req: AskRequest, request: Request):
@@ -102,6 +115,7 @@ async def ask_stream(req: AskRequest, request: Request):
 curl -N -X POST localhost:8000/ask/stream -H "Content-Type: application/json" \
      -d '{"question": "Explain the KV cache in three sentences."}'</code></pre>
 <p>Visit <code>localhost:8000/docs</code> for the interactive documentation FastAPI generates. Production additions: authentication, per-user rate limits and quotas, request size limits, timeouts, and the guardrails from lesson <a data-ref="safety-security"></a>.</p>
+<p>Two details are easy to miss. The SDK's <code>text_stream</code> yields only text, but a full reply is a list of content blocks that may begin with a thinking block, so never read <code>content[0].text</code>; <code>answer_text</code> picks the text blocks. And the stream loop checks whether the client has gone away, because tokens you generate for a closed connection still cost money.</p>
 <h3>Ship it in a container</h3>
 <pre data-file="Dockerfile"><code class="language-dockerfile">FROM python:3.12-slim
 WORKDIR /app
@@ -111,8 +125,67 @@ COPY . .                       # list .venv and .env in .dockerignore so they ar
 EXPOSE 8000
 CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]</code></pre>
 <p>Secrets come from the environment at runtime (<code>docker run -e ANTHROPIC_API_KEY=...</code>, or your platform's secret manager), never baked into the image.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: test the service with a fake model</p>
+<p>A service you can only test with a live API key and a credit card will not get tested. FastAPI's <code>TestClient</code> runs the app in-process, and the model client is an attribute you can replace.</p>
+<ol>
+<li>Write a <code>FakeMessages</code> class with an async <code>create</code> that returns an object with <code>content</code> (one text block) and <code>usage</code>, and a <code>stream</code> method that returns an async context manager with a <code>text_stream</code> and <code>get_final_message</code>.</li>
+<li>Import <code>app</code>, replace <code>app.client.messages</code> with your fake, and use <code>TestClient</code> to check: <code>/health</code> returns 200; <code>/ask</code> with an empty question returns 422; <code>/ask</code> returns the fake answer; <code>/ask/stream</code> returns <code>text/event-stream</code> whose last event is <code>{"done": true}</code>.</li>
+<li>Make the fake raise <code>anthropic.APIConnectionError</code> and check the stream reports an error event instead of crashing.</li>
+</ol>
+<p>You are done when all five checks pass without a network connection.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">import contextlib, json, os
+from types import SimpleNamespace
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")      # the client is built at import time
+import anthropic
+from fastapi.testclient import TestClient
+import app as service
+
+def fake_message(text="The KV cache stores keys and values."):
+    return SimpleNamespace(content=[SimpleNamespace(type="text", text=text)],
+                           usage=SimpleNamespace(input_tokens=12, output_tokens=8))
+
+class FakeMessages:
+    def __init__(self, fail=False):
+        self.fail = fail
+
+    async def create(self, **kw):
+        return fake_message()
+
+    def stream(self, **kw):
+        @contextlib.asynccontextmanager
+        async def cm():
+            if self.fail:
+                raise anthropic.APIConnectionError(request=None)
+            async def words():
+                for w in ["The ", "KV ", "cache."]:
+                    yield w
+            yield SimpleNamespace(text_stream=words(), get_final_message=_final)
+        return cm()
+
+async def _final():
+    return fake_message()
+
+service.client.messages = FakeMessages()
+tc = TestClient(service.app)
+assert tc.get("/health").status_code == 200
+assert tc.post("/ask", json={"question": ""}).status_code == 422
+assert tc.post("/ask", json={"question": "hi"}).json()["answer"].startswith("The KV cache")
+r = tc.post("/ask/stream", json={"question": "hi"})
+events = [json.loads(line[6:]) for line in r.text.splitlines() if line.startswith("data: ")]
+assert r.headers["content-type"].startswith("text/event-stream") and events[-1] == {"done": True}
+service.client.messages = FakeMessages(fail=True)
+r = tc.post("/ask/stream", json={"question": "hi"})
+assert "error" in r.text
+print("all checks passed:", len(events), "events on the happy path")</code></pre>
+<p>The fake mirrors only the three things the app touches: <code>content</code>, <code>usage</code> and the stream protocol. That is the point of keeping the model behind a thin interface; a fake for a client that was called from twelve places would be a project in itself. The error test matters most: a streaming endpoint that throws after the headers were sent cannot return a 500, so the error has to travel inside the stream.</p>
+</details>
+<hr data-session="2">
 <h2>Serving open models</h2>
-<p>When you need data to stay on your hardware, very high volume at low cost, offline operation, or a fine-tuned open model (lesson <a data-ref="fine-tuning"></a>), you serve models yourself.</p>
+<p>When you need data to stay on your hardware, very high volume at low cost, offline operation, or a fine-tuned open model (lesson <a data-ref="fine-tuning"></a>), you serve models yourself. This session covers the operator's decisions: which server, which precision, how much memory. Lesson <a data-ref="llm-inference"></a> explains the mechanics underneath them: prefill and decode, continuous batching, PagedAttention, prefix caching, speculative decoding and the quantisation formats.</p>
 <h3>The serving landscape</h3>
 <table>
 <thead>
@@ -136,7 +209,7 @@ CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "
 <tr>
 <td>vLLM</td>
 <td>High-throughput GPU serving</td>
-<td>PagedAttention, continuous batching, multiple LoRA adapters, OpenAI-compatible server</td>
+<td>Continuous batching, PagedAttention, multiple LoRA adapters, OpenAI-compatible server</td>
 </tr>
 <tr>
 <td>SGLang, TensorRT-LLM, TGI</td>
@@ -151,15 +224,11 @@ vllm serve Qwen/Qwen2.5-7B-Instruct --max-model-len 16384 --gpu-memory-utilizati
 
 # serve a base model plus your LoRA adapter from lesson 18
 vllm serve Qwen/Qwen2.5-0.5B-Instruct --enable-lora --lora-modules notes=./notes-to-json-lora</code></pre>
-<p>Your lesson <a data-ref="llm-apis"></a> code then works by pointing the OpenAI client at <code>http://localhost:8000/v1</code>, using <code>model="notes"</code> to select the adapter.</p>
-<h3>Why serving is hard: memory and batching</h3>
-<p>Generation is mostly limited by <strong>memory bandwidth</strong>: every new token requires reading all the model weights from GPU memory. Serving one user at a time leaves the GPU's compute mostly idle. Serving systems therefore <strong>batch</strong> many users' requests together so each weight read does work for many sequences. Two innovations made this efficient:</p>
-<ul>
-<li><strong>Continuous batching</strong>: new requests join the running batch as soon as others finish, instead of waiting for a whole batch to complete.</li>
-<li><strong>PagedAttention</strong> (vLLM): the KV cache (lesson <a data-ref="transformers"></a>) is stored in fixed-size pages, like virtual memory, eliminating fragmentation so far more sequences fit in memory at once.</li>
-</ul>
-<h3>Quantisation</h3>
-<p>Store weights in fewer bits to cut memory and speed up the memory-bound decoding:</p>
+<p>Your lesson <a data-ref="llm-apis"></a> code then works by pointing the OpenAI client at <code>http://localhost:8000/v1</code>, using <code>model="notes"</code> to select the adapter. Command-line flags change between versions; <code>vllm serve --help</code> is the reference for the one you installed.</p>
+<h3>Why serving is hard, in one paragraph</h3>
+<p>Generating a token means reading every weight of the model from GPU memory, so decoding one user at a time leaves the GPU's arithmetic units mostly idle: the bottleneck is <strong>memory bandwidth</strong>, not compute. Serving systems therefore batch many users' requests so that each read of the weights does work for many sequences, admit new requests into the running batch as others finish (<strong>continuous batching</strong>), and manage the KV cache (lesson <a data-ref="transformers"></a>) in pages so that far more sequences fit in memory. The operator's consequence: throughput per GPU depends on how many sequences fit at once, which the memory budget below decides.</p>
+<h3>Quantisation: the operator's choice</h3>
+<p>Store weights in fewer bits to cut memory and speed up memory-bound decoding:</p>
 <table>
 <thead>
 <tr>
@@ -196,7 +265,7 @@ vllm serve Qwen/Qwen2.5-0.5B-Instruct --enable-lora --lora-modules notes=./notes
 </tr>
 </tbody>
 </table>
-<p>GGUF is the file format used by llama.cpp and Ollama, with variants such as <code>Q4_K_M</code> (a good default) and <code>Q8_0</code>. AWQ and GPTQ are 4-bit formats popular on GPUs. Always re-run your eval set after quantising: the average benchmark loss may be small while <em>your</em> task suffers.</p>
+<p>GGUF is the file format used by llama.cpp and Ollama, with variants such as <code>Q4_K_M</code> (a good default) and <code>Q8_0</code>. AWQ and GPTQ are 4-bit formats popular on GPUs. Always re-run your eval set after quantising: the average benchmark loss may be small while <em>your</em> task suffers. How these formats work, and why 4-bit costs more on reasoning than on chat, is in lesson <a data-ref="llm-inference"></a>.</p>
 <h3>The GPU memory budget</h3>
 <pre><code class="language-python">def serving_memory_gb(params_billion, weight_bytes, layers, kv_heads, head_dim,
                       context_tokens, concurrent_seqs, kv_bytes=2):
@@ -208,23 +277,52 @@ vllm serve Qwen/Qwen2.5-0.5B-Instruct --enable-lora --lora-modules notes=./notes
 # an 8B model with 32 layers, 8 KV heads of dimension 128:
 print(serving_memory_gb(8, 2, 32, 8, 128, 8192, 16))     # (16.0, 17.2): BF16 weights + 16 users at 8k context
 print(serving_memory_gb(8, 0.5, 32, 8, 128, 8192, 16))   # (4.0, 17.2): 4-bit weights; KV cache now dominates</code></pre>
-<p>Add 10 to 20% for activations and overheads. The lesson of the arithmetic: for many users and long contexts, <strong>KV cache memory, not weights, limits capacity</strong>. Shorter maximum context, KV-cache quantisation and grouped-query-attention models all raise the number of concurrent users per GPU.</p>
+<p>Add 10 to 20% for activations and overheads. The lesson of the arithmetic: for many users and long contexts, <strong>KV cache memory, not weights, limits capacity</strong>. Shorter maximum context, KV-cache quantisation and grouped-query-attention models all raise the number of concurrent users per GPU. The numbers you need (layers, KV heads, head dimension) are in every model's configuration file.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: capacity-plan a GPU</p>
+<p>You must serve the 8B model above (32 layers, 8 KV heads of dimension 128) to users whose conversations reach 8,192 tokens.</p>
+<ol>
+<li>Write <code>max_concurrent(gpu_gb, weight_bytes, context_tokens, kv_bytes=2)</code> that returns how many sequences fit after the weights, keeping 15% of the card free for activations and overheads.</li>
+<li>Print a table for 24 GB, 48 GB and 80 GB cards at BF16, INT8 and 4-bit weights.</li>
+<li>Add two more rows for the 80 GB card: KV cache quantised to 8-bit (<code>kv_bytes=1</code>), and a 4,096-token context limit.</li>
+</ol>
+<p>You are done when you can name the cheapest configuration that serves 32 users at 8k context, and explain why quantising the weights alone does not get a 24 GB card there.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">def max_concurrent(gpu_gb, weight_bytes, context_tokens, kv_bytes=2,
+                   params_billion=8, layers=32, kv_heads=8, head_dim=128, headroom=0.15):
+    weights_gb = params_billion * weight_bytes
+    kv_per_seq_gb = 2 * layers * kv_heads * head_dim * kv_bytes * context_tokens / 1e9
+    free = gpu_gb * (1 - headroom) - weights_gb
+    return max(0, int(free // kv_per_seq_gb))
+
+print(f"{'GPU':&gt;6} {'weights':&gt;8} {'context':&gt;8} {'kv':&gt;3}  users")
+for gpu in [24, 48, 80]:
+    for name, wb in [("bf16", 2), ("int8", 1), ("4-bit", 0.5)]:
+        print(f"{gpu:&gt;4}GB {name:&gt;8} {8192:&gt;8} {2:&gt;3}  {max_concurrent(gpu, wb, 8192)}")
+print(f"{80:&gt;4}GB {'4-bit':&gt;8} {8192:&gt;8} {1:&gt;3}  {max_concurrent(80, 0.5, 8192, kv_bytes=1)}")
+print(f"{80:&gt;4}GB {'4-bit':&gt;8} {4096:&gt;8} {2:&gt;3}  {max_concurrent(80, 0.5, 4096)}")</code></pre>
+<p>Each 8k-token sequence costs about 1.07 GB of KV cache. A 24 GB card with 4-bit weights has about 16 GB left, so 15 users, however small the weights get: the cache, not the weights, is the wall. An 80 GB card at BF16 holds about 48 users, and at 4-bit about 60; quantising the KV cache to 8-bit doubles that, and halving the context limit doubles it again. The cheapest route to 32 users at 8k is a single 48 GB card with INT8 weights (about 30 users) or 4-bit weights (about 34), with KV-cache quantisation as the next lever. Real servers reserve memory differently, so treat the numbers as a planning estimate and confirm with a load test.</p>
+</details>
+<hr data-session="3">
 <h2>Latency, throughput and cost</h2>
 <h3>Measure the right things</h3>
 <ul>
 <li><strong>Time to first token (TTFT)</strong>: dominated by prompt length (the "prefill"). What makes an app feel responsive.</li>
-<li><strong>Time per output token (TPOT)</strong> or tokens per second: the streaming speed.</li>
+<li><strong>Time per output token (TPOT)</strong>, also called inter-token latency, or its inverse, tokens per second: the streaming speed.</li>
 <li><strong>Total latency</strong> ≈ TTFT + output tokens × TPOT. Output length is the biggest lever: ask for concise answers.</li>
 <li><strong>Throughput</strong>: requests or tokens per second the system sustains.</li>
 <li>Report <strong>p50 and p95</strong> (or p99), not averages. Users remember the slow requests.</li>
 </ul>
+<p>Lesson <a data-ref="llm-inference"></a> works through where each of these numbers comes from inside a serving engine. Here they are the things you log and alert on.</p>
 <h3>Levers, roughly in order of payoff</h3>
 <ol>
 <li><strong>Shorter outputs</strong>: specify length and format. Output tokens are slow and expensive.</li>
 <li><strong>Smaller models where they pass the eval</strong>, with <strong>routing</strong>: a cheap model for easy requests, escalate the rest.</li>
 <li><strong>Prompt caching</strong> for long shared prefixes (lesson <a data-ref="llm-apis"></a>).</li>
 <li><strong>Response caching</strong>: identical requests get the stored answer. A <strong>semantic cache</strong> also matches near-identical questions by embedding similarity; set the similarity threshold conservatively and exclude anything user-specific or time-sensitive.</li>
-<li><strong>Trim context</strong>: retrieve fewer, better chunks (reranking); summarise long histories.</li>
+<li><strong>Trim context</strong>: retrieve fewer, better chunks (reranking); summarise long histories (lesson <a data-ref="context-engineering"></a>).</li>
 <li><strong>Parallelise</strong> independent calls (lesson <a data-ref="agents"></a>) and <strong>batch</strong> offline work (batch APIs, lesson <a data-ref="llm-apis"></a>).</li>
 <li><strong>Streaming</strong> does not reduce total time but transforms perceived speed.</li>
 </ol>
@@ -251,6 +349,50 @@ class SemanticCache:
 <li>Set <strong>budgets and alerts</strong>, plus per-user quotas to stop abuse and runaway agents.</li>
 <li>Re-run the cost estimate from lesson <a data-ref="llm-apis"></a> whenever prompts grow: added context is the usual culprit.</li>
 </ul>
+<h3>A cost dashboard from your logs</h3>
+<p>The JSON log lines the service writes are the raw material for every cost question. A <strong>cost dashboard</strong> needs only four things per request: a timestamp, a feature name, input and output token counts, and the model, from which cost follows by multiplying by the price list you keep in configuration. Aggregate by day and feature, by user for quota alerts, and by model to see what a routing change saved. Add the cache hit rate: every hit is a request that cost nothing. The point is not the chart but the habit: the person who changed the prompt sees the cost line move the next morning.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a cost and latency dashboard from logs</p>
+<ol>
+<li>Generate 2,000 synthetic log lines like the ones <code>app.py</code> writes, spread over 7 days and three features (<code>ask</code>, <code>summarise</code>, <code>extract</code>), with realistic token counts, a cache-hit flag, and a <code>model</code> field that routes 30% of <code>ask</code> traffic to a cheaper model. Make one day's <code>summarise</code> prompts twice as long as the others.</li>
+<li>Load the lines with pandas, compute the cost of each request from a price table (per million input and output tokens), and print cost per feature per day and the cache hit rate.</li>
+<li>Print p50 and p95 latency per feature.</li>
+</ol>
+<p>You are done when the day with the longer prompts stands out in the table and you can say what the routing to the cheaper model saved.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">import json, random
+import pandas as pd
+
+random.seed(0)
+PRICES = {"big": (2.0, 10.0), "small": (0.10, 0.50)}         # dollars per million input / output tokens
+rows = []
+for i in range(2000):
+    day = i % 7
+    feature = random.choice(["ask", "ask", "summarise", "extract"])
+    model = "small" if feature == "ask" and random.random() &lt; 0.3 else "big"
+    inp = {"ask": 900, "summarise": 3000, "extract": 1500}[feature] * (2 if feature == "summarise" and day == 4 else 1)
+    inp = int(random.gauss(inp, inp * 0.2)); out = int(random.gauss(250, 80))
+    hit = feature == "ask" and random.random() &lt; 0.25
+    rows.append({"ts": f"2026-10-{12 + day:02d}", "feature": feature, "model": model,
+                 "in": 0 if hit else inp, "out": 0 if hit else out, "cache_hit": hit,
+                 "latency_s": 0.05 if hit else round(0.4 + out * (0.03 if model == "big" else 0.015) + random.random(), 2)})
+with open("requests.jsonl", "w") as f:
+    for r in rows:
+        f.write(json.dumps(r) + "\n")
+
+df = pd.read_json("requests.jsonl", lines=True)
+df["cost"] = [(PRICES[m][0] * i + PRICES[m][1] * o) / 1e6 for m, i, o in zip(df.model, df["in"], df["out"])]
+print(df.pivot_table(index="ts", columns="feature", values="cost", aggfunc="sum").round(2))
+print("cache hit rate:", round(df.cache_hit.mean(), 3))
+print(df.groupby("feature").latency_s.quantile([0.5, 0.95]).unstack().round(2))
+ask = df[(df.feature == "ask") &amp; ~df.cache_hit]
+would_cost = (PRICES["big"][0] * ask["in"] + PRICES["big"][1] * ask["out"]).sum() / 1e6
+print(f"ask: actual ${ask.cost.sum():.2f} versus ${would_cost:.2f} with no routing")</code></pre>
+<p>The summarise column jumps on the fourth day, which is exactly the kind of silent prompt growth that a dashboard catches and a unit test never will. Routing 30% of the easy questions to the small model cuts the <code>ask</code> bill by roughly a quarter; whether that is worth it depends on the eval, not the dashboard. In production the same three queries run against a log store or a metrics system instead of a file, and the price table lives in configuration next to the model name.</p>
+</details>
+<hr data-session="4">
 <h2>Observability</h2>
 <p>LLM systems fail quietly: no exception, just a worse answer. You need to see inside every request.</p>
 <h3>Tracing</h3>
@@ -280,13 +422,66 @@ with span("retrieve", trace_id, query="belt slipping") as s:
 </div>
 <h3>Monitoring</h3>
 <p>Dashboards and alerts on: error rate and upstream provider errors; latency percentiles; tokens and cost per request; cache hit rate; refusal and "I don't know" rates; user feedback; and a regular sample of traces scored by your LLM judges (lesson <a data-ref="evaluation"></a>). Sudden shifts in any of these, such as a spike in refusals after a provider's model update, are often the first sign something changed.</p>
+<h3>Monitoring for drift</h3>
+<p><strong>Drift</strong> is change without error. Three kinds matter for LLM systems:</p>
+<ul>
+<li><strong>Input drift</strong>: users ask about new products, in new languages, with longer messages, or a new client starts sending a different kind of traffic. Track the distribution of input length, language, detected topic and the share of each request type.</li>
+<li><strong>Output drift</strong>: answer length, refusal rate, tool-use rate and judge scores shift. The usual cause is a provider model update, a prompt change that nobody evaluated, or a retrieval index rebuild.</li>
+<li><strong>Quality drift</strong>: the offline eval set still passes but online feedback worsens, which means the eval set no longer represents the traffic. Feed the new cases back into it.</li>
+</ul>
+<p>A practical detector compares this week's distribution of a metric with a reference week. For categorical metrics (topic, request type, language) a chi-square test or the <strong>population stability index</strong> works; for numeric ones, compare percentiles. Alert on the comparison, not on the raw number, so that normal daily variation does not page anyone.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: detect drift in production traffic</p>
+<ol>
+<li>Simulate two weeks of request-type counts for the support assistant: a reference week where requests are 50% hardware, 20% software, 20% data and 10% other, and a second week with the same mix. Then simulate a third week in which a new client arrives and data questions rise to 40%.</li>
+<li>Implement the population stability index, \(\text{PSI} = \sum_i (p_i - q_i)\ln(p_i / q_i)\) over categories, and compute it for weeks two and three against the reference week.</li>
+<li>Also track the mean input length per day for the three weeks, with a jump in week three, and flag any day whose mean is more than three standard deviations from the reference week.</li>
+</ol>
+<p>You are done when week two stays under the common PSI alert threshold of 0.2, week three exceeds it, and the length alert fires only in week three.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">import numpy as np
+rng = np.random.default_rng(0)
+CATS = ["hardware", "software", "data", "other"]
+
+def week(mix, n=1400):
+    counts = rng.multinomial(n, mix)
+    return counts / counts.sum()
+
+def psi(p, q, eps=1e-6):
+    p, q = np.asarray(p) + eps, np.asarray(q) + eps
+    return float(np.sum((p - q) * np.log(p / q)))
+
+ref = week([0.5, 0.2, 0.2, 0.1])
+for name, mix in [("week 2", [0.5, 0.2, 0.2, 0.1]), ("week 3", [0.35, 0.15, 0.4, 0.1])]:
+    value = psi(week(mix), ref)
+    print(f"{name}: PSI {value:.3f} {'ALERT' if value &gt; 0.2 else 'ok'}")
+
+ref_days = rng.normal(180, 12, 7)                       # mean input length per day, reference week
+mu, sd = ref_days.mean(), ref_days.std()
+for name, mean in [("week 2", 180), ("week 3", 260)]:
+    days = rng.normal(mean, 12, 7)
+    flags = [f"day {i + 1}" for i, d in enumerate(days) if abs(d - mu) &gt; 3 * sd]
+    print(f"{name}: mean length {days.mean():.0f}, alerts: {flags or 'none'}")</code></pre>
+<p>Week two lands near zero (sampling noise alone gives a PSI of a few thousandths), and week three lands well above 0.2 because a fifth of the traffic moved category. The length detector is the same idea for a numeric metric. Two refinements for production: compare against a rolling reference so that slow seasonal change does not accumulate into a false alert, and when an alert fires, pull a sample of the new traffic into your eval set before anyone touches the prompt.</p>
+</details>
+<h3>Rolling out changes: canaries, A/B tests and shadow deployments</h3>
+<p>Every prompt, model or index change is a deployment, and there are three ways to expose it to traffic:</p>
+<ul>
+<li><strong>Canary release</strong>: send a small share of requests (1 to 5%) to the new version, watch the error, latency and quality metrics, then widen or roll back. This catches crashes and gross regressions cheaply.</li>
+<li><strong>A/B test</strong>: split users randomly between versions and compare the outcome the product exists for (task completion, escalation rate, retention) with enough traffic for the difference to be real (the statistics of lesson <a data-ref="evaluation"></a> apply). This is the only way to learn whether a quality gain users notice.</li>
+<li><strong>Shadow deployment</strong>: run the candidate on live traffic in parallel but show nobody its answers; store both outputs and compare them offline with your judges. It costs double inference for the shadowed share but carries no user risk, which makes it the right first step for a model swap.</li>
+</ul>
+<p>Whichever you use, the versions must be distinguishable in traces and logs, and rollback must be a configuration change, not a code deploy.</p>
 <h3>CI/CD for AI systems</h3>
 <ul>
 <li><strong>Version everything</strong>: code, prompts, model identifiers, retrieval index builds, eval datasets.</li>
 <li><strong>Gate deploys on evals</strong>: the smoke eval set runs on every change; the full set before releasing prompt or model changes.</li>
 <li><strong>Roll out gradually</strong>: canary or percentage rollouts, with automatic rollback on error or quality alarms.</li>
-<li><strong>Shadow testing</strong>: run a candidate model on live traffic in parallel without showing its answers, and compare offline.</li>
+<li><strong>Shadow first</strong> for model swaps, then canary, then the A/B test that decides.</li>
 </ul>
+<p>Training and serving a model of your own adds the infrastructure side of this, from checkpoints to multi-GPU clusters; lesson <a data-ref="training-at-scale"></a> covers it.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: production-ise your RAG system</p>
 <ol>
@@ -299,7 +494,7 @@ with span("retrieve", trace_id, query="belt slipping") as s:
 </div>
 <details class="solution">
 <summary>Show what to measure and typical findings</summary>
-<p><pre><code class="language-python">import asyncio, time, httpx, numpy as np
+<pre><code class="language-python">import asyncio, time, httpx, numpy as np
 
 async def one(client, q):
     t0 = time.perf_counter()
@@ -313,7 +508,7 @@ async def load_test(questions, concurrency=50):
     print(f"ok {len(lat)}/{len(res)}  p50 {np.percentile(lat, 50):.2f}s  p95 {np.percentile(lat, 95):.2f}s")
 
 # asyncio.run(load_test(my_questions))</code></pre>
-Typical findings: p95 is often two to three times p50, driven by long answers and provider-side queueing; a few requests may hit rate limits under burst load, which your retries should absorb (check the logs). The semantic cache catches paraphrases that the exact cache misses, but with a loose threshold it also returns answers to subtly different questions; reading those false hits is the best way to choose the threshold. The JSON logs make all of this answerable in a few lines of pandas (lesson <a data-ref="python-for-ai"></a> skills, paying off).</p>
+<p>Typical findings: p95 is often two to three times p50, driven by long answers and provider-side queueing; a few requests may hit rate limits under burst load, which your retries should absorb (check the logs). The semantic cache catches paraphrases that the exact cache misses, but with a loose threshold it also returns answers to subtly different questions; reading those false hits is the best way to choose the threshold. The JSON logs make all of this answerable in a few lines of pandas (lesson <a data-ref="python-for-ai"></a> skills, paying off).</p>
 </details>
 <h2>Check yourself</h2>
 <div class="quiz">
@@ -345,17 +540,17 @@ Typical findings: p95 is often two to three times p50, driven by long answers an
 <li>To reduce the number of tokens generated</li>
 <li>Because GPUs cannot run a single request</li>
 </ul>
-<p class="why">Continuous batching and PagedAttention raise throughput dramatically.</p>
+<p class="why">Continuous batching and paged KV caches raise throughput dramatically.</p>
 </div>
 <div class="q">
-<p>What is the main risk of a semantic cache?</p>
+<p>You want to swap to a new model version with no risk to users. What is the right first step?</p>
 <ul>
-<li>It is slower than calling the model</li>
-<li class="correct">Returning a cached answer to a question that is similar but meaningfully different, or user-specific</li>
-<li>It uses too many tokens</li>
-<li>It cannot be combined with streaming</li>
+<li>An A/B test on all traffic</li>
+<li class="correct">A shadow deployment: run the new model on live traffic without showing its answers, and compare offline</li>
+<li>Switch at midnight and watch the error rate</li>
+<li>Rely on the provider's benchmark numbers</li>
 </ul>
-<p class="why">Use a conservative threshold, exclude personal and time-sensitive queries, and review false hits.</p>
+<p class="why">Shadowing costs extra inference but exposes nobody to the candidate; canary and A/B come after.</p>
 </div>
 <div class="q">
 <p>A user reports a wrong answer from your RAG service. What lets you find which stage failed?</p>
@@ -371,11 +566,11 @@ Typical findings: p95 is often two to three times p50, driven by long answers an
 <div class="admonition takeaways">
 <p class="admonition-title">Key takeaways</p>
 <ul>
-<li>Production AI is ordinary software around model calls: validate, authenticate, rate-limit, stream, time out, and keep the model behind a thin interface.</li>
-<li>Self-hosting uses servers such as vLLM, Ollama and llama.cpp. Continuous batching and PagedAttention make GPUs efficient; quantisation shrinks weights, but measure quality afterwards.</li>
+<li>Production AI is ordinary software around model calls: validate, authenticate, rate-limit, stream, time out, test with a fake model, and keep the model behind a thin interface.</li>
+<li>Self-hosting uses servers such as vLLM, Ollama and llama.cpp. Quantisation shrinks weights, but measure quality afterwards; the mechanics are in lesson <a data-ref="llm-inference"></a>.</li>
 <li>Budget GPU memory as weights plus KV cache; with many users and long contexts, the cache dominates.</li>
-<li>Cut latency and cost with shorter outputs, smaller routed models, prompt and response caching, trimmed context and parallelism. Track p95, not averages.</li>
-<li>Trace every request end to end, monitor quality as well as uptime, version everything, and gate releases on evals.</li>
+<li>Cut latency and cost with shorter outputs, smaller routed models, prompt and response caching, trimmed context and parallelism. Track p95, not averages, and keep a cost dashboard.</li>
+<li>Trace every request end to end, monitor quality and drift as well as uptime, version everything, roll out through shadow, canary and A/B stages, and gate releases on evals.</li>
 </ul>
 </div>
 <h3>Go deeper</h3>
@@ -385,4 +580,5 @@ Typical findings: p95 is often two to three times p50, driven by long answers an
 <li>Chip Huyen, <em>AI Engineering</em> (O'Reilly, 2025), chapters on inference optimisation and architecture</li>
 <li><a href="https://docs.vllm.ai">vLLM documentation</a> and <a href="https://fastapi.tiangolo.com">FastAPI documentation</a></li>
 <li>The OpenTelemetry semantic conventions for generative AI</li>
+<li>Google's "Rules of Machine Learning" and the Hidden Technical Debt in ML Systems paper (Sculley et al., 2015), on monitoring and drift</li>
 </ul>

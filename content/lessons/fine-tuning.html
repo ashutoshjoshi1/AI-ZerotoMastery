@@ -2,23 +2,30 @@
 {
   "title": "Fine-tuning language models",
   "short": "Fine-tuning",
-  "summary": "Learn when fine-tuning is the right tool and when it is not, understand LoRA and QLoRA down to the matrix shapes and memory budget, fine-tune a small open model on your own task, then go further with DPO, distillation and adapter serving.",
+  "summary": "Learn when fine-tuning is the right tool and when it is not, understand LoRA and QLoRA down to the matrix shapes and memory budget, fine-tune a small open model on your own task and measure it against a prompted baseline, then see where preference tuning, distillation and adapter serving take you next.",
   "sessions": [
     "When to fine-tune, and full fine-tuning versus parameter-efficient methods",
     "LoRA and QLoRA: the maths, the shapes and the memory arithmetic",
-    "Hands-on: prepare a dataset and LoRA-fine-tune a small open model",
-    "Preference tuning with DPO, distillation, evaluation, merging and serving adapters"
+    "Hands-on: prepare a dataset, measure a baseline, and LoRA-fine-tune a small open model",
+    "Beyond SFT: a bridge to preference tuning and distillation, hosted fine-tuning, serving adapters, and what goes wrong"
   ],
-  "objectives": [],
-  "prerequisites": [],
-  "runs_on": "A GPU runtime (a free Colab T4 is enough for the 0.5B model). The LoRA-from-scratch cell runs on CPU.",
+  "objectives": [
+    "Decide whether a problem needs prompting, retrieval, tools or fine-tuning, and justify the choice with an eval set",
+    "Estimate the GPU memory that full fine-tuning, LoRA and QLoRA need for a model of a given size",
+    "Implement LoRA from scratch, explain the roles of the rank and alpha, and merge an adapter back into the weights",
+    "Prepare a chat-format dataset, measure a baseline, and fine-tune a small open model with TRL and PEFT",
+    "Evaluate a fine-tuned model against a prompted baseline and a large model on held-out data, and recognise overfitting, forgetting and safety regressions",
+    "Describe what preference tuning, distillation and multi-adapter serving add, and where the course covers them in depth"
+  ],
+  "prerequisites": ["pytorch", "how-llms-are-built", "llm-apis", "evaluation"],
+  "runs_on": "A GPU runtime (a free Colab T4 is enough for the 0.5B model) for the training cells. The LoRA-from-scratch code, the data generation, the memory calculator and the baseline exercises run on any CPU.",
   "glossary": [
     {"term": "Chat template", "def": "The special-token format a chat model was trained with to mark system, user and assistant turns. Training and serving must use the same one."},
-    {"term": "Distillation", "def": "Training a small student model to imitate a larger teacher."},
-    {"term": "DPO (direct preference optimisation)", "def": "Training directly on preference pairs (chosen versus rejected) without a separate reward model or RL loop.", "also": ["how-llms-are-built"]},
+    {"term": "Distillation", "def": "Training a small student model to imitate a larger teacher.", "also": ["advanced-fine-tuning"]},
     {"term": "Fine-tuning", "def": "Continuing to train a pretrained model on task-specific data."},
     {"term": "LoRA", "def": "Low-rank adaptation: fine-tuning by learning a small low-rank update beside frozen weights."},
     {"term": "QLoRA", "def": "LoRA on top of a base model stored in 4-bit precision."},
+    {"term": "Catastrophic forgetting", "def": "Losing general abilities when a model is trained hard on a narrow task."},
     {"term": "SFT (supervised fine-tuning)", "def": "Fine-tuning on examples of desired inputs and outputs.", "also": ["how-llms-are-built"]}
   ]
 }
@@ -43,8 +50,41 @@
 <p>Without the evaluation discipline of lesson <a data-ref="evaluation"></a> you cannot tell whether fine-tuning helped, hurt, or just changed things. Measure the prompted baseline first. Fine-tuning that does not beat a well-prompted baseline on your eval set is wasted money.</p>
 </div>
 <h3>Full fine-tuning versus parameter-efficient fine-tuning</h3>
-<p><strong>Full fine-tuning</strong> updates every weight. With the Adam optimiser in mixed precision, a common rule of thumb is about 16 bytes of GPU memory per parameter (weights, gradients, two optimiser moments and a full-precision master copy), before activations. For a 7-billion-parameter model that is over 110 GB: several data-centre GPUs. You also get a full-size copy of the model for every task.</p>
+<p><strong>Full fine-tuning</strong> updates every weight. With the Adam optimiser in mixed precision, a common rule of thumb is about 16 bytes of GPU memory per parameter (16-bit weights and gradients, a 32-bit master copy, and two 32-bit optimiser moments), before activations. For a 7-billion-parameter model that is over 110 GB: several data-centre GPUs. You also get a full-size copy of the model for every task.</p>
 <p><strong>Parameter-efficient fine-tuning (PEFT)</strong> freezes the pretrained weights and trains a small number of new parameters. Quality is close to full fine-tuning for most adaptation tasks, memory needs drop dramatically, and the trained result is a small file you can swap in and out. <strong>LoRA</strong> is the method nearly everyone uses.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: the memory budget of fine-tuning</p>
+<ol>
+<li>Write <code>finetune_memory_gb(params_b, method)</code> that returns (weights, training state) in GB from the rules in this section: full fine-tuning costs 16 bytes per parameter in total; LoRA keeps a frozen 16-bit base and trains about 0.6% of the parameters, each with its own 16 bytes of state; QLoRA stores the base in 4-bit, about 0.55 bytes per parameter once the quantisation scales are counted.</li>
+<li>Print a table for 0.5B, 7B and 70B models and the three methods.</li>
+<li>For each row, say which single GPU it fits on before activations (16, 24, 48 or 80 GB), or "multi-GPU".</li>
+</ol>
+<p>You are done when the 7B row matches the table in the next session (about 112 GB full, 15 GB LoRA, 5 GB QLoRA) and you can say why a 70B model still needs a large card even with QLoRA.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">def finetune_memory_gb(params_b, method, lora_fraction=0.006):
+    """Rough GPU memory in GB for the weights and the training state, before activations."""
+    n = params_b * 1e9
+    if method == "full":        # 2 (weights) + 2 (grads) + 4 (master) + 4 + 4 (Adam moments) bytes per param
+        weights, state = 2 * n, 14 * n
+    elif method == "lora":      # frozen 16-bit base; only the adapter carries gradients and optimiser state
+        weights, state = 2 * n, 16 * lora_fraction * n
+    elif method == "qlora":     # frozen 4-bit base (about 0.55 bytes per param including the scales)
+        weights, state = 0.55 * n, 16 * lora_fraction * n
+    return weights / 1e9, state / 1e9
+
+def fits_on(gb):
+    return next((f"{g} GB GPU" for g in [16, 24, 48, 80] if gb &lt;= 0.85 * g), "multi-GPU")
+
+print(f"{'model':&gt;6} {'method':&lt;6} {'weights':&gt;8} {'state':&gt;7} {'total':&gt;7}   fits on")
+for p in [0.5, 7, 70]:
+    for m in ["full", "lora", "qlora"]:
+        w, s = finetune_memory_gb(p, m)
+        print(f"{p:&gt;5}B {m:&lt;6} {w:&gt;8.1f} {s:&gt;7.1f} {w + s:&gt;7.1f}   {fits_on(w + s)}")</code></pre>
+<p>The 7B row gives 112 GB, 14.7 GB and 4.5 GB. Even QLoRA of a 70B model needs about 45 GB before activations, because 4-bit weights of 70 billion parameters are still 38 GB; that is why 70B fine-tunes live on 80 GB cards. The 15% headroom in <code>fits_on</code> stands in for activations, which the table in the next session treats separately: they scale with batch size and sequence length, not with the method.</p>
+</details>
+<hr data-session="2">
 <h2>LoRA: low-rank adaptation</h2>
 <h3>The idea</h3>
 <p>Fine-tuning changes a weight matrix \(W\) (shape \(d_{\text{out}} \times d_{\text{in}}\)) by some update \(\Delta W\). The LoRA paper observed that these updates have low <strong>intrinsic rank</strong>: they can be well approximated by the product of two thin matrices (recall the SVD discussion in lesson <a data-ref="math-for-ai"></a>). So instead of learning \(\Delta W\) directly, learn</p>
@@ -93,8 +133,44 @@ print(trainable, total, f"{100 * trainable / total:.2f}%")   # 131072 16912384 0
 <li><strong>Learning rate</strong>: much higher than for full fine-tuning, often around \(10^{-4}\) to \(2\times10^{-4}\).</li>
 <li><strong>Epochs</strong>: 1 to 3. More risks memorising the training set.</li>
 </ul>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: find the rank a task needs</p>
+<ol>
+<li>Create a frozen base layer <code>nn.Linear(64, 64)</code> and a hidden "ideal" update \(\Delta W\) of rank 4 (the product of two random 64 × 4 and 4 × 64 matrices, scaled down). The target is \(y = (W + \Delta W)\,x\) on 2,048 random inputs.</li>
+<li>For \(r\) in 1, 2, 4, 8 and 16, wrap a copy of the same base layer in <code>LoRALinear</code> and train only \(A\) and \(B\) with Adam for 300 steps on the mean squared error to the target. Print the final loss per rank.</li>
+<li>For the last model, compare its outputs before and after <code>merge()</code>.</li>
+</ol>
+<p>You are done when the loss drops by orders of magnitude once \(r\) reaches the true rank of 4 and barely improves beyond it, and the merged layer reproduces the unmerged outputs to within \(10^{-5}\).</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">torch.manual_seed(0)
+d = 64
+base = nn.Linear(d, d)
+true_delta = (torch.randn(d, 4) @ torch.randn(4, d)) / d        # a hidden rank-4 change to W
+X = torch.randn(2048, d)
+with torch.no_grad():
+    Y = base(X) + X @ true_delta.T                               # what the "fine-tuned" layer should output
+
+for r in [1, 2, 4, 8, 16]:
+    torch.manual_seed(r)
+    layer = LoRALinear(nn.Linear(d, d), r=r, alpha=2 * r)
+    layer.base.load_state_dict(base.state_dict())                # the same frozen base every time
+    opt = torch.optim.Adam([layer.A, layer.B], lr=1e-2)
+    for step in range(300):
+        opt.zero_grad()
+        loss = ((layer(X) - Y) ** 2).mean()
+        loss.backward(); opt.step()
+    print(f"r = {r:&lt;2} final loss {loss.item():.2e}")
+
+with torch.no_grad():
+    before = layer(X)
+    after = layer.merge()(X)                                     # merge folds BA into W; the output must not change
+print("merged matches unmerged:", (before - after).abs().max().item() &lt; 1e-5)</code></pre>
+<p>Ranks 1 and 2 plateau because a rank-2 product cannot represent a rank-4 matrix, whatever the optimiser does. Rank 4 drops the loss by orders of magnitude; 8 and 16 fit no better, they only train more parameters. Real fine-tuning updates are not exactly low rank, which is why 8 to 64 is the usual range and why rank is a hyperparameter you tune on validation loss rather than derive. The merge check is the property that lets LoRA models serve at full speed.</p>
+</details>
 <h3>QLoRA: fine-tuning on one consumer GPU</h3>
-<p><strong>QLoRA</strong> stores the frozen base model in <strong>4-bit</strong> precision (a format called NF4, designed for normally distributed weights) and trains LoRA adapters in 16-bit on top. Memory for the base model falls about fourfold: a 7B model's weights take roughly 4 to 5 GB instead of 14. With paged optimisers and gradient checkpointing, fine-tuning a 7B model fits on a single 16 to 24 GB GPU, and small models (0.5B to 3B) fit on a free Colab T4. Quality is close to 16-bit LoRA.</p>
+<p><strong>QLoRA</strong> stores the frozen base model in <strong>4-bit</strong> precision (a format called NF4, designed for normally distributed weights) and trains LoRA adapters in 16-bit on top. Memory for the base model falls about fourfold: a 7B model's weights take roughly 4 to 5 GB instead of 14. With paged optimisers and gradient checkpointing, fine-tuning a 7B model fits on a single 16 to 24 GB GPU, and small models (0.5B to 3B) fit on a free Colab T4. Quality is close to 16-bit LoRA. The quantisation formats themselves, and what they cost at inference time, are the subject of lesson <a data-ref="llm-inference"></a>.</p>
 <h3>A memory budget, worked out</h3>
 <table>
 <thead>
@@ -132,6 +208,8 @@ print(trainable, total, f"{100 * trainable / total:.2f}%")   # 131072 16912384 0
 </tr>
 </tbody>
 </table>
+<p>The activations row is the one this table hand-waves. Lesson <a data-ref="training-at-scale"></a> works out the full training memory budget (parameters, gradients, optimiser states and activations as a function of batch and sequence length) and shows how ZeRO and FSDP shard the first three across GPUs when even LoRA does not fit on one.</p>
+<hr data-session="3">
 <h2>Hands-on: fine-tune a small model</h2>
 <h3>The task</h3>
 <p>We will teach a small open model to turn free-text field-technician notes into a strict JSON record. This is a textbook fine-tuning case: narrow, high-volume, format-sensitive, and something a 0.5B to 1.5B model can learn well enough to run cheaply or on a laptop.</p>
@@ -148,6 +226,64 @@ print(trainable, total, f"{100 * trainable / total:.2f}%")   # 131072 16912384 0
 <li><strong>Cover the real distribution</strong>: typos, abbreviations, missing fields, multiple instruments in one note, notes that should produce <code>null</code>s.</li>
 <li><strong>Hold out</strong> 10 to 20% as a validation set, and keep your separate eval set untouched.</li>
 </ul>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: build the training set and a baseline to beat</p>
+<p>The notebook provides a small generator that writes synthetic technician notes and their JSON records, so the training cells run without any API.</p>
+<ol>
+<li>Run the generator to write <code>train.jsonl</code> (400 examples) and <code>val.jsonl</code> (60). Read ten examples. What variation does it cover, and what real-world variation is missing?</li>
+<li>Write <code>grade(pred, gold)</code> that returns JSON validity and an exact-match flag per field.</li>
+<li>Write a rule-based baseline <code>rule_convert(note)</code>: a regex for the instrument id, a regex for the duration (handle "45 min", "45min" and "1.5h"), and keyword rules for the action, the parts and the follow-up. Score it on <code>val.jsonl</code> with <code>grade</code>.</li>
+</ol>
+<p>You are done when you have a per-field accuracy table for the baseline. These are the numbers the fine-tuned model has to beat in the next section; the solution discusses why they are suspiciously high.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">import json, re
+
+FIELDS = ["instrument_id", "action", "parts", "duration_min", "follow_up"]
+
+def grade(pred: str, gold: dict) -&gt; dict:
+    try:
+        p = json.loads(pred)
+    except json.JSONDecodeError:
+        return {"valid": 0, **{f: 0 for f in FIELDS}}
+    return {"valid": 1, **{f: int(p.get(f) == gold.get(f)) for f in FIELDS}}
+
+PARTS = [("desiccant", "desiccant"), ("belt", "filter wheel belt"), ("window", "entrance window"),
+         ("gps", "gps antenna"), ("fan", "cooler fan"), ("modem", "modem")]
+FOLLOW = [("wk", "recheck in 2 weeks"), ("two weeks", "recheck in 2 weeks"),
+          ("spare belt", "return with spare belt"), ("upload", "monitor data upload")]
+
+def rule_convert(note: str) -&gt; str:
+    t = note.lower()
+    m = re.search(r"p-\d{3}", t)
+    dur = re.search(r"(\d+(?:\.\d+)?)\s*(h|mins?)\b", t)
+    minutes = None if not dur else (float(dur[1]) * 60 if dur[2] == "h" else float(dur[1]))
+    parts = [name for key, name in PARTS if key in t]
+    if "firmware" in t or ("fw" in t and "belt" not in t):
+        action = "firmware_update"
+    elif any(w in t for w in ["inspection", "visual check", "looked over"]):
+        action = "inspection"
+    elif any(p in ("gps antenna", "cooler fan", "modem") for p in parts):
+        action = "repair"
+    else:
+        action = "maintenance"
+    follow = next((v for k, v in FOLLOW if k in t), None)
+    return json.dumps({"instrument_id": m[0].upper() if m else None, "action": action, "parts": parts,
+                       "duration_min": None if minutes is None else int(minutes), "follow_up": follow})
+
+def evaluate(convert_fn, path="val.jsonl"):
+    rows = [json.loads(l) for l in open(path)]
+    totals = {"valid": 0, **{f: 0 for f in FIELDS}}
+    for ex in rows:
+        note, gold = ex["messages"][1]["content"], json.loads(ex["messages"][2]["content"])
+        for k, v in grade(convert_fn(note), gold).items():
+            totals[k] += v
+    return {k: round(v / len(rows), 3) for k, v in totals.items()}
+
+print("rule baseline:", evaluate(rule_convert))</code></pre>
+<p>On the synthetic validation set the rules score close to 100% on every field, and that is the lesson rather than the result: the generator has nine job phrasings and four follow-up phrasings, so a short list of keywords covers it. Real notes have typos ("dessicant"), new parts, two instruments in one line and free-text follow-ups that no keyword list anticipates. A fine-tuned model earns its place on <em>that</em> variation, which is why the distillation exercise at the end of this lesson insists on 30 hand-written notes as the eval set. Whatever you fine-tune, keep <code>evaluate</code>: the same function scores the base model, the fine-tuned model and the large model.</p>
+</details>
 <h3>Training with Hugging Face TRL and PEFT</h3>
 <p>Run this on a GPU (a free Colab T4 is enough for a 0.5B model). Library APIs evolve quickly; if an argument name has changed, check the TRL documentation for your installed version.</p>
 <pre><code class="language-bash">pip install -U transformers datasets peft trl accelerate bitsandbytes</code></pre>
@@ -159,7 +295,7 @@ from trl import SFTConfig, SFTTrainer
 
 model_id = "Qwen/Qwen2.5-0.5B-Instruct"         # small instruction-tuned open model
 tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16, device_map="auto")
+model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float16, device_map="auto")
 
 data = load_dataset("json", data_files={"train": "train.jsonl", "validation": "val.jsonl"})
 
@@ -191,7 +327,7 @@ trainer = SFTTrainer(
 )
 trainer.train()
 trainer.save_model("notes-to-json-lora")         # saves only the adapter: a few MB</code></pre>
-<p>The trainer applies the model's chat template to each conversation, and by default computes the loss on the whole sequence; options exist to train only on the assistant's replies, which is usually what you want for instruction data.</p>
+<p>The trainer applies the model's chat template to each conversation. By default it computes the loss on the whole sequence, including the system prompt and the user's note; for instruction data you usually want the loss only on the assistant's reply, so the model learns to answer rather than to predict questions. TRL's <code>SFTConfig</code> has an <code>assistant_only_loss</code> option for this (it needs a chat template that marks assistant turns; check the documentation for your version), and lesson <a data-ref="advanced-fine-tuning"></a> builds the loss mask by hand so you can see exactly which tokens train.</p>
 <p>For a larger model on limited memory, load it in 4-bit (QLoRA) instead:</p>
 <pre><code class="language-python">from transformers import BitsAndBytesConfig
 
@@ -205,7 +341,7 @@ model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-7B-Instruct",
 <h3>Use and evaluate the result</h3>
 <pre><code class="language-python">from peft import PeftModel
 
-base = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16, device_map="auto")
+base = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float16, device_map="auto")
 tuned = PeftModel.from_pretrained(base, "notes-to-json-lora")
 
 def convert(note: str, m) -&gt; str:
@@ -220,36 +356,23 @@ print(convert("P-204: firmware 2.3-&gt;2.4, rebooted, all ok. 15min", tuned))
 merged = tuned.merge_and_unload()                # fold LoRA into the weights for deployment
 merged.save_pretrained("notes-to-json-merged")</code></pre>
 <p>Then run your lesson <a data-ref="evaluation"></a> harness on the held-out eval set, comparing three systems: the base small model with your best prompt, the fine-tuned small model, and the large model you distilled from. The question is never "did the loss go down" but "is the fine-tuned small model good enough on the eval set, at its cost and latency".</p>
+<hr data-session="4">
 <h2>Beyond supervised fine-tuning</h2>
-<h3>Preference tuning with DPO</h3>
-<p>SFT teaches by imitation. When it is easier to say which of two outputs is better than to write the perfect one (tone, helpfulness, conciseness, safety), use preference data: triples of a prompt, a <strong>chosen</strong> response and a <strong>rejected</strong> response. <strong>Direct preference optimisation</strong> (lesson <a data-ref="how-llms-are-built"></a>) trains on these directly:</p>
-\[
-\mathcal{L}_{\text{DPO}} = -\log\sigma\!\left(\beta\left[\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\text{ref}}(y_w\mid x)} - \log\frac{\pi_\theta(y_l\mid x)}{\pi_{\text{ref}}(y_l\mid x)}\right]\right)
-\]
-<p>In words: raise the probability of the chosen answer \(y_w\) relative to the rejected one \(y_l\), measured against a frozen reference model so the tuned model does not drift too far; \(\beta\) controls how far. It is usually run after SFT.</p>
-<pre><code class="language-python">from trl import DPOConfig, DPOTrainer
-
-prefs = load_dataset("json", data_files="prefs.jsonl")["train"]   # {"prompt", "chosen", "rejected"}
-trainer = DPOTrainer(
-    model=sft_model,                       # start from your SFT result
-    args=DPOConfig(output_dir="dpo-out", beta=0.1, learning_rate=5e-6, num_train_epochs=1),
-    train_dataset=prefs,
-    processing_class=tokenizer,
-    peft_config=lora,                      # with LoRA, the frozen base acts as the reference model
-)
-trainer.train()</code></pre>
+<p>SFT teaches by imitation: show the model good outputs and it learns to produce them. Two families of technique start where imitation stops. This section is a map; lesson <a data-ref="advanced-fine-tuning"></a> is the territory.</p>
+<h3>Preference tuning</h3>
+<p>Sometimes it is easier to say which of two outputs is better than to write the perfect one: tone, helpfulness, conciseness, safety. <strong>Preference tuning</strong> trains on triples of a prompt, a <strong>chosen</strong> response and a <strong>rejected</strong> response. You met the idea as RLHF in lesson <a data-ref="how-llms-are-built"></a>; the practical workhorse is direct preference optimisation (DPO), which raises the probability of the chosen answer relative to the rejected one while a frozen reference model keeps the tuned model from drifting too far. It is usually run after SFT, and TRL's <code>DPOTrainer</code> takes the same model, tokenizer and LoRA configuration as the SFT code above. Lesson <a data-ref="advanced-fine-tuning"></a> derives the DPO loss, implements it from scratch, and goes on to reward models and GRPO, the reinforcement-learning method behind reasoning models.</p>
 <h3>Distillation</h3>
-<p><strong>Knowledge distillation</strong> trains a small "student" to imitate a large "teacher". The simplest version is what you did above: train on the teacher's outputs. The classic version also matches the teacher's full probability distribution over tokens (using a KL-divergence loss), which carries more information per example but requires access to the teacher's logits, so it is mostly done with open models. Distillation is how many small, fast production models get most of a big model's quality on a narrow task.</p>
+<p><strong>Knowledge distillation</strong> trains a small "student" to imitate a large "teacher". The simplest version is what this lesson does: train on the teacher's outputs. The classic version also matches the teacher's full probability distribution over tokens with a KL-divergence loss, which carries more information per example but needs the teacher's logits, so it is mostly done between open models. Distillation is how many small, fast production models get most of a big model's quality on a narrow task. Lesson <a data-ref="advanced-fine-tuning"></a> covers both forms, together with synthetic data generation, decontamination, model merging and how to evaluate a post-trained model.</p>
 <h3>Hosted fine-tuning</h3>
 <p>Several API providers offer fine-tuning of their own models: upload a JSONL file in their chat format, launch a job, get a model id. You give up control of the method and weights in exchange for zero infrastructure. The same rules apply: clean data, a held-out eval, and a comparison against a well-prompted baseline.</p>
 <h3>Serving adapters</h3>
-<p>Because adapters are small, one base model can serve many of them. Servers such as vLLM can load multiple LoRA adapters and select one per request, so ten customer-specific fine-tunes cost little more than one base model to serve (lesson <a data-ref="deployment-llmops"></a>).</p>
+<p>Because adapters are small, one base model can serve many of them. Servers such as vLLM can load multiple LoRA adapters and select one per request, so ten customer-specific fine-tunes cost little more than one base model to serve (lesson <a data-ref="deployment-llmops"></a> shows the command). A merged model can also be quantised and exported for CPU or edge serving; lesson <a data-ref="llm-inference"></a> explains the formats and what each one costs in quality and speed. Re-run your eval set after quantising, exactly as you did after fine-tuning.</p>
 <h3>Things that go wrong</h3>
 <ul>
 <li><strong>Catastrophic forgetting</strong>: heavy fine-tuning on a narrow task degrades general abilities. LoRA, low learning rates and few epochs reduce it; mixing in some general instruction data helps.</li>
 <li><strong>Format mismatch</strong>: training with one chat template and serving with another silently ruins results. Always use <code>apply_chat_template</code> from the same tokenizer.</li>
-<li><strong>Data leakage</strong> between training and eval examples gives flattering scores (lesson <a data-ref="ml-fundamentals"></a> again).</li>
-<li><strong>Safety regressions</strong>: fine-tuning can weaken a model's refusal behaviour, even on benign data. Include safety cases in your eval set.</li>
+<li><strong>Data leakage</strong> between training and eval examples gives flattering scores (lesson <a data-ref="ml-fundamentals"></a> again, and the contamination section of lesson <a data-ref="evaluation"></a>).</li>
+<li><strong>Safety regressions</strong>: fine-tuning can weaken a model's refusal behaviour, even on benign data. Include safety cases in your eval set (lesson <a data-ref="safety-security"></a>).</li>
 </ul>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: distil a large model into a small one</p>
@@ -263,17 +386,12 @@ trainer.train()</code></pre>
 </div>
 <details class="solution">
 <summary>Show what to expect and how to grade it</summary>
-<p><pre><code class="language-python">import json
-
-FIELDS = ["instrument_id", "action", "parts", "duration_min", "follow_up"]
-
-def grade(pred: str, gold: dict) -&gt; dict:
-    try:
-        p = json.loads(pred)
-    except json.JSONDecodeError:
-        return {"valid": 0, **{f: 0 for f in FIELDS}}
-    return {"valid": 1, **{f: int(p.get(f) == gold.get(f)) for f in FIELDS}}</code></pre>
-Typical outcome: the base 0.5B model with a few-shot prompt produces valid JSON most of the time but gets fields wrong or invents values; the fine-tuned model is close to 100% valid and approaches the large model on <code>instrument_id</code>, <code>duration_min</code> and <code>parts</code>, while still trailing on free-text fields like <code>follow_up</code>. It runs on a laptop CPU at a fraction of the cost. A sound recommendation might be: deploy the fine-tuned small model, route notes it fails to parse (or flags as low confidence) to the large model, and keep adding corrected failures to the training set for the next round. The exact numbers matter less than having measured them on data the model never saw.</p>
+<pre><code class="language-python"># Needs a GPU runtime (Colab: Runtime &gt; Change runtime type &gt; GPU)
+# grade() and evaluate() come from the baseline exercise; convert() from "Use and evaluate the result"
+fresh_base = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float16, device_map="auto")
+print("base model :", evaluate(lambda note: convert(note, fresh_base)))
+print("fine-tuned :", evaluate(lambda note: convert(note, merged)))</code></pre>
+<p>Typical outcome: the base 0.5B model with a few-shot prompt produces valid JSON most of the time but gets fields wrong or invents values; the fine-tuned model is close to 100% valid and approaches the large model on <code>instrument_id</code>, <code>duration_min</code> and <code>parts</code>, while still trailing on free-text fields like <code>follow_up</code>. It runs on a laptop CPU at a fraction of the cost. A sound recommendation might be: deploy the fine-tuned small model, route notes it fails to parse (or flags as low confidence) to the large model, and keep adding corrected failures to the training set for the next round. The exact numbers matter less than having measured them on data the model never saw.</p>
 </details>
 <h2>Check yourself</h2>
 <div class="quiz">
@@ -283,7 +401,7 @@ Typical outcome: the base 0.5B model with a few-shot prompt produces valid JSON 
 <li>Fine-tune a model on the documents every week</li>
 <li class="correct">Retrieval-augmented generation over the documents</li>
 <li>A longer system prompt</li>
-<li>DPO on question-answer pairs</li>
+<li>Preference tuning on question-answer pairs</li>
 </ul>
 <p class="why">Knowledge that changes belongs in a retrieval index. Fine-tuning is for behaviour, format and efficiency.</p>
 </div>
@@ -334,8 +452,8 @@ Typical outcome: the base 0.5B model with a few-shot prompt produces valid JSON 
 <li>Try prompting, retrieval and tools first. Fine-tune to change behaviour or format reliably, or to make a small model do a narrow task cheaply, not to teach facts.</li>
 <li>LoRA learns a low-rank update \(BA\) beside frozen weights, training under 1% of parameters; adapters are small, swappable and mergeable.</li>
 <li>QLoRA keeps the base in 4-bit so large models fine-tune on one GPU.</li>
-<li>Data quality, coverage and a held-out eval set decide success. Use the model's own chat template.</li>
-<li>DPO tunes on preferences; distillation transfers a large model's skill to a small one. Watch for forgetting and safety regressions.</li>
+<li>Data quality, coverage and a held-out eval set decide success. Measure a baseline before you train, and use the model's own chat template.</li>
+<li>Preference tuning and distillation take over where imitation stops; lesson <a data-ref="advanced-fine-tuning"></a> covers them in depth. Watch for forgetting and safety regressions.</li>
 </ul>
 </div>
 <h3>Go deeper</h3>

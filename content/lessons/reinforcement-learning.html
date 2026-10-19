@@ -1,0 +1,767 @@
+<!--
+{
+  "title": "Reinforcement learning",
+  "short": "Reinforcement learning",
+  "summary": "Learn how agents improve from rewards instead of labels: build bandits, value iteration, Q-learning and a policy-gradient agent from scratch, then see how the same ideas (PPO, GRPO and verifiable rewards) post-train today's language models.",
+  "sessions": [
+    "Agents, rewards and the exploration problem: multi-armed bandits",
+    "Markov decision processes, value iteration, Q-learning and SARSA",
+    "Deep RL: DQN, policy gradients, actor-critic and PPO",
+    "RL for language models: reward models, RLHF, GRPO and reward hacking"
+  ],
+  "objectives": [
+    "Explain the agent-environment loop, returns and discounting, and why RL is harder than supervised learning",
+    "Implement epsilon-greedy, UCB and Thompson sampling bandits and compare them by regret",
+    "Solve a small MDP with value iteration and train tabular Q-learning and SARSA agents",
+    "Train a REINFORCE agent on CartPole in PyTorch and explain how baselines, actor-critic methods and PPO's clipping make policy gradients stable",
+    "Describe how RLHF, DPO and GRPO with verifiable rewards post-train language models, and recognise reward hacking"
+  ],
+  "prerequisites": ["neural-networks", "pytorch", "how-llms-are-built"],
+  "runs_on": "Any computer (CPU), offline. Needs numpy, matplotlib, torch and gymnasium; the notebook runs in a few minutes.",
+  "glossary": [
+    {"term": "Reward", "def": "The number an environment returns after each action, saying how good that step was."},
+    {"term": "Return", "def": "The total, usually discounted, reward collected from a point in time to the end of an episode; what an RL agent tries to maximise."},
+    {"term": "Policy", "def": "The rule an agent uses to choose an action in each state, often a probability distribution over actions."},
+    {"term": "Value function", "def": "The expected return from a state when following a given policy."},
+    {"term": "Q-function", "def": "The expected return from taking a given action in a given state and following the policy afterwards."},
+    {"term": "Bellman equation", "def": "The recursive rule that a state's value equals the expected immediate reward plus the discounted value of the next state."},
+    {"term": "Exploration vs exploitation", "def": "The trade-off between trying actions to learn more about them and choosing the action that currently looks best."},
+    {"term": "Q-learning", "def": "An off-policy algorithm that learns the optimal Q-function by moving each estimate towards the reward plus the discounted best next value."},
+    {"term": "Policy gradient", "def": "A family of methods that adjust a policy's parameters directly, raising the probability of actions that led to higher-than-expected return."},
+    {"term": "PPO", "def": "Proximal policy optimisation: a policy-gradient method that clips the probability ratio between the new and old policy so each update stays small."},
+    {"term": "GRPO", "def": "Group relative policy optimisation: a PPO variant that samples several answers per prompt and uses each answer's reward relative to its group as the advantage, with no value network."},
+    {"term": "Reward hacking", "def": "When an agent maximises the reward signal in a way its designers did not intend, exploiting flaws in the reward instead of doing the task."}
+  ]
+}
+-->
+<h2>Learning from consequences</h2>
+<p>Every model so far learned from examples with the right answer attached. In <strong>reinforcement learning</strong> (RL) nobody supplies the answer. An agent acts, the world responds with a number, and the agent must work out which of its past actions earned it. That is how a recommender learns what people come back for and, as lesson <a data-ref="how-llms-are-built"></a> described, how frontier language models are finished.</p>
+<h3>The agent-environment loop</h3>
+<p>At each step the <strong>agent</strong> observes a <strong>state</strong> \(s_t\) and picks an <strong>action</strong> \(a_t\); the <strong>environment</strong> replies with a <strong>reward</strong> \(r_{t+1}\) and the next state. The agent's rule for choosing actions is its <strong>policy</strong> \(\pi(a \mid s)\), a probability for each action. One run from start to end is an <strong>episode</strong>.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 560 222" role="img" aria-label="The agent sends an action to the environment, which sends back the next state and a reward, in a loop">
+<rect x="200" y="20" width="160" height="56" rx="8" class="accent" opacity="0.15"/><rect x="200" y="20" width="160" height="56" rx="8" class="accent-stroke"/>
+<text x="280" y="44" text-anchor="middle">agent</text>
+<text x="280" y="63" text-anchor="middle" class="muted">policy π(a | s)</text>
+<rect class="box" x="200" y="150" width="160" height="56" rx="8"/>
+<text x="280" y="174" text-anchor="middle">environment</text>
+<text x="280" y="193" text-anchor="middle" class="muted">dynamics P(s′ | s, a)</text>
+<path class="wire" d="M360 48 H470 V178 H360"/>
+<path class="wire" d="M368 173 L360 178 L368 183"/>
+<text x="480" y="118">action a</text>
+<path class="wire" d="M200 165 H95 V58 H200"/>
+<path class="wire" d="M192 53 L200 58 L192 63"/>
+<text x="105" y="118">next state s′</text>
+<path class="wire" d="M200 192 H55 V32 H200"/>
+<path class="wire" d="M192 27 L200 32 L192 37"/>
+<text x="105" y="212">reward r</text>
+</svg>
+<figcaption>The loop repeats every step. The agent never sees the environment's rules, only the states and rewards that come back.</figcaption>
+</figure>
+<p>Gymnasium gives many environments this interface. In CartPole you push a cart left or right to keep a pole upright, earning +1 per step, up to 500.</p>
+<pre><code class="language-python">import gymnasium as gym
+import numpy as np
+
+env = gym.make("CartPole-v1")
+obs, info = env.reset(seed=0)
+print("state:", obs.round(3))         # cart position and velocity, pole angle and spin
+print("actions:", env.action_space)   # Discrete(2): push left or push right
+
+rng = np.random.default_rng(0)
+total, steps, done = 0.0, 0, False
+while not done:
+    action = int(rng.integers(2))              # a random policy
+    obs, reward, terminated, truncated, info = env.step(action)
+    total += reward                            # +1 for every step the pole stays up
+    steps += 1
+    done = terminated or truncated             # pole fell, or the 500-step limit
+print(f"random policy: {steps} steps, return {total}")</code></pre>
+<pre><code class="language-text">state: [ 0.014 -0.023 -0.046 -0.048]
+actions: Discrete(2)
+random policy: 18 steps, return 18.0</code></pre>
+<p><code>terminated</code> means the task really ended (the pole fell); <code>truncated</code> means a time limit cut it short. A random policy lasts about 20 steps. The rest of this lesson is about getting to 500.</p>
+<h3>Returns and discounting</h3>
+<p>The agent maximises not the next reward but the <strong>return</strong>, the discounted sum of rewards from now on:</p>
+\[
+G_t = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + \cdots = r_{t+1} + \gamma\, G_{t+1}
+\]
+<p>The discount \(\gamma\) between 0 and 1 keeps sums finite and sets a horizon: with \(\gamma = 0.99\) the agent looks roughly \(1/(1-\gamma) = 100\) steps ahead. The recursive form computes every return in one backward pass.</p>
+<pre><code class="language-python">def discounted_returns(rewards, gamma):
+    """G_t = r_{t+1} + gamma * G_{t+1}, computed backwards in one pass."""
+    G, out = 0.0, []
+    for r in reversed(rewards):
+        G = r + gamma * G
+        out.append(G)
+    return out[::-1]
+
+print(np.round(discounted_returns([0, 0, 0, 1], gamma=0.9), 3))   # reward at the end
+print(round(discounted_returns([1] * 200, gamma=0.99)[0], 1))      # tends to 100</code></pre>
+<pre><code class="language-text">[0.729 0.81  0.9   1.   ]
+86.6</code></pre>
+<p>Three things make RL harder than supervised learning. <strong>Credit assignment</strong>: a game is decided at move 60, so which moves deserve the credit? <strong>The data depends on the model</strong>: the policy decides what it sees, so the data shifts whenever the policy changes. And <strong>exploration</strong>: you only see the reward of the action you took, and there is no gradient through the world, only a number you observe.</p>
+<h2>Multi-armed bandits</h2>
+<p>Remove the states and exploration is all that is left. A <strong>multi-armed bandit</strong> is a row of slot machines, each paying out with an unknown probability. Pull the best-looking arm (<strong>exploit</strong>) and you may never find a better one; try others (<strong>explore</strong>) and you pay for every worse pull. A strategy is measured by its <strong>regret</strong>, the expected reward given up against always pulling the best arm:</p>
+\[
+\text{regret}(T) = \sum_{t=1}^{T} \big(\mu^* - \mu_{a_t}\big)
+\]
+<ul>
+<li><strong>Epsilon-greedy</strong>: with probability \(\varepsilon\) pull a random arm, otherwise the best average so far.</li>
+<li><strong>UCB</strong>: pull the arm with the highest optimistic estimate \(Q_a + \sqrt{2 \ln t / N_a}\); rarely tried arms get a big bonus.</li>
+<li><strong>Thompson sampling</strong>: keep a Beta distribution over each arm's payout rate, draw one sample from each, pull the largest. Each arm is chosen with the probability that it is the best.</li>
+</ul>
+<p>The averages use \(Q \leftarrow Q + \tfrac{1}{n}(r - Q)\), the template for nearly every update in this lesson: <em>estimate ← estimate + step × (target − estimate)</em>.</p>
+<pre><code class="language-python">class EpsilonGreedy:
+    def __init__(self, k, eps=0.1):
+        self.eps, self.Q, self.N = eps, np.zeros(k), np.zeros(k)
+
+    def choose(self, t, rng):
+        if rng.random() &lt; self.eps:
+            return int(rng.integers(len(self.Q)))      # explore
+        return int(np.argmax(self.Q))                  # exploit
+
+    def update(self, a, r):
+        self.N[a] += 1
+        self.Q[a] += (r - self.Q[a]) / self.N[a]       # running mean of rewards
+
+
+class UCB(EpsilonGreedy):
+    def choose(self, t, rng):
+        if (self.N == 0).any():
+            return int(np.argmin(self.N))              # try every arm once
+        bonus = np.sqrt(2 * np.log(t) / self.N)        # big when an arm is rarely tried
+        return int(np.argmax(self.Q + bonus))
+
+
+class Thompson:
+    def __init__(self, k):
+        self.a, self.b = np.ones(k), np.ones(k)        # Beta(1, 1): a uniform belief
+
+    def choose(self, t, rng):
+        return int(np.argmax(rng.beta(self.a, self.b)))  # sample a belief, act on it
+
+    def update(self, a, r):
+        self.a[a] += r                                 # count successes
+        self.b[a] += 1 - r                             # and failures</code></pre>
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+p = np.array([0.30, 0.45, 0.50, 0.55, 0.60])   # true payout rates, hidden from agents
+T, runs = 2000, 50
+
+def run(make_agent, seed):
+    rng = np.random.default_rng(seed)
+    agent, regret = make_agent(), np.zeros(T)
+    for t in range(T):
+        a = agent.choose(t, rng)
+        r = float(rng.random() &lt; p[a])               # pull the arm
+        agent.update(a, r)
+        regret[t] = p.max() - p[a]                   # what this choice cost us
+    return regret.cumsum()
+
+agents = {
+    "greedy": lambda: EpsilonGreedy(len(p), eps=0.0),
+    "epsilon-greedy 0.1": lambda: EpsilonGreedy(len(p), eps=0.1),
+    "UCB": lambda: UCB(len(p)),
+    "Thompson": lambda: Thompson(len(p)),
+}
+for name, make in agents.items():
+    curve = np.mean([run(make, seed) for seed in range(runs)], axis=0)
+    plt.plot(curve, label=name)
+    print(f"{name:20s} regret after {T} pulls: {curve[-1]:6.1f}")
+plt.xlabel("pull"); plt.ylabel("cumulative regret"); plt.legend(); plt.show()</code></pre>
+<pre><code class="language-text">greedy               regret after 2000 pulls:  600.0
+epsilon-greedy 0.1   regret after 2000 pulls:   73.5
+UCB                  regret after 2000 pulls:  110.1
+Thompson             regret after 2000 pulls:   48.5</code></pre>
+<p>Greedy pulled arm 0 first, its estimate never fell below the untried arms' zero, and it never tried anything else: linear regret. Thompson sampling did best. UCB lost to epsilon-greedy at this horizon because its bonus keeps re-checking the near-tied arms; its regret grows only logarithmically, so it wins in the long run. Rankings depend on the problem, so simulate yours.</p>
+<p>In industry, a bandit is an A/B test that shifts traffic towards the winner while it runs, so fewer users see the loser. Bandits pick headlines, ads, offers and recommendation slots; a <strong>contextual bandit</strong> predicts each action's reward from features of the user. The catch: adaptive allocation breaks the usual significance tests, so run a proper experiment when you need a clean causal estimate.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a bandit for a changing world</p>
+<ol>
+<li>Write <code>run_shift</code>, a version of <code>run</code> in which the payout rates reverse after 1,000 pulls (<code>p[::-1]</code>). Record whether each pull chose the currently best arm, averaged over 50 runs.</li>
+<li>Compare <code>EpsilonGreedy</code> with a subclass that updates with a constant step, <code>Q[a] += 0.1 * (r - Q[a])</code>.</li>
+<li>You are done when you can say which agent recovers after the change, and what that costs it before.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>In our runs the sample-average agent chose the best arm 50% of the time before the change but 4% in the last 500 pulls: after 1,000 pulls each reward moves its estimate by only \(1/n\). The constant step forgets old rewards and recovered to 49%, at the price of noisier estimates before the change (42%). Production bandits use sliding windows or discounting for this reason.</p>
+</details>
+
+<hr data-session="2">
+<h2>Markov decision processes</h2>
+<p>Most problems have many states, and actions change which comes next. A <strong>Markov decision process</strong> (MDP) has states, actions, transition probabilities \(P(s' \mid s, a)\), rewards \(R(s, a, s')\) and a discount \(\gamma\). "Markov" means the next state depends only on the current state and action, so the state must hold everything relevant. Lesson <a data-ref="classical-ai"></a> searched for plans in known, deterministic worlds; an MDP adds chance, and its solution is a policy, an action for every state.</p>
+<h3>Value functions and the Bellman equations</h3>
+<p>The <strong>value function</strong> \(V^\pi(s)\) is the expected return from \(s\) under policy \(\pi\). The <strong>Q-function</strong> \(Q^\pi(s, a)\) is the expected return from taking \(a\) in \(s\) and following \(\pi\) after; with it, acting is just \(\arg\max_a Q(s, a)\). Because \(G_t = r_{t+1} + \gamma G_{t+1}\), the best values obey the <strong>Bellman optimality equations</strong>:</p>
+\[
+V^*(s) = \max_a \sum_{s'} P(s' \mid s, a)\,\big[R(s, a, s') + \gamma\, V^*(s')\big]
+\]
+\[
+Q^*(s, a) = \sum_{s'} P(s' \mid s, a)\,\big[R(s, a, s') + \gamma \max_{a'} Q^*(s', a')\big]
+\]
+<p>In words: the value of where you are is the reward you expect next plus the discounted value of where you land. Every method in this lesson solves or approximates these equations.</p>
+<h3>Value iteration on FrozenLake</h3>
+<p>If you know \(P\), apply the Bellman equation as an update until nothing changes: <strong>value iteration</strong>. FrozenLake is a 4×4 grid of ice with holes; reaching the goal pays 1. The ice is slippery: you move the way you aim only a third of the time.</p>
+<pre><code class="language-python">env = gym.make("FrozenLake-v1", is_slippery=True)
+P = env.unwrapped.P          # P[s][a] = [(prob, next_state, reward, terminated), ...]
+# from the square left of the goal (14), try to move right (action 2):
+print([(round(prob, 3), s2, r, end) for prob, s2, r, end in P[14][2]])
+
+def value_iteration(P, gamma=0.99, tol=1e-8):
+    nS, nA = len(P), len(P[0])
+    V = np.zeros(nS)
+    while True:
+        Q = np.zeros((nS, nA))
+        for s in range(nS):
+            for a in range(nA):
+                Q[s, a] = sum(prob * (r + gamma * V[s2] * (not end))
+                              for prob, s2, r, end in P[s][a])
+        V_new = Q.max(axis=1)                      # the Bellman optimality backup
+        if np.abs(V_new - V).max() &lt; tol:
+            return V_new, Q.argmax(axis=1)
+        V = V_new
+
+V, policy = value_iteration(P)
+print(V.reshape(4, 4).round(2))</code></pre>
+<pre><code class="language-text">[(0.333, 14, 0, False), (0.333, 15, 1, True), (0.333, 10, 0, False)]
+[[0.54 0.5  0.47 0.46]
+ [0.56 0.   0.36 0.  ]
+ [0.59 0.64 0.62 0.  ]
+ [0.   0.74 0.86 0.  ]]</code></pre>
+<pre><code class="language-python">desc = env.unwrapped.desc.astype(str)       # S start, F frozen, H hole, G goal
+arrows = np.array(["←", "↓", "→", "↑"])[policy].reshape(4, 4)
+arrows[(desc == "H") | (desc == "G")] = ""
+print(np.char.add(desc, arrows))
+
+plt.imshow(V.reshape(4, 4), cmap="viridis")
+for (i, j), ch in np.ndenumerate(desc):
+    plt.text(j, i, f"{ch}\n{arrows[i, j]}", ha="center", va="center", color="white")
+plt.colorbar(label="V*(s)"); plt.xticks([]); plt.yticks([]); plt.show()
+
+def success_rate(env, policy, episodes=1000):
+    wins = 0.0
+    for ep in range(episodes):
+        s, _ = env.reset(seed=ep)
+        done = False
+        while not done:
+            s, r, terminated, truncated, _ = env.step(int(policy[s]))
+            done = terminated or truncated
+        wins += r                                  # 1 only if we reached the goal
+    return wins / episodes
+
+print("optimal policy reaches the goal in", success_rate(env, policy))</code></pre>
+<pre><code class="language-text">[['S←' 'F↑' 'F↑' 'F↑']
+ ['F←' 'H' 'F←' 'H']
+ ['F↑' 'F↓' 'F←' 'H']
+ ['H' 'F→' 'F↓' 'G']]
+optimal policy reaches the goal in 0.755</code></pre>
+<p>Values rise towards the goal. Some arrows look wrong until you remember the ice: between two holes (second row, third column) the policy aims straight at a hole, which risks a fall once in three moves, while aiming up or down would slide into a hole twice in three. Even the optimal policy wins only 75.5% of the time; that is irreducible risk, not a learning failure.</p>
+<h3>Q-learning and SARSA</h3>
+<p>Usually nobody hands you \(P\). <strong>Temporal-difference (TD) learning</strong> replaces the sum over next states with one sampled transition. <strong>Q-learning</strong> nudges its estimate towards a one-step target:</p>
+\[
+Q(s, a) \leftarrow Q(s, a) + \alpha \big[\, r + \gamma \max_{a'} Q(s', a') - Q(s, a) \,\big]
+\]
+<p>The bracket is the <strong>TD error</strong>. The target uses the current estimate of the next state, which is <strong>bootstrapping</strong>; it works because the reward in the target is real, and that real information flows back from the goal one step at a time. <strong>SARSA</strong> changes one term, using the action the agent will actually take next, \(Q(s', a')\), instead of the max. That makes Q-learning <strong>off-policy</strong> (it learns the greedy policy while behaving differently, so it can learn from any data) and SARSA <strong>on-policy</strong> (it learns the policy it runs, exploration included). CliffWalking, with a cliff along the bottom edge (−100 and back to the start for falling off), shows the difference.</p>
+<pre><code class="language-python">def td_control(env, method, episodes=500, alpha=0.5, gamma=1.0, eps=0.1, seed=0):
+    """Tabular Q-learning (method="q") or SARSA (method="sarsa")."""
+    rng = np.random.default_rng(seed)
+    Q = np.zeros((env.observation_space.n, env.action_space.n))
+
+    def act(s):                                          # epsilon-greedy
+        if rng.random() &lt; eps:
+            return int(rng.integers(env.action_space.n))
+        return int(rng.choice(np.flatnonzero(Q[s] == Q[s].max())))  # random tie-break
+
+    returns = []
+    for ep in range(episodes):
+        s, _ = env.reset(seed=seed + ep)
+        a, done, G = act(s), False, 0.0
+        while not done:
+            s2, r, terminated, truncated, _ = env.step(a)
+            a2 = act(s2)                                 # the action we will take next
+            if method == "sarsa":
+                target = r + gamma * Q[s2, a2] * (not terminated)    # on-policy
+            else:
+                target = r + gamma * Q[s2].max() * (not terminated)  # off-policy
+            Q[s, a] += alpha * (target - Q[s, a])        # move towards the target
+            s, a, G = s2, a2, G + r
+            done = terminated or truncated
+        returns.append(G)
+    return Q, np.array(returns)</code></pre>
+<pre><code class="language-python">cliff = gym.make("CliffWalking-v1")
+Q_q, ret_q = td_control(cliff, "q")
+Q_s, ret_s = td_control(cliff, "sarsa")
+print("mean training return, last 100 episodes:",
+      f"Q-learning {ret_q[-100:].mean():.1f}, SARSA {ret_s[-100:].mean():.1f}")
+
+def greedy_path(Q, env):
+    grid = np.full((4, 12), ".")
+    grid[3, 1:11] = "C"                                  # the cliff
+    s, _ = env.reset()
+    for _ in range(50):
+        grid[divmod(s, 12)] = "o"
+        s, r, terminated, truncated, _ = env.step(int(Q[s].argmax()))
+        if terminated:
+            break
+    grid[3, 0], grid[3, 11] = "S", "G"
+    return "\n".join("".join(row) for row in grid)
+
+for name, Q in [("Q-learning", Q_q), ("SARSA", Q_s)]:
+    print(name, "greedy path:")
+    print(greedy_path(Q, cliff))
+
+smooth = lambda x: np.convolve(x, np.ones(20) / 20, mode="valid")
+plt.plot(smooth(ret_q), label="Q-learning"); plt.plot(smooth(ret_s), label="SARSA")
+plt.ylim(-150, 0); plt.xlabel("episode"); plt.ylabel("return (20-episode mean)")
+plt.legend(); plt.show()</code></pre>
+<pre><code class="language-text">mean training return, last 100 episodes: Q-learning -61.8, SARSA -26.2
+Q-learning greedy path:
+............
+............
+oooooooooooo
+SCCCCCCCCCCG
+SARSA greedy path:
+ooooooooooo.
+o.........oo
+o..........o
+SCCCCCCCCCCG</code></pre>
+<p>Q-learning found the shortest route along the cliff edge, but it still explores 10% of the time, so it keeps falling during training. SARSA learned that, for an agent that sometimes slips, the edge is dangerous, and walks along the top. When exploration is real and mistakes are costly, the on-policy answer is the one you want.</p>
+<p>Exploration is a dial: decay epsilon from about 1 to a floor such as 0.05, start Q optimistically high, or sample actions in proportion to \(e^{Q/\tau}\), the temperature sampling of lesson <a data-ref="how-llms-are-built"></a>. Two common mistakes: decaying so fast the agent commits before it finds the goal, and judging an agent by training returns with exploration still on.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: Q-learning on slippery FrozenLake</p>
+<ol>
+<li>Write <code>q_learning(env, episodes)</code> for FrozenLake with \(\alpha = 0.1\), \(\gamma = 0.99\) and epsilon decaying linearly from 1.0 to 0.05 over the first half of training.</li>
+<li>Train for 5,000 episodes; record the success rate over the last 1,000 training episodes.</li>
+<li>Evaluate the greedy policy <code>Q.argmax(axis=1)</code> with <code>success_rate</code> and compare it with value iteration's 0.755.</li>
+</ol>
+<p>You are done when the greedy policy is within a couple of points of the optimum.</p>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>With seed 0 the greedy policy won 75.1% of evaluation episodes, essentially optimal, while the last 1,000 <em>training</em> episodes succeeded only 53% of the time: even 5% random actions are often fatal next to a hole. It matched value iteration's action in 10 of the 11 states where a choice matters; where two actions are nearly equal, either is fine.</p>
+</details>
+
+<hr data-session="3">
+<h2>Deep reinforcement learning</h2>
+<p>Tables work for 16 states. CartPole's state is four real numbers, and Go has more positions than the observable universe has atoms. So replace the table with a neural network, \(Q_\theta(s, a)\) or \(\pi_\theta(a \mid s)\), that generalises to similar states. The price is stability: function approximation, bootstrapping and off-policy data together (Sutton and Barto's <strong>deadly triad</strong>) can make estimates diverge, because each update also moves the target you are chasing.</p>
+<h3>DQN</h3>
+<p>DeepMind's DQN (Mnih et al., <em>Nature</em> 2015) learned dozens of Atari games from pixels. It is Q-learning with a network, trained on</p>
+\[
+L(\theta) = \Big( r + \gamma \max_{a'} Q_{\bar\theta}(s', a') - Q_\theta(s, a) \Big)^2
+\]
+<p>plus two stabilisers. A <strong>replay buffer</strong> trains on random mini-batches of past transitions, breaking the correlation between consecutive steps and reusing data (allowed because Q-learning is off-policy). A <strong>target network</strong> \(Q_{\bar\theta}\), a copy synced only occasionally, computes the target so the label stops moving.</p>
+<pre><code class="language-python">import random
+from collections import deque
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class ReplayBuffer:
+    def __init__(self, capacity=10_000):
+        self.memory = deque(maxlen=capacity)              # oldest transitions fall out
+
+    def push(self, s, a, r, s2, done):
+        self.memory.append((s, a, r, s2, done))
+
+    def sample(self, n):
+        s, a, r, s2, done = zip(*random.sample(self.memory, n))   # random: uncorrelated
+        f = lambda x: torch.as_tensor(np.array(x), dtype=torch.float32)
+        return f(s), torch.as_tensor(a), f(r), f(s2), f(done)
+
+def dqn_loss(q_net, target_net, batch, gamma=0.99):
+    s, a, r, s2, done = batch
+    q = q_net(s).gather(1, a.unsqueeze(1)).squeeze(1)       # Q(s, a) for actions taken
+    with torch.no_grad():                                   # the target is a fixed label
+        target = r + gamma * target_net(s2).max(dim=1).values * (1 - done)
+    return F.smooth_l1_loss(q, target)
+
+random.seed(0); torch.manual_seed(0)
+env = gym.make("CartPole-v1")
+env.action_space.seed(0)
+buffer = ReplayBuffer()
+s, _ = env.reset(seed=0)
+for _ in range(500):                                       # fill it with random play
+    a = env.action_space.sample()
+    s2, r, terminated, truncated, _ = env.step(a)
+    buffer.push(s, a, r, s2, terminated)                   # terminated, not truncated
+    s = env.reset()[0] if terminated or truncated else s2
+
+q_net = nn.Sequential(nn.Linear(4, 64), nn.ReLU(), nn.Linear(64, 2))
+target_net = nn.Sequential(nn.Linear(4, 64), nn.ReLU(), nn.Linear(64, 2))
+target_net.load_state_dict(q_net.state_dict())            # a frozen copy, synced rarely
+print(len(buffer.memory), "transitions; loss on one batch:",
+      round(dqn_loss(q_net, target_net, buffer.sample(64)).item(), 4))</code></pre>
+<pre><code class="language-text">500 transitions; loss on one batch: 0.5713</code></pre>
+<p>The full loop adds epsilon-greedy acting, one gradient step per environment step and an occasional weight copy. The buffer stores <code>terminated</code>, not <code>truncated</code>: a time limit is not a real ending, and confusing the two is a classic DQN bug.</p>
+<h3>Policy gradients and REINFORCE</h3>
+<p><strong>Policy-gradient</strong> methods skip the values: a network outputs action probabilities and training makes high-return actions more likely. This is the family that trains language models. To maximise expected return \(J(\theta)\), the log-derivative trick \(\nabla p = p\, \nabla \log p\) moves the gradient onto the policy's own probabilities, and the environment drops out:</p>
+\[
+\nabla_\theta J(\theta) = \mathbb{E}_{\pi_\theta}\Big[ \sum_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)\; G_t \Big]
+\]
+<p>Push up each action's log-probability in proportion to the return that followed. That is <strong>REINFORCE</strong> (Williams, 1992): cross-entropy on the agent's own actions, weighted by how well things went. The code rolls out an episode without gradients, then re-scores its states in one batch, the same pattern PPO and LLM training use.</p>
+<pre><code class="language-python">def rollout(env, policy, seed):
+    """Play one episode with the current policy and record it."""
+    obs, _ = env.reset(seed=seed)
+    states, actions, rewards, done = [], [], [], False
+    while not done:
+        with torch.no_grad():                          # acting needs no gradients
+            probs = torch.softmax(policy(torch.as_tensor(obs)), dim=-1)
+        a = int(torch.multinomial(probs, 1))           # sample, never argmax, in training
+        states.append(obs)
+        actions.append(a)
+        obs, r, terminated, truncated, _ = env.step(a)
+        rewards.append(r)
+        done = terminated or truncated
+    return torch.as_tensor(np.array(states)), torch.as_tensor(actions), rewards
+
+def reinforce(seed=0, episodes=1000, lr=5e-3, gamma=0.99, verbose=True):
+    torch.manual_seed(seed)
+    env = gym.make("CartPole-v1")
+    policy = nn.Sequential(nn.Linear(4, 64), nn.Tanh(), nn.Linear(64, 2))  # 2 logits
+    opt = torch.optim.Adam(policy.parameters(), lr=lr)
+    history = []
+    for ep in range(episodes):
+        S, A, rewards = rollout(env, policy, seed=1000 * seed + ep)       # 1. act
+        G = torch.tensor(discounted_returns(rewards, gamma), dtype=torch.float32)
+        G = (G - G.mean()) / (G.std() + 1e-8)        # normalise: a simple baseline
+        logp = torch.distributions.Categorical(logits=policy(S)).log_prob(A)
+        loss = -(logp * G).sum()                      # 2. push up log-prob x return
+        opt.zero_grad(); loss.backward(); opt.step()
+        history.append(sum(rewards))
+        if verbose and ep % 50 == 0:
+            mean50 = np.mean(history[-50:])
+            print(f"episode {ep:4d}  mean return of last 50: {mean50:5.1f}")
+        if len(history) &gt;= 20 and np.mean(history[-20:]) &gt;= 475:
+            if verbose:
+                print(f"solved at episode {ep}: mean of the last 20 returns &gt;= 475")
+            break
+    return policy, history
+
+policy, history = reinforce(seed=0)</code></pre>
+<pre><code class="language-text">episode    0  mean return of last 50:  14.0
+episode   50  mean return of last 50:  29.0
+episode  100  mean return of last 50:  47.4
+episode  150  mean return of last 50: 172.9
+episode  200  mean return of last 50: 276.3
+episode  250  mean return of last 50: 220.8
+episode  300  mean return of last 50: 224.0
+solved at episode 329: mean of the last 20 returns &gt;= 475</code></pre>
+<pre><code class="language-python">plt.plot(history, alpha=0.4, label="episode return")
+plt.plot(np.convolve(history, np.ones(20) / 20, mode="valid"), label="20-episode mean")
+plt.xlabel("episode"); plt.ylabel("return"); plt.legend(); plt.show()
+
+def evaluate(policy, episodes=10):
+    """Greedy actions on fresh seeds: how good is the learned policy?"""
+    env, scores = gym.make("CartPole-v1"), []
+    for i in range(episodes):
+        obs, _ = env.reset(seed=10_000 + i)
+        done, total = False, 0.0
+        while not done:
+            with torch.no_grad():
+                a = int(policy(torch.as_tensor(obs)).argmax())
+            obs, r, terminated, truncated, _ = env.step(a)
+            total, done = total + r, terminated or truncated
+        scores.append(total)
+    return scores
+
+print(evaluate(policy))</code></pre>
+<pre><code class="language-text">[500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0]</code></pre>
+<p>On this seed the 20-episode average passed 475 (CartPole's reward threshold) at episode 329, in under 20 seconds on a CPU, and the greedy policy then balanced for 500 steps on ten fresh episodes. Seeds 0 to 4 took between 144 and 329 episodes. Progress is not smooth: the average reached 276, fell to the low 220s, then recovered.</p>
+<div class="admonition warning">
+<p class="admonition-title">REINFORCE bugs fail silently</p>
+<p>Taking the <code>argmax</code> instead of sampling during training, flipping the sign of the loss, or a learning rate slightly too high all show up as "learns worse", not as errors. Doubling the learning rate to 0.01 solved four of our five seeds faster but needed 668 episodes on the fifth.</p>
+</div>
+<h3>Baselines and actor-critic</h3>
+<p>REINFORCE is noisy: in a good episode every action gets the same large weight. Subtracting a <strong>baseline</strong> \(b(s_t)\) leaves the expected gradient unchanged (the expected score \(\mathbb{E}_{a \sim \pi}[\nabla \log \pi(a \mid s)]\) is zero) but can cut its variance. With \(b(s) = V(s)\) the weight becomes the <strong>advantage</strong> \(A_t = G_t - V(s_t)\): how much better the action turned out than average. An <strong>actor-critic</strong> learns both a policy (actor) and a value network (critic), and usually bootstraps \(A_t \approx r_{t+1} + \gamma V(s_{t+1}) - V(s_t)\); GAE blends the two estimates with a parameter \(\lambda\).</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: REINFORCE with a learned baseline</p>
+<ol>
+<li>Copy <code>reinforce</code> to <code>reinforce_baseline</code> and add a critic with one output and its own Adam optimiser (learning rate 0.01).</li>
+<li>Each episode, take one mean-squared-error step fitting \(V(s_t)\) to \(G_t\), and weight the log-probabilities by the normalised advantage \(G_t - V(s_t)\), with \(V\) detached.</li>
+<li>Record the episode at which each version is solved for seeds 0, 1 and 2.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>In our runs the plain version solved at episodes 329, 240 and 144, the baseline version at 194, 135 and 490: faster on two seeds, much slower on the third. Return normalisation is already a decent baseline on CartPole, and three seeds cannot separate methods with this much spread. Critics matter more on long, noisy tasks and once you bootstrap from them. Always compare RL methods over several seeds.</p>
+</details>
+<h3>PPO: small, safe steps</h3>
+<p>One oversized policy update can wreck a policy, and a wrecked policy collects useless data. <strong>Proximal policy optimisation</strong> (PPO; Schulman et al., 2017) bounds each update. With the probability ratio \(\rho_t = \pi_\theta(a_t \mid s_t) / \pi_{\theta_\text{old}}(a_t \mid s_t)\) and advantage \(A_t\), it maximises</p>
+\[
+L^{\text{CLIP}}(\theta) = \mathbb{E}_t\Big[ \min\big( \rho_t A_t,\ \operatorname{clip}(\rho_t, 1-\epsilon, 1+\epsilon)\, A_t \big) \Big]
+\]
+<p>with \(\epsilon\) around 0.2. For a good action (\(A_t &gt; 0\)) raising its probability pays only until the ratio reaches \(1 + \epsilon\); beyond that the gradient is zero. For a bad one you may lower it only to \(1 - \epsilon\). The <code>min</code> keeps the bound pessimistic, so clipping never stops you undoing a move in the wrong direction. That is what makes it safe to take several gradient steps on each batch.</p>
+<pre><code class="language-python">def ppo_clip_objective(logp_new, logp_old, adv, clip=0.2):
+    ratio = torch.exp(logp_new - logp_old)                  # pi_new(a|s) / pi_old(a|s)
+    clipped = torch.clamp(ratio, 1 - clip, 1 + clip)
+    return torch.min(ratio * adv, clipped * adv).mean()     # maximise this
+
+for adv in (1.0, -1.0):
+    for ratio in (0.5, 0.9, 1.1, 1.5):
+        logp_new = torch.tensor(np.log(ratio), requires_grad=True)
+        obj = ppo_clip_objective(logp_new, torch.tensor(0.0), torch.tensor(adv))
+        obj.backward()
+        print(f"advantage {adv:+.0f}  ratio {ratio:.1f}  objective {obj.item():+.2f}"
+              f"  gradient {logp_new.grad.item():+.2f}")</code></pre>
+<pre><code class="language-text">advantage +1  ratio 0.5  objective +0.50  gradient +0.50
+advantage +1  ratio 0.9  objective +0.90  gradient +0.90
+advantage +1  ratio 1.1  objective +1.10  gradient +1.10
+advantage +1  ratio 1.5  objective +1.20  gradient +0.00
+advantage -1  ratio 0.5  objective -0.80  gradient +0.00
+advantage -1  ratio 0.9  objective -0.90  gradient -0.90
+advantage -1  ratio 1.1  objective -1.10  gradient -1.10
+advantage -1  ratio 1.5  objective -1.50  gradient -1.50</code></pre>
+<p>The gradient is zero exactly where the policy has already moved far enough in the helpful direction. A full PPO adds a critic, GAE and an entropy bonus; it was the algorithm behind classic RLHF.</p>
+<p>All of this is <strong>model-free</strong>. <strong>Model-based</strong> RL learns the dynamics and plans or trains inside them, which saves real experience but invites the policy to exploit the model's errors. AlphaZero planned with tree search in games with known rules (lesson <a data-ref="classical-ai"></a>), MuZero (Schrittwieser et al., 2020) learned the model too, and the Dreamer family trains an actor-critic inside a learned <strong>world model</strong>.</p>
+
+<hr data-session="4">
+<h2>Reinforcement learning for language models</h2>
+<p>A chat model is a policy. The state is the prompt plus the tokens so far, an action is the next token, the policy is the softmax over the vocabulary, an episode is one response, and the reward usually arrives only at the end. Transitions are trivial (append the token), so all the difficulty is in the reward and in assigning credit across hundreds of tokens.</p>
+<h3>Reward models from preferences</h3>
+<p>"Be helpful" has no formula, so RLHF learns one from comparisons. A <strong>reward model</strong> \(r_\phi(x, y)\), usually a language model with a single-number head, is trained so that the chosen response \(y_w\) beats the rejected \(y_l\) under the <strong>Bradley-Terry</strong> model:</p>
+\[
+L(\phi) = -\log \sigma\big(r_\phi(x, y_w) - r_\phi(x, y_l)\big)
+\]
+<p>It is logistic regression on a difference of scores. Here it recovers a hidden preference over three made-up features:</p>
+<pre><code class="language-python">torch.manual_seed(0)
+n = 2000
+true_w = torch.tensor([2.0, 1.0, -0.5])   # labellers like correct, clear, not rambling
+xa, xb = torch.randn(n, 3), torch.randn(n, 3)       # features of two responses
+prefer_a = torch.rand(n) &lt; torch.sigmoid((xa - xb) @ true_w)  # noisy human choices
+chosen = torch.where(prefer_a[:, None], xa, xb)
+rejected = torch.where(prefer_a[:, None], xb, xa)
+
+reward_model = nn.Linear(3, 1, bias=False)        # only differences matter: no bias
+opt = torch.optim.Adam(reward_model.parameters(), lr=0.05)
+for step in range(300):
+    margin = (reward_model(chosen) - reward_model(rejected)).squeeze(1)
+    loss = -F.logsigmoid(margin).mean()            # Bradley-Terry: P(chosen wins)
+    opt.zero_grad(); loss.backward(); opt.step()
+
+agreement = lambda m: round((m &gt; 0).float().mean().item(), 3)
+print("learned weights:", reward_model.weight.detach().squeeze().numpy().round(2))
+print("learned model agrees with the labels:", agreement(margin))
+print("true weights agree with the labels:  ", agreement((chosen - rejected) @ true_w))</code></pre>
+<pre><code class="language-text">learned weights: [ 1.9   0.9  -0.46]
+learned model agrees with the labels: 0.842
+true weights agree with the labels:   0.842</code></pre>
+<p>The weights come back close to the truth; only differences matter, hence no bias. Agreement is 84% because the labels are noisy, and the true weights do no better. Real reward models are also accurate only on responses like their training data, which is why optimising hard against them goes wrong.</p>
+<h3>PPO-based RLHF versus DPO</h3>
+<p>Classic RLHF maximises the reward model's score while staying close to the supervised model \(\pi_\text{ref}\):</p>
+\[
+\max_\theta\ \mathbb{E}_{y \sim \pi_\theta}\big[ r_\phi(x, y) \big] - \beta\, D_\text{KL}\big(\pi_\theta \,\|\, \pi_\text{ref}\big)
+\]
+<p>optimised with PPO, which needs four large models in memory: policy, reference, reward model and critic. <strong>DPO</strong> uses the closed-form optimum of this objective to turn preferences directly into a loss on the policy, where the "reward" is \(\beta \log \pi_\theta(y \mid x) / \pi_\text{ref}(y \mid x)\). It is simpler and stable but <strong>offline</strong>, learning only from the dataset's responses; PPO is <strong>online</strong>, scoring fresh samples, so it can find and fix its own mistakes. Lesson <a data-ref="advanced-fine-tuning"></a> runs both with real libraries.</p>
+<h3>GRPO and verifiable rewards</h3>
+<p>For maths and code you can often check the answer instead of learning a reward: compare with the known result, run the tests. This is <strong>RL with verifiable rewards</strong> (RLVR), and it is how reasoning models (lesson <a data-ref="reasoning-models"></a>) learn to think at length: only correct final answers are rewarded, and careful reasoning is what earns them.</p>
+<p><strong>GRPO</strong>, introduced in the DeepSeekMath paper (Shao et al., 2024) and later used for DeepSeek-R1, simplifies PPO for this setting. Sample a group of \(G\) answers per prompt, score them, and give every token of answer \(i\) the advantage</p>
+\[
+A_i = \frac{r_i - \operatorname{mean}(r_1, \ldots, r_G)}{\operatorname{std}(r_1, \ldots, r_G)}
+\]
+<p>The group mean replaces the critic, saving a model's worth of memory. The rest is PPO's clipped objective plus a KL penalty to the reference, estimated per token as \(\frac{\pi_\text{ref}}{\pi_\theta} - \log\frac{\pi_\text{ref}}{\pi_\theta} - 1\), which is never negative. The KL term stops drift into text that games the reward and keeps outputs varied; too large a \(\beta\) and the model cannot move. Note that a group whose answers all score the same has zero advantage everywhere and teaches nothing.</p>
+<h3>A toy: teaching a policy to pass a verifier</h3>
+<p>The whole RLVR loop at readable scale. The "language model" is a tiny autoregressive network over ten digits and a junk token <code>?</code>. Each prompt is a target from 0 to 18; a correct answer is two digits that add up to it. Nothing tells the model how to add.</p>
+<pre><code class="language-python">import copy
+
+VOCAB = list("0123456789?")                    # ten digits and one junk token
+START, LENGTH, N_PROMPTS = len(VOCAB), 2, 19   # prompt t: "two digits that sum to t"
+
+class TinyLM(nn.Module):
+    """Autoregressive: next-token logits from (prompt, previous token, position)."""
+    def __init__(self, hidden=64):
+        super().__init__()
+        self.prompt = nn.Embedding(N_PROMPTS, hidden)
+        self.token = nn.Embedding(len(VOCAB) + 1, hidden)    # +1 for the start token
+        self.pos = nn.Embedding(LENGTH, hidden)
+        self.head = nn.Sequential(nn.Tanh(), nn.Linear(hidden, len(VOCAB)))
+
+    def logits(self, prompts, prev, pos):
+        return self.head(self.prompt(prompts) + self.token(prev) + self.pos(pos))
+
+def generate(model, prompts):
+    """Sample one answer per prompt, token by token: the policy acting."""
+    prev, out = torch.full_like(prompts, START), []
+    for pos in range(LENGTH):
+        logits = model.logits(prompts, prev, torch.full_like(prompts, pos))
+        prev = torch.multinomial(torch.softmax(logits, -1), 1).squeeze(1)
+        out.append(prev)
+    return torch.stack(out, 1)                                # (batch, LENGTH)
+
+def token_logprobs(model, prompts, tokens):
+    """Log-probability of every sampled token, all positions in one pass."""
+    prev = torch.cat([torch.full_like(tokens[:, :1], START), tokens[:, :-1]], 1)
+    pos = torch.arange(LENGTH).expand_as(tokens)
+    logits = model.logits(prompts[:, None], prev, pos)        # (batch, LENGTH, vocab)
+    return torch.log_softmax(logits, -1).gather(2, tokens[..., None]).squeeze(2)
+
+def decode(tokens):
+    return "".join(VOCAB[t] for t in tokens)
+
+def verify(target, text):
+    """The checker: two digits that add up to the target."""
+    return float(text.isdigit() and int(text[0]) + int(text[1]) == target)
+
+torch.manual_seed(0)
+with torch.no_grad():
+    print([decode(t) for t in generate(TinyLM(), torch.arange(8)).tolist()])</code></pre>
+<pre><code class="language-text">['83', '58', '37', '12', '50', '4?', '82', '86']</code></pre>
+<p>Now GRPO, reusing <code>ppo_clip_objective</code> from session 3. The <code>check</code> column is an independent score from the honest verifier.</p>
+<pre><code class="language-python">def grpo(verifier, steps=300, group=8, n_prompts=32, beta=0.02, lr=5e-3, seed=0,
+         log_every=50):
+    torch.manual_seed(seed)
+    policy = TinyLM()
+    reference = copy.deepcopy(policy).requires_grad_(False)   # frozen starting point
+    opt = torch.optim.Adam(policy.parameters(), lr=lr)
+    for step in range(steps + 1):
+        # 1. sample a group of answers for each prompt, and score them
+        prompts = torch.randint(0, N_PROMPTS, (n_prompts,)).repeat_interleave(group)
+        with torch.no_grad():
+            tokens = generate(policy, prompts)
+            logp_old = token_logprobs(policy, prompts, tokens)
+            logp_ref = token_logprobs(reference, prompts, tokens)
+        texts = [decode(t) for t in tokens.tolist()]
+        targets = prompts.tolist()
+        rewards = torch.tensor([verifier(t, s) for t, s in zip(targets, texts)])
+        # 2. group-relative advantage: better or worse than my other attempts?
+        r = rewards.view(-1, group)
+        adv = (r - r.mean(1, keepdim=True)) / (r.std(1, keepdim=True) + 1e-4)
+        adv = adv.view(-1, 1)                                 # same for every token
+        # 3. two clipped PPO-style steps on this batch, anchored by a KL penalty
+        for _ in range(2):
+            logp = token_logprobs(policy, prompts, tokens)
+            log_ratio = logp_ref - logp
+            kl = (torch.exp(log_ratio) - log_ratio - 1).mean()   # always &gt;= 0
+            loss = -ppo_clip_objective(logp, logp_old, adv) + beta * kl
+            opt.zero_grad(); loss.backward(); opt.step()
+        if step % log_every == 0:
+            check = np.mean([verify(t, s) for t, s in zip(targets, texts)])
+            stuck = (r.std(1) == 0).float().mean().item()     # groups with no signal
+            print(f"step {step:3d}  reward {rewards.mean():.2f}  check {check:.2f}  "
+                  f"KL {kl.item():.2f}  no-signal groups {stuck:.2f}")
+    return policy
+
+def pass_rate(model, tries=20):
+    with torch.no_grad():
+        test = torch.arange(N_PROMPTS).repeat_interleave(tries)   # every target
+        texts = [decode(t) for t in generate(model, test).tolist()]
+    return np.mean([verify(t, s) for t, s in zip(test.tolist(), texts)]), texts
+
+policy = grpo(verify)
+rate, texts = pass_rate(policy)
+print(f"pass rate over all 19 targets: {rate:.3f}")
+print({t: texts[20 * t] for t in range(0, 19, 3)})</code></pre>
+<pre><code class="language-text">step   0  reward 0.04  check 0.04  KL 0.00  no-signal groups 0.75
+step  50  reward 0.82  check 0.82  KL 2.12  no-signal groups 0.62
+step 100  reward 0.82  check 0.82  KL 2.38  no-signal groups 0.78
+step 150  reward 0.89  check 0.89  KL 1.52  no-signal groups 0.88
+step 200  reward 0.79  check 0.79  KL 1.47  no-signal groups 0.88
+step 250  reward 0.98  check 0.98  KL 2.54  no-signal groups 0.84
+step 300  reward 0.93  check 0.93  KL 3.37  no-signal groups 0.72
+pass rate over all 19 targets: 0.934
+{0: '00', 3: '12', 6: '51', 9: '81', 12: '48', 15: '87', 18: '16'}</code></pre>
+<p>The pass rate climbed from 4% to 93% in 300 steps. The no-signal column shows the GRPO effect: early on most groups are all wrong, later most are all right, and either way they contribute nothing. The KL grows as the policy leaves its starting point.</p>
+<h3>Reward hacking</h3>
+<p>An agent optimises the reward you wrote, not the goal you meant. <strong>Reward hacking</strong>, or specification gaming, is Goodhart's law in algorithmic form. In OpenAI's 2016 CoastRunners experiment, a boat-racing agent scored more by circling a lagoon to hit the same targets than by finishing the race. Chat reward models tend to favour long, confident, agreeable answers, so optimising hard against them yields verbosity and <strong>sycophancy</strong> (Sharma et al., 2023). Coding models trained against unit tests have been reported to special-case expected outputs or edit the tests. Defences: robust checkers that fail closed, the KL anchor, evaluations the policy never trains on (lesson <a data-ref="evaluation"></a>), and reading samples whenever the reward jumps.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: catch a reward hacker</p>
+<p>This verifier has a bug that could pass a quick review:</p>
+<pre><code class="language-python">def buggy_verify(target, text):
+    try:
+        return float(int(text[0]) + int(text[1]) == target)
+    except ValueError:
+        return 1.0         # "could not parse, so do not penalise": the bug</code></pre>
+<ol>
+<li>Train <code>grpo(buggy_verify, steps=150)</code> and watch the <code>reward</code> and <code>check</code> columns.</li>
+<li>Print the trained model's answers for a few targets. What has it learned?</li>
+<li>Fix the verifier, and note how you would have caught this without <code>check</code>.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>Within 50 steps the reward reached 0.98 while the honest check fell to 0.00: the model put the junk token in every answer (<code>'1?'</code>, <code>'?0'</code>), because unparsable answers are never marked wrong, and that is far easier to find than addition. Fix it by failing closed: anything that does not parse scores 0, as <code>verify</code> does. Without <code>check</code>, you would catch it by reading samples, by noticing the reward rose suspiciously fast, or with a held-out evaluation using a separate strict grader.</p>
+</details>
+<h2>Where RL is used, and when not to use it</h2>
+<p>RL shines where experience is cheap to simulate or the reward is easy to check: games (TD-Gammon, Atari, AlphaGo and AlphaZero, Dota 2, StarCraft II), robot policies trained in simulation, controlling plasma in a fusion reactor (Degrave et al., <em>Nature</em> 2022), bandits for recommendation and ads, chip floorplanning (Mirhoseini et al., <em>Nature</em> 2021, a result whose comparison with established tools has been publicly disputed) and, now routinely, LLM post-training.</p>
+<table>
+<thead>
+<tr><th>Situation</th><th>Use instead of RL</th></tr>
+</thead>
+<tbody>
+<tr><td>You have labels</td><td>Supervised learning</td></tr>
+<tr><td>Decisions do not change what comes next</td><td>A contextual bandit, or prediction plus a decision rule</td></tr>
+<tr><td>You know the rules</td><td>Search and planning (lesson <a data-ref="classical-ai"></a>) or a solver</td></tr>
+<tr><td>You want an LLM to behave differently</td><td>Prompting, retrieval, SFT or DPO first (lessons <a data-ref="prompt-engineering"></a>, <a data-ref="rag"></a>, <a data-ref="fine-tuning"></a>)</td></tr>
+</tbody>
+</table>
+<p>RL is sample-hungry, sensitive to seeds and hard to debug. Use it when the problem really is sequential decision-making with a reward you trust.</p>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>Why can a purely greedy bandit agent (epsilon = 0) suffer linearly growing regret?</p>
+<ul>
+<li>It updates its estimates too quickly</li>
+<li class="correct">It can lock onto an early arm and never gather evidence that another is better</li>
+<li>Regret always grows linearly</li>
+<li>It pulls arms at random</li>
+</ul>
+<p class="why">Without exploration a bad early choice is never corrected, so every pull pays the same gap.</p>
+</div>
+<div class="q">
+<p>On CliffWalking with epsilon = 0.1, why does SARSA learn a safer route than Q-learning?</p>
+<ul>
+<li>It uses a larger learning rate</li>
+<li>Q-learning ignores negative rewards</li>
+<li class="correct">Its target uses the action it will actually take next, so it learns the value of its own exploring policy</li>
+<li>It has a model of the environment</li>
+</ul>
+<p class="why">SARSA is on-policy: occasional random steps near the cliff lower the value of the edge.</p>
+</div>
+<div class="q">
+<p>In PPO with clip 0.2, an action has positive advantage and a ratio of 1.3. What does it add to the gradient?</p>
+<ul>
+<li class="correct">Nothing: above 1.2 the clipped objective is flat</li>
+<li>A large push upwards</li>
+<li>A push back towards a ratio of 1</li>
+<li>Only a KL term</li>
+</ul>
+<p class="why">Clipping removes the incentive to move further in a direction that has already helped.</p>
+</div>
+<div class="q">
+<p>In GRPO, all eight answers to a prompt pass the verifier. What does that prompt contribute?</p>
+<ul>
+<li>A strong positive signal</li>
+<li class="correct">Nothing apart from the KL term: every advantage is zero</li>
+<li>A negative signal for diversity</li>
+<li>Training data for the value network</li>
+</ul>
+<p class="why">Advantages are relative to the group, so always-solved and never-solved prompts carry no signal.</p>
+</div>
+<div class="q">
+<p>During RLHF the reward model's score keeps rising but held-out human ratings fall. Most likely?</p>
+<ul>
+<li>The learning rate is too low</li>
+<li>The raters became harsher</li>
+<li class="correct">The policy is exploiting the reward model's errors (reward hacking)</li>
+<li>The KL penalty is too large</li>
+</ul>
+<p class="why">A reward model is a proxy that is accurate only near its training data; stronger KL, a better reward model and early stopping on independent evaluations help.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>RL maximises discounted return from rewards, not labels. The hard parts are credit assignment, exploration and data that depends on the policy.</li>
+<li>Bandits isolate exploration; epsilon-greedy, UCB and Thompson sampling trade it off differently, measured by regret.</li>
+<li>Bellman equations: value is reward plus discounted next value. Value iteration solves them with a model; Q-learning (off-policy) and SARSA (on-policy) learn them from samples.</li>
+<li>Deep RL swaps tables for networks: DQN adds replay and a target network; policy gradients weight log-probabilities by advantage; baselines cut variance; PPO clips each step.</li>
+<li>An LLM is a policy over tokens. RLHF uses a reward model, PPO and a KL penalty; DPO is the offline shortcut; GRPO uses group-relative advantages with verifiable rewards. Every reward gets hacked if it can be, so keep an independent check.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Richard S. Sutton and Andrew G. Barto, <em>Reinforcement Learning: An Introduction</em>, 2nd edition (MIT Press, 2018), free online from the authors</li>
+<li>OpenAI, <em>Spinning Up in Deep RL</em>: clear derivations and reference implementations of policy-gradient methods</li>
+<li>David Silver, <em>UCL Course on Reinforcement Learning</em> (lecture videos and slides)</li>
+<li>Schulman et al., "Proximal Policy Optimization Algorithms" (arXiv 1707.06347)</li>
+<li>Shao et al., "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models" (arXiv 2402.03300), which introduced GRPO</li>
+<li>Hugging Face, <em>Deep Reinforcement Learning Course</em> (free, hands-on)</li>
+</ul>

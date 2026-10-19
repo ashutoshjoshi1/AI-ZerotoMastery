@@ -7,10 +7,23 @@
     "What AI engineers do, and how AI, ML, deep learning and LLMs nest together",
     "Set up Python, a project template, Jupyter, Git and your API keys"
   ],
-  "objectives": [],
+  "objectives": [
+    "Describe what an AI engineer does and how the role differs from research scientist, ML engineer and data scientist",
+    "Place AI, machine learning, deep learning, LLMs and generative AI in their nested relationship",
+    "Contrast a hand-written rule with behaviour learned from data, in code",
+    "Navigate the course: ten parts, one-hour sessions, reading on a phone and practising in a notebook",
+    "Set up an isolated Python project with uv or venv, JupyterLab, Git and a git-ignored .env for API keys"
+  ],
   "prerequisites": [],
-  "runs_on": "Any computer (CPU).",
-  "glossary": []
+  "runs_on": "Any computer (CPU). No API key needed; the key-loading cell simply reports that none is set.",
+  "glossary": [
+    {"term": "Artificial intelligence (AI)", "def": "Any technique that makes machines act intelligently, whether by hand-written rules or by learning."},
+    {"term": "Machine learning (ML)", "def": "Behaviour learned from data rather than programmed by hand."},
+    {"term": "Deep learning", "def": "Machine learning with many-layered neural networks that learn their own features from raw data."},
+    {"term": "Large language model (LLM)", "def": "A transformer trained on huge text corpora to predict the next token, then tuned to follow instructions."},
+    {"term": "Generative AI", "def": "Models that produce new text, images, audio, video or code, including but not limited to LLMs."},
+    {"term": "Virtual environment", "def": "An isolated Python installation per project, so each project pins its own library versions."}
+  ]
 }
 -->
 <h2>What an AI engineer does</h2>
@@ -81,6 +94,61 @@
 <p><strong>Machine learning (ML)</strong> means the behaviour comes from data. You show a spam filter thousands of labelled emails and it works out the rules itself. Classical ML (linear models, decision trees, gradient boosting) still powers a huge share of real systems, especially on tabular data.</p>
 <p><strong>Deep learning</strong> is ML with neural networks that have many layers. It took over around 2012 because, given enough data and GPU compute, deep networks learn their own features from raw pixels, audio or text.</p>
 <p><strong>Large language models</strong> are deep networks, almost always transformers, trained on trillions of tokens of text to predict the next token. That simple objective, at enormous scale, produces models that can write, summarise, translate, reason through problems and use tools.</p>
+<p>The difference between the outer circle and the rest is easiest to feel in code, so the first exercise asks you to build both a rule-based and a learned spam filter. If Python is not set up yet, use the <em>Open in Colab</em> link at the top of this lesson, or come back to it after session 2.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: rules versus learning</p>
+<p>Using only the Python standard library:</p>
+<ol>
+<li>Write twelve short labelled messages (half spam, half not) as a <code>train</code> list of <code>(text, label)</code> pairs, and eight more as a <code>test</code> list. Make some test spam use words that never appear in your rule's keyword list.</li>
+<li>Write <code>rule_filter(text)</code>: spam if the message contains any of a hand-picked set of keywords such as <code>free</code>, <code>win</code>, <code>prize</code>.</li>
+<li>Write <code>learned_filter(text)</code>: count, in the training messages, how often each word appears in spam and in non-spam. Score a message as the sum over its words of <code>log((spam_count + 1) / (ham_count + 1))</code> and call it spam if the score is positive.</li>
+<li>Measure both on the test list. You are done when the learned filter beats the rule, and you can explain why it catches a spam message that contains none of your keywords.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">import math
+from collections import Counter
+
+train = [
+    ("win a free prize now", 1), ("claim your free cash reward", 1),
+    ("urgent: your account prize is waiting", 1), ("free entry, win big today", 1),
+    ("limited offer, claim cash now", 1), ("urgent reward waiting, claim today", 1),
+    ("are we still on for lunch tomorrow", 0), ("can you send the calibration report", 0),
+    ("meeting moved to 3pm", 0), ("thanks for the update on the sensor", 0),
+    ("lunch at the usual place?", 0), ("the report is attached, see you at the meeting", 0),
+]
+test = [
+    ("free cash, claim now", 1), ("claim your reward today", 1), ("urgent: account waiting", 1),
+    ("win a prize", 1), ("sensor calibration tomorrow", 0), ("lunch then the meeting?", 0),
+    ("thanks for the report", 0), ("the free lunch is at 3pm", 0),
+]
+
+def words(text):
+    return text.lower().replace(",", " ").replace(":", " ").replace("?", " ").split()
+
+KEYWORDS = {"free", "win", "prize"}            # the hand-written rule
+
+def rule_filter(text):
+    return int(any(w in KEYWORDS for w in words(text)))
+
+spam_counts, ham_counts = Counter(), Counter()  # the "training": just counting
+for text, label in train:
+    (spam_counts if label else ham_counts).update(words(text))
+
+def learned_filter(text):
+    score = sum(math.log((spam_counts[w] + 1) / (ham_counts[w] + 1)) for w in words(text))
+    return int(score &gt; 0)
+
+def accuracy(filter_fn, data):
+    return sum(filter_fn(t) == y for t, y in data) / len(data)
+
+print("rule-based:", accuracy(rule_filter, test))      # 0.625
+print("learned:   ", accuracy(learned_filter, test))   # 1.0
+for text, y in test:
+    print(f"{text!r:36} truth {y}  rule {rule_filter(text)}  learned {learned_filter(text)}")</code></pre>
+<p>The rule misses "claim your reward today" (none of its keywords) and wrongly flags "the free lunch is at 3pm". The learned filter picked up "claim", "urgent" and "reward" from the data, and learned that "lunch" and "meeting" are evidence against spam. Nobody wrote those rules; the counts did. This is a crude Naive Bayes classifier, which you will meet properly in lessons <a data-ref="classical-ml"></a> and <a data-ref="classical-ai"></a>. Add a new kind of spam to <code>train</code> and the filter adapts without a code change, which is the whole point of machine learning.</p>
+</details>
 <h3>A short history, so the names make sense</h3>
 <table>
 <thead>
@@ -154,8 +222,32 @@
 </tbody>
 </table>
 <p>You will meet most of these ideas again, in order, as you go through the course.</p>
+<h3>The course map</h3>
+<p>The course has 33 lessons in ten parts. Parts I to V build the mental model, parts VI to VIII are the daily craft of the job, and part IX looks beyond language models.</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Lessons</th>
+<th>What you get</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>I Orientation</td><td><a data-ref="welcome"></a></td><td>The map and a working setup</td></tr>
+<tr><td>II Foundations</td><td><a data-ref="python-for-ai"></a> to <a data-ref="math-for-ai"></a></td><td>Python, NumPy, pandas, and the maths every model uses</td></tr>
+<tr><td>III Machine learning</td><td><a data-ref="ml-fundamentals"></a> to <a data-ref="classical-ml"></a></td><td>How models learn, how to measure them honestly, the classical toolbox</td></tr>
+<tr><td>IV Deep learning</td><td><a data-ref="neural-networks"></a> to <a data-ref="sequences-embeddings"></a></td><td>Neural networks from scratch, then PyTorch, sequences and embeddings</td></tr>
+<tr><td>V Transformers and LLMs</td><td><a data-ref="transformers"></a> to <a data-ref="how-llms-are-built"></a></td><td>Attention, the transformer, and how LLMs are trained</td></tr>
+<tr><td>VI Building with LLMs</td><td><a data-ref="llm-apis"></a> to <a data-ref="evaluation"></a></td><td>APIs, prompting, reasoning models, retrieval, agents, context engineering, evaluation</td></tr>
+<tr><td>VII Fine-tuning and inference</td><td><a data-ref="fine-tuning"></a> to <a data-ref="llm-inference"></a></td><td>Changing a model's behaviour, and serving it fast and cheaply</td></tr>
+<tr><td>VIII Production</td><td><a data-ref="deployment-llmops"></a> to <a data-ref="multimodal"></a></td><td>Deployment, safety and security, images and audio</td></tr>
+<tr><td>IX The wider field</td><td><a data-ref="classical-ai"></a> to <a data-ref="interpretability"></a></td><td>Search and planning, reinforcement learning, generative models, vision, time series and graphs, training at scale, interpretability</td></tr>
+<tr><td>X Mastery</td><td><a data-ref="system-design"></a> to <a data-ref="capstones-career"></a></td><td>System design, capstone projects, your portfolio and career</td></tr>
+</tbody>
+</table>
+<p>Parts I to VIII build on each other, so take them in order. Part IX is different: its seven lessons each stand on their own, so take them in any order, or only the ones your work needs, and come back for the rest later.</p>
 <h2>How to study this, an hour at a time</h2>
-<p>Learning a field this wide is a long game. Three habits matter more than any particular resource.</p>
+<p>Every lesson is split into sessions of about an hour, and a divider with a checkbox marks where each session ends. The <a href="../schedule.html">daily schedule</a> lays the whole course out at five sessions a week. Learning a field this wide is a long game, and three habits matter more than any particular resource.</p>
 <p><strong>Retrieval beats rereading.</strong> At the end of each session, close the page and write a short summary from memory in a learning log. The effort of recall is what makes it stick. The quizzes at the end of each lesson exist for the same reason.</p>
 <p><strong>Build, then read.</strong> When an idea feels abstract, run the code, change a number, and watch what happens. Every lesson has at least one hands-on exercise with a hidden solution. Try the exercise for real before you open the solution, even if you only get halfway.</p>
 <p><strong>Spaced review.</strong> Once a week, skim the key takeaways of the last two or three lessons. Five minutes of review saves hours of relearning later.</p>
@@ -163,14 +255,23 @@
 <p class="admonition-title">Your learning log</p>
 <p>Create a repository called <code>ai-engineering-log</code> with one Markdown file per lesson. Each entry gets three things: what you learned in your own words, the code you wrote, and one question you still have. By the end of the course this repository is a portfolio, a reference manual and proof of work, all in one.</p>
 </div>
+<h3>Read on your phone, practise at your computer</h3>
+<p>The lessons are written to be read anywhere, and the code is meant to be run on a computer. A good rhythm is to read a session on your phone during the day, then open the notebook in the evening and do that session's exercise.</p>
+<ul>
+<li><strong>Reading.</strong> Open the site on your phone and add it to your home screen (Safari: <em>Share, Add to Home Screen</em>; Chrome: <em>Install app</em>). Lessons you open are kept for offline reading. The <strong>Aa</strong> button sets text size, typeface and theme.</li>
+<li><strong>Practising.</strong> Every exercise is labelled <em>At your computer</em> and names the notebook cell to use. Clone the repository and open the notebook with the lesson's number in JupyterLab or VS Code, or use the <em>Open in Colab</em> link if your computer is not set up.</li>
+<li><strong>Progress.</strong> Ticks are stored per browser. The <strong>Aa</strong> panel gives you a sync link; open it on another device and the ticks are merged.</li>
+</ul>
+<hr data-session="2">
 <h2>Set up your workbench</h2>
 <p>You need Python, an isolated environment per project, a notebook for exploration, an editor for real code, Git, and a safe way to store API keys.</p>
 <h3>Python and environments</h3>
-<p>Use Python 3.11 or newer. The easiest modern way to manage Python versions and packages is <a href="https://docs.astral.sh/uv/">uv</a>, a fast replacement for <code>pip</code> and <code>venv</code>. The classic <code>venv</code> plus <code>pip</code> route works just as well; both are shown.</p>
+<p>Use Python 3.12. Anything from 3.11 up works, but the newest Python release often lags behind in library support, so 3.12 is the safe choice. The easiest modern way to manage Python versions and packages is <a href="https://docs.astral.sh/uv/">uv</a>, a fast replacement for <code>pip</code> and <code>venv</code> that also installs Python itself. The classic <code>venv</code> plus <code>pip</code> route works just as well; both are shown.</p>
 <div class="tabs">
 <section data-tab="uv (recommended)">
-<pre><code class="language-bash"># install uv (macOS / Linux); see the uv docs for Windows
+<pre><code class="language-bash"># install uv (macOS / Linux)
 curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows (PowerShell): powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 mkdir ai-engineering-log &amp;&amp; cd ai-engineering-log
 uv init --python 3.12          # creates pyproject.toml and a .venv on first sync
@@ -191,7 +292,7 @@ jupyter lab</code></pre>
 <p>Jupyter notebooks are excellent for exploring data and trying ideas cell by cell. They are poor for anything you want to rerun, test or deploy, because hidden state builds up as you run cells out of order. A good rule: explore in a notebook, then move anything you want to keep into a <code>.py</code> file with functions you can import and test.</p>
 <p>For an editor, VS Code with the Python and Jupyter extensions is the common choice. It opens notebooks too, so you can stay in one tool.</p>
 <h3>GPUs without buying one</h3>
-<p>You will not need a GPU until part IV. When you do, <a href="https://colab.research.google.com">Google Colab</a> gives you a free NVIDIA GPU in the browser (Runtime, then Change runtime type). Kaggle notebooks offer similar free quotas. For heavier work later, cloud GPU providers rent by the hour.</p>
+<p>You will not need a GPU until part IV, and even there most notebooks run on a CPU, just more slowly. Fine-tuning in part VII is where a GPU becomes necessary. When you need one, <a href="https://colab.research.google.com">Google Colab</a> gives you a free NVIDIA GPU in the browser (Runtime, then Change runtime type), and every lesson page has an <em>Open in Colab</em> link for its notebook. Kaggle notebooks offer similar free quotas. For heavier work later, cloud GPU providers rent by the hour.</p>
 <h3>Git</h3>
 <p>Initialise Git now and commit after every session. Small, frequent commits make your log readable and give you an undo button.</p>
 <pre><code class="language-bash">git init
@@ -287,6 +388,16 @@ for var in ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"]:
 </ul>
 <p class="why">Retrieval practice, the effort of recalling without looking, beats passive rereading in study after study.</p>
 </div>
+<div class="q">
+<p>Why move code you want to keep out of a notebook and into a <code>.py</code> file?</p>
+<ul>
+<li>Notebooks cannot import NumPy</li>
+<li class="correct">Notebooks accumulate hidden state when cells run out of order, so code you want to rerun, test or deploy belongs in importable modules</li>
+<li>Python files run on the GPU and notebooks do not</li>
+<li>Git cannot store notebooks</li>
+</ul>
+<p class="why">Explore in a notebook, then move what you keep into functions in <code>src/</code> that notebooks, scripts and tests can all import.</p>
+</div>
 </div>
 <div class="admonition takeaways">
 <p class="admonition-title">Key takeaways</p>
@@ -295,5 +406,14 @@ for var in ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"]:
 <li>AI contains machine learning, which contains deep learning, which contains LLMs.</li>
 <li>Use one isolated environment per project, keep secrets in a git-ignored <code>.env</code>, and commit after every session.</li>
 <li>Retrieval practice and building things beat rereading. Keep a learning log from day one.</li>
+<li>Read sessions anywhere; do the <em>At your computer</em> exercises in the lesson's notebook. Parts I to VIII are in order; part IX can be taken in any order.</li>
 </ul>
 </div>
+<h3>Go deeper</h3>
+<ul>
+<li><a href="https://docs.astral.sh/uv/">uv documentation</a>: projects, Python versions and lockfiles</li>
+<li><a href="https://docs.python.org/3/tutorial/">The official Python tutorial</a>, if Python itself is new to you</li>
+<li><a href="https://git-scm.com/book/en/v2">Pro Git</a> (free online), chapters 1 to 3</li>
+<li>Chip Huyen, <em>AI Engineering</em> (O'Reilly, 2025): the job described in this lesson, at book length</li>
+<li><a href="https://jupyterlab.readthedocs.io/">JupyterLab documentation</a></li>
+</ul>

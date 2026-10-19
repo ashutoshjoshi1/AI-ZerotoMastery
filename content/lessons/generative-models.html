@@ -113,7 +113,7 @@ print(round(judge.score(X_te, y_te), 3))
 print(judge_report(X_te))</code></pre>
 <pre><code class="language-text">0.969
 (0.9, [45, 52, 43, 45, 43, 47, 43, 47, 41, 44])</code></pre>
-<p>The judge gets 96.9% of real test digits right, with an average confidence of 0.9, and the test set holds 41 to 52 of each digit. That is what "looks like a real digit" means in numbers. Now the autoencoder, with a two-number code so we can look at it.</p>
+<p>The judge gets 96.9% of real test digits right, with an average confidence of 0.9, and it spreads the test set evenly, calling 41 to 52 images each digit. That is what "looks like a real digit" means in numbers. Now the autoencoder, with a two-number code so we can look at it.</p>
 <pre><code class="language-python">class AutoEncoder(nn.Module):
     def __init__(self, d_latent=2):
         super().__init__()
@@ -274,7 +274,7 @@ def elbo_terms(model, x):
 def vae_loss(model, x, beta=1.0):
     recon, kl = elbo_terms(model, x)
     return recon + beta * kl                    # the negative ELBO when beta = 1</code></pre>
-<p>Three details here prevent the most common VAE bugs. The encoder predicts \(\log \sigma^2\) rather than \(\sigma\), so any real output is valid. The decoder returns logits and the loss applies the sigmoid itself, as in lesson <a data-ref="pytorch"></a>. And both terms are summed over their dimensions before averaging over the batch: if you average the reconstruction over 64 pixels but sum the KL, the KL is effectively 64 times too strong and the model learns to ignore its codes.</p>
+<p>Three details here prevent the most common VAE bugs. The encoder predicts \(\log \sigma^2\) rather than \(\sigma\), so any real output is valid. The decoder returns logits and the loss applies the sigmoid itself, as in lesson <a data-ref="pytorch"></a>. And both terms are summed over their dimensions before averaging over the batch: if you average the reconstruction over 64 pixels but sum the KL, the KL is effectively 64 times too strong and the model will usually learn to ignore its codes.</p>
 <h3>Train, sample and interpolate</h3>
 <pre><code class="language-python">torch.manual_seed(0)
 vae = fit(VAE(), vae_loss)
@@ -309,9 +309,9 @@ print(judge.predict(frames))</code></pre>
     """Snap each row of z to its nearest codebook vector, as in a VQ-VAE."""
     idx = torch.cdist(z, codebook).argmin(dim=1)   # one integer token per row
     z_q = codebook[idx]
-    vq_loss = (F.mse_loss(z_q, z.detach())            # move codes to the encoder
-               + 0.25 * F.mse_loss(z, z_q.detach()))  # keep encoder near its code
-    z_st = z + (z_q - z).detach()   # straight-through: forward z_q, gradient to z
+    vq_loss = (F.mse_loss(z_q, z.detach())          # pull codes to the encoder
+               + 0.25 * F.mse_loss(z, z_q.detach()))  # commit encoder to code
+    z_st = z + (z_q - z).detach()  # straight-through: value z_q, gradient to z
     return z_st, idx, vq_loss
 
 torch.manual_seed(0)
@@ -359,7 +359,8 @@ def mode_report(x, std=0.05):
     d = torch.cdist(x, CENTRES)                  # distance to every centre
     good = d.min(1).values &lt; 3 * std             # within 3 std of some mode
     counts = torch.bincount(d.argmin(1)[good], minlength=8)
-    return int((counts &gt;= 0.01 * len(x)).sum()), round(good.float().mean().item(), 2)
+    covered = int((counts &gt;= 0.01 * len(x)).sum())
+    return covered, round(good.float().mean().item(), 2)
 
 def mlp(n_in, n_out, hidden=128, depth=2):
     layers, d = [], n_in
@@ -398,7 +399,7 @@ G = train_gan()</code></pre>
 2000 (6, 0.49)
 2500 (5, 0.73)
 3000 (5, 0.73)</code></pre>
-<p>Read the log line by line. At step 500 the samples crowd onto one side of the ring and almost none land on a mode; at 1,000 they have spread out but still sit between the modes. By the end the samples are sharp (73% land on a mode) but cover only five of the eight modes, and the notebook's plot shows the shape of the failure: about four in five samples pile up near two modes, while the mode between them gets none. That is <strong>mode collapse</strong>, here in its partial form. The generator is rewarded for fooling the current discriminator, not for covering the data. If one region fools \(D\) best, \(G\) moves its samples there; \(D\) learns to reject that region; \(G\) hops elsewhere. Nothing in the loss directly rewards diversity. Rerun with a different seed and the details change, sometimes eight modes, sometimes one. That sensitivity is the practical problem with GANs.</p>
+<p>Read the log line by line. At step 500 the samples crowd onto one side of the ring and almost none land on a mode; at 1,000 they have spread out but still sit between the modes. By the end the samples are sharp (73% land on a mode) but cover only five of the eight modes, and the notebook's plot shows the shape of the failure: about four in five samples pile up near two modes, while the mode between them gets none. That is <strong>mode collapse</strong>, here in its partial form. The generator is rewarded for fooling the current discriminator, not for covering the data. If one region fools \(D\) best, \(G\) moves its samples there; \(D\) learns to reject that region; \(G\) hops elsewhere. Nothing in the loss directly rewards diversity. Rerun with a different seed and the details change: across nine seeds this run ended with anything from one mode to seven. That sensitivity is the practical problem with GANs.</p>
 <h3>Making GANs train</h3>
 <p>A decade of practice produced a toolbox of fixes:</p>
 <ul>
@@ -413,7 +414,7 @@ G = train_gan()</code></pre>
 <p>GAN losses do not fall steadily as the generator improves, because each player's loss depends on the other. Log a sample-based metric, as <code>mode_report</code> does here, and look at pictures.</p>
 </div>
 <h3>Where GANs still win</h3>
-<p>Diffusion models overtook GANs for image synthesis around 2021 (Dhariwal and Nichol's paper is titled "Diffusion Models Beat GANs on Image Synthesis"), mainly on diversity and training stability. GANs remain the right tool when you need an output in a single network call: real-time synthesis, video-game textures, and super-resolution, where models such as ESRGAN sharpen images. The adversarial loss also lives on inside other models. The autoencoders of latent diffusion are trained with a GAN loss so their decoders produce crisp detail, and SD-Turbo, the one-step generator from lesson <a data-ref="multimodal"></a>, was distilled from a diffusion model with an adversarial loss.</p>
+<p>Diffusion models overtook GANs for image synthesis around 2021 (Dhariwal and Nichol's paper is titled "Diffusion Models Beat GANs on Image Synthesis"), mainly on diversity and training stability. GANs remain the right tool when you need an output in a single network call: real-time synthesis and super-resolution, where models such as ESRGAN sharpen images. The adversarial loss also lives on inside other models. The autoencoders of latent diffusion are trained with a GAN loss so their decoders produce crisp detail, and SD-Turbo, the one-step generator from lesson <a data-ref="multimodal"></a>, was distilled from a diffusion model with an adversarial loss.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: stabilise the GAN</p>
 <ol>
@@ -553,7 +554,7 @@ round trip: 2.384185791015625e-07</code></pre>
 \[
 x_{t-1} = \frac{1}{\sqrt{\alpha_t}}\left(x_t - \frac{\beta_t}{\sqrt{1-\bar\alpha_t}}\,\varepsilon_\theta(x_t, t)\right) + \sigma_t\, \mathbf{n}, \qquad \mathbf{n} \sim \mathcal{N}(0, I),
 \]
-<p>where \(\alpha_t = 1 - \beta_t\). The added noise \(\sigma_t\) can be \(\sqrt{\beta_t}\) or the variance of the true reverse step, \(\tilde\beta_t = \beta_t(1-\bar\alpha_{t-1})/(1-\bar\alpha_t)\). The DDPM paper found the two similar on images; on this tiny dataset \(\tilde\beta_t\) gives noticeably sharper samples, so we use it.</p>
+<p>where \(\alpha_t = 1 - \beta_t\). The added noise \(\sigma_t\) can be \(\sqrt{\beta_t}\) or the variance of the true reverse step when \(x_0\) is known, \(\tilde\beta_t = \beta_t(1-\bar\alpha_{t-1})/(1-\bar\alpha_t)\). The DDPM paper found the two similar on images; on this tiny dataset \(\tilde\beta_t\) gives noticeably sharper samples, so we use it.</p>
 <pre><code class="language-python">T = 100
 betas = torch.linspace(1e-4, 0.2, T)   # linear schedule, rescaled for 100 steps
 alphas = 1 - betas
@@ -562,7 +563,7 @@ alpha_bar_prev = torch.cat([torch.ones(1), alpha_bar[:-1]])
 sigma2 = betas * (1 - alpha_bar_prev) / (1 - alpha_bar)    # posterior variance
 
 torch.manual_seed(0)
-eps_model = mlp(3, 2, depth=3)          # input: (x_t, t/T), output: predicted noise
+eps_model = mlp(3, 2, depth=3)          # (x_t, t/T) -&gt; predicted noise
 opt = torch.optim.Adam(eps_model.parameters(), lr=1e-3)
 for step in range(4000):
     x0 = sample_ring(256)
@@ -576,7 +577,7 @@ for step in range(4000):
 
 @torch.no_grad()
 def ddpm_sample(n):
-    x = torch.randn(n, 2)                                   # start from pure noise
+    x = torch.randn(n, 2)                              # start from pure noise
     for t in reversed(range(T)):
         eps = eps_model(torch.cat([x, torch.full((n, 1), t / T)], dim=1))
         x = (x - betas[t] / (1 - alpha_bar[t]).sqrt() * eps) / alphas[t].sqrt()
@@ -596,7 +597,7 @@ x_t = (1 - t)\,x_0 + t\,x_1, \qquad \mathcal{L} = \big\lVert v_\theta(x_t, t) - 
 \]
 <p>Many lines pass through any given point, so the network learns their average direction there. That averaged velocity field defines a flow whose paths never cross and which carries the noise distribution onto the data distribution. To generate, start from noise and integrate \(dx/dt = v_\theta(x, t)\) from \(t = 0\) to \(t = 1\), here with simple Euler steps.</p>
 <pre><code class="language-python">torch.manual_seed(0)
-v_model = mlp(3, 2, depth=3)            # input: (x_t, t), output: velocity
+v_model = mlp(3, 2, depth=3)            # (x_t, t) -&gt; velocity
 opt = torch.optim.Adam(v_model.parameters(), lr=1e-3)
 for step in range(4000):
     x1 = sample_ring(256)                        # data
@@ -661,15 +662,17 @@ print("real, only 50   ", round(frechet(X_te[:50], X_tr[:50]), 2))
 # 2. precision and recall on the ring (k-nearest-neighbour balls)
 def precision_recall(real, fake, k=5):
     def radii(a):          # distance from each point to its k-th neighbour
-        return NearestNeighbors(n_neighbors=k + 1).fit(a).kneighbors(a)[0][:, -1]
+        knn = NearestNeighbors(n_neighbors=k + 1).fit(a)
+        return torch.tensor(knn.kneighbors(a)[0][:, -1])
     def inside(a, b):      # share of a that falls in some ball around b
-        return (torch.cdist(a, b) &lt;= torch.tensor(radii(b))).any(1).float().mean()
-    return round(inside(fake, real).item(), 2), round(inside(real, fake).item(), 2)
+        return (torch.cdist(a, b) &lt;= radii(b)).any(1).float().mean().item()
+    return round(inside(fake, real), 2), round(inside(real, fake), 2)
 
 torch.manual_seed(2)
 real = sample_ring(1000)
 with torch.no_grad():
-    print("GAN  (precision, recall):", precision_recall(real, G(torch.randn(1000, 2))))
+    gan_fake = G(torch.randn(1000, 2))
+print("GAN  (precision, recall):", precision_recall(real, gan_fake))
 print("DDPM (precision, recall):", precision_recall(real, ddpm_sample(1000)))</code></pre>
 <pre><code class="language-text">real vs real     0.24
 VAE samples      7.07
@@ -723,12 +726,15 @@ with torch.no_grad():
         z = z + v_lat(torch.cat([z, torch.full((1000, 1), i / 50)], dim=1)) / 50
     latent_fm = ae8.decoder(z * c_std + c_mean).numpy()
     no_prior = ae8.decoder(torch.randn(1000, 8) * c_std + c_mean).numpy()
-print("latent flow matching:", judge_report(latent_fm), round(frechet(X_te, latent_fm), 2))
-print("independent Gaussian:", judge_report(no_prior), round(frechet(X_te, no_prior), 2))
+print("latent flow matching:", judge_report(latent_fm),
+      round(frechet(X_te, latent_fm), 2))
+print("independent Gaussian:", judge_report(no_prior),
+      round(frechet(X_te, no_prior), 2))
 
 # 4. memorisation check: distance to the nearest training image
 def nn_dist(x):
-    return torch.cdist(torch.tensor(x, dtype=torch.float32), Xtr).min(1).values.median().item()
+    x = torch.tensor(x, dtype=torch.float32)
+    return torch.cdist(x, Xtr).min(1).values.median().item()
 print("held-out real digits:", round(nn_dist(X_te), 2))
 print("generated digits:    ", round(nn_dist(latent_fm), 2))</code></pre>
 <pre><code class="language-text">latent flow matching: (0.84, [98, 89, 80, 110, 85, 106, 105, 102, 100, 125]) 0.95

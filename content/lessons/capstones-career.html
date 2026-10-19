@@ -244,9 +244,9 @@ print(len(cases), "cases written")</code></pre>
 <summary>Show what you should find</summary>
 <p>The solutions notebook builds a skeleton for Capstone A over a six-paragraph toy corpus: <code>retrieve</code> scores paragraphs by the number of query words they contain, <code>generate</code> returns the best paragraph with its id as the citation or <code>NOT_IN_DOCS</code> when no word matches, and <code>grade</code> checks that the expected phrase is in the answer. It prints:</p>
 <pre><code class="language-text">10 cases written
-pass rate: 0.6
-worst traces: q-004 q-006 q-008 q-010</code></pre>
-<p>Opening the failed traces shows that retrieval, not generation, is the weak stage: the right paragraph is rarely in the top result for paraphrased questions. That is the first entry in the decision log, and the first thing to improve in session 3.</p>
+pass rate: 0.7
+worst traces: q-006 q-009 q-010</code></pre>
+<p>Opening the failed traces shows two kinds of failure, both in retrieval: a paraphrased question picks the wrong paragraph, and the two unanswerable questions are never refused, because counting raw words (including "the") always finds some paragraph to return. That is the first entry in the decision log, and the first thing to improve in session 3.</p>
 </details>
 <hr data-session="3">
 <h2>Evaluate, harden and deploy</h2>
@@ -280,11 +280,11 @@ def paired_bootstrap(before, after, n=5000, seed=0):
 </div>
 <details class="solution">
 <summary>Show what you should find</summary>
-<p>The solutions notebook ranks paragraphs by the fraction of query words matched after lower-casing and stripping punctuation, which handles paraphrases better. Reading both trace files back and comparing per case prints:</p>
-<pre><code class="language-text">before 0.6  after 0.8
-fixed: ['q-004', 'q-006']  broke: []
-change +0.20  95% interval [0.0, 0.4]</code></pre>
-<p>With ten cases the interval touches zero: the change is probably real but the evidence is thin, and the decision-log row should say so. The honest next step is more cases, not a bigger model.</p>
+<p>The solutions notebook ranks paragraphs by the fraction of query words matched after lower-casing, stripping punctuation and dropping stopwords, and abstains when even the best paragraph matches less than half of them. Reading both trace files back and comparing per case prints:</p>
+<pre><code class="language-text">before 0.7  after 0.8
+fixed: ['q-009', 'q-010']  broke: ['q-005']
+change +0.10  95% interval [-0.2, 0.4]</code></pre>
+<p>The change fixed both unanswerable cases (the skeleton now abstains) and broke one paraphrase, because "installing" no longer matches "install" once whole words are compared. That is exactly what the fixed and broken lists are for: the next decision-log row is about stemming or embeddings, not about the overall number. With ten cases the interval spans zero, so the decision-log row should say that the evidence is thin and that the honest next step is more cases, not a bigger model.</p>
 </details>
 <hr data-session="4">
 <h2>Write it up</h2>

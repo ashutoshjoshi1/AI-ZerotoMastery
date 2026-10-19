@@ -116,7 +116,7 @@ If the report does not say something, write "not stated" rather than guessing.""
 print(lint_prompt(vague))
 print(lint_prompt(specific))
 print(lint_prompt("Classify the email.\n&lt;email&gt;\n{email_text}\n&lt;/email&gt;\nDon't be verbose."))</code></pre>
-The vague prompt gets four findings; the specific one none; the last one is flagged for the bare prohibition and for having no audience, format or missing-information rule. The linter is deliberately crude: a prompt can pass it and still be unclear, which is why the real test is the labelled set in the last session.</p>
+The vague prompt gets four findings; the specific one none; the last one is flagged for the bare prohibition and for having no audience, format, length or missing-information rule. The linter is deliberately crude: a prompt can pass it and still be unclear, which is why the real test is the labelled set in the last session.</p>
 </details>
 <hr data-session="2">
 <h2>Techniques</h2>

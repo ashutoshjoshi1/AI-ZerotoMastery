@@ -388,11 +388,11 @@ cost = {"current": 0.011, "candidate": 0.008}     # per request</code></pre>
 <details class="solution">
 <summary>Show what you should find</summary>
 <p>Pairs matter: resample question indices and compute the difference on each resample, so that both models see the same questions. The solutions notebook prints something like:</p>
-<pre><code class="language-text">current   pass rate 0.66
-candidate pass rate 0.74
-difference +0.075  95% interval [-0.025, +0.175]
-fixed 16 cases, broke 10 cases</code></pre>
-<p>The candidate looks better, but with 80 questions the interval includes zero, so the evidence is weak. It is also slower and cheaper. A reasonable decision: do not switch the whole assistant yet; route 20% of traffic to the candidate behind the interface, grow the eval set with the broken cases, and revisit when the interval clears zero or the latency target is at risk.</p>
+<pre><code class="language-text">current   pass rate 0.54
+candidate pass rate 0.65
+difference +0.113  95% interval [-0.013, +0.250]
+fixed 19 cases, broke 10 cases</code></pre>
+<p>The candidate looks better by eleven points, but with 80 questions the interval still includes zero, so the evidence is suggestive rather than conclusive. It is also slower and cheaper. A reasonable decision: do not switch the whole assistant yet; route 20% of traffic to the candidate behind the interface, add the ten broken cases to the eval set and look at what they have in common, and revisit when the interval clears zero or the latency target is relaxed.</p>
 </details>
 <h2>Check yourself</h2>
 <div class="quiz">

@@ -1,0 +1,900 @@
+<!--
+{
+  "title": "Time series, recommender systems and graphs",
+  "short": "Time series, recsys, graphs",
+  "summary": "Three kinds of data that break the independent-rows assumption: forecast with honest baselines and walk-forward backtests, build and evaluate recommenders from matrix factorisation to two-tower retrieval, and learn on graphs with PageRank, node embeddings and a graph neural network written from scratch.",
+  "sessions": [
+    "Time series: baselines, backtesting, Holt-Winters, ARIMA and gradient boosting",
+    "Recommender systems: collaborative filtering, matrix factorisation and ranking metrics",
+    "Modern recommenders: two-tower retrieval, ranking, cold start and feedback loops",
+    "Graphs: PageRank, node embeddings and graph neural networks"
+  ],
+  "objectives": [
+    "Forecast a seasonal series with naive baselines, Holt-Winters, ARIMA and gradient-boosted lag features, and compare them with walk-forward backtesting and MASE",
+    "Explain why shuffled cross-validation leaks the future, and check whether prediction intervals cover what they claim",
+    "Train a matrix factorisation recommender from scratch and evaluate it with RMSE, recall@k and NDCG@k on a time-based split",
+    "Build a two-tower retrieval model in PyTorch with in-batch negatives, and use content features for cold-start items",
+    "Explain feedback loops, popularity bias and the main defences against them",
+    "Use PageRank and community detection as features, and implement and train a graph convolutional network from scratch"
+  ],
+  "prerequisites": ["classical-ml", "pytorch", "embeddings-vector-search"],
+  "runs_on": "Any computer (CPU), offline: the data ships with statsmodels and networkx or is generated in code. One optional cell downloads MovieLens 100k (5 MB). The whole notebook runs in a few minutes.",
+  "glossary": [
+    {"term": "Time series", "def": "A sequence of measurements ordered in time, where each value usually depends on the ones before it."},
+    {"term": "Stationarity", "def": "The property of a series whose mean, variance and autocorrelation do not change over time; most classical forecasting models assume it."},
+    {"term": "Seasonality", "def": "A pattern that repeats with a fixed period, such as a daily, weekly or yearly cycle."},
+    {"term": "Backtesting (walk-forward validation)", "def": "Evaluating a forecaster by repeatedly training on the past and scoring on the period that follows, never on shuffled data."},
+    {"term": "ARIMA", "def": "A classical forecasting model that differences a series to remove trend, then predicts from its own past values and past forecast errors."},
+    {"term": "MASE", "def": "Mean absolute scaled error: a forecast's mean absolute error divided by that of a naive forecast on the training data, so values below 1 beat the naive method."},
+    {"term": "Collaborative filtering", "def": "Recommending from the behaviour of many users: people who agreed in the past tend to agree again."},
+    {"term": "Matrix factorisation", "def": "Approximating the sparse user-item matrix by the product of small user and item vector matrices, whose dot products predict preferences."},
+    {"term": "Cold start", "def": "The problem of recommending to new users, or recommending new items, that have no interaction history yet."},
+    {"term": "NDCG", "def": "Normalised discounted cumulative gain: a ranking metric that rewards relevant items more the nearer they are to the top, scaled so a perfect ranking scores 1."},
+    {"term": "Two-tower model", "def": "A retrieval model with separate networks that embed users and items in one vector space, so candidates can be found by nearest-neighbour search."},
+    {"term": "Graph neural network", "def": "A neural network that learns on graphs by repeatedly updating each node's vector from its neighbours' vectors."},
+    {"term": "Message passing", "def": "The core step of a graph neural network: each node gathers its neighbours' vectors, aggregates them and updates its own."},
+    {"term": "PageRank", "def": "A node importance score: the long-run share of time a random walker that follows edges, with occasional random jumps, spends at each node."}
+  ]
+}
+-->
+<h2>Data that is not a bag of independent rows</h2>
+<p>Lessons <a data-ref="ml-fundamentals"></a> and <a data-ref="classical-ml"></a> treated data as a table of independent rows: shuffle them, split them, and each row is a fresh draw from the same distribution. A large share of production machine learning breaks that assumption in one of three ways.</p>
+<ul>
+<li><strong>Time series</strong>: the rows are ordered, and today depends on yesterday. Demand forecasting, energy load, sensor readings, capacity planning.</li>
+<li><strong>Recommender systems</strong>: each row is an interaction between a user and an item, and the user-item matrix is almost entirely empty. Shops, feeds, streaming, ads.</li>
+<li><strong>Graphs</strong>: the rows are nodes joined by edges, and a node's label depends on its neighbours. Fraud rings, molecules, social and road networks.</li>
+</ul>
+<p>Each has its own models, but the costliest mistakes share one cause: validating as if the rows were independent. Watch for that thread through all four sessions.</p>
+<h2>Time series: what makes them different</h2>
+<p>A <strong>time series</strong> is a sequence of measurements at regular intervals, \(y_1, y_2, \dots, y_T\). Four properties shape everything you do with one.</p>
+<ul>
+<li><strong>Autocorrelation</strong>: values are correlated with their own past. This is the signal forecasting exploits.</li>
+<li><strong>Trend</strong>: a long-run rise or fall.</li>
+<li><strong>Seasonality</strong>: a pattern that repeats with a fixed period, such as the hours of a day or the months of a year.</li>
+<li><strong>Non-stationarity</strong>: a series is <strong>stationary</strong> when its mean, variance and autocorrelation stay the same over time. Trend and seasonality break this, and so do sudden level shifts and changing volatility.</li>
+</ul>
+<p>Our running example is the concentration of carbon dioxide in the air at Mauna Loa, Hawaii, which ships with statsmodels. It comes as weekly readings from 1958 to 2001 with gaps, so we average to months and interpolate the five empty ones.</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from statsmodels.tsa.seasonal import STL
+raw = sm.datasets.co2.load_pandas().data["co2"]    # weekly, Mauna Loa, 1958-2001
+y = raw.resample("MS").mean().interpolate()        # monthly means, fill 5 empty months
+print(len(y), "months from", y.index[0].date(), "to", y.index[-1].date())
+for lag in [1, 6, 12]:
+    print(f"lag {lag:&gt;2}: raw {y.autocorr(lag):.3f}   "
+          f"differenced {y.diff().autocorr(lag):+.3f}")
+parts = STL(y, period=12).fit()                    # trend + seasonal + remainder
+by_month = parts.seasonal.groupby(y.index.month).mean()
+print(f"trend {parts.trend.iloc[0]:.1f} to {parts.trend.iloc[-1]:.1f} ppm, "
+      f"remainder std {parts.resid.std():.2f} ppm")
+print(f"seasonal peak: month {by_month.idxmax()} ({by_month.max():+.1f}), "
+      f"trough: month {by_month.idxmin()} ({by_month.min():+.1f})")</code></pre>
+<pre><code class="language-text">526 months from 1958-03-01 to 2001-12-01
+lag  1: raw 0.998   differenced +0.705
+lag  6: raw 0.973   differenced -0.532
+lag 12: raw 0.999   differenced +0.939
+trend 315.1 to 371.5 ppm, remainder std 0.19 ppm
+seasonal peak: month 5 (+2.9), trough: month 10 (-3.1)</code></pre>
+<p>The raw autocorrelation is close to 1 at every lag. That is the trend talking: any steadily rising series looks like this, so the number tells you little. Difference the series (\(y_t - y_{t-1}\)) to remove the trend and the seasonal cycle appears: this month's change is very like the change 12 months ago and opposite to the change 6 months ago.</p>
+<p><strong>STL</strong> (seasonal-trend decomposition using LOESS) splits the series into trend, seasonal and remainder parts. The trend rises 56 ppm, the season swings by about 6 ppm a year (highest in May and lowest in October, as northern-hemisphere plants draw carbon dioxide down over the summer), and the remainder is tiny. Plot a series and its decomposition before you model anything; the notebook does.</p>
+<h2>Baselines and metrics</h2>
+<p>Three baselines cost nothing: <strong>naive</strong> (repeat the last value), <strong>seasonal naive</strong> (repeat the value from the same season last year) and the <strong>moving average</strong> (repeat the mean of a recent window). They are surprisingly hard to beat, and a model that cannot beat them is not worth deploying.</p>
+<p>MAE and RMSE are in the units of the data; RMSE punishes large errors more. MAPE, the mean absolute percentage error, is popular in business reports and full of traps: it is undefined when the actual value is zero and explodes near zero, it depends on the level of the series, and it punishes over-forecasts more than under-forecasts (an under-forecast can be at most 100% wrong, an over-forecast has no limit). The <strong>MASE</strong> (mean absolute scaled error) avoids all of this by dividing your MAE by the in-sample MAE of the seasonal naive forecast:</p>
+\[
+\text{MASE} = \frac{\frac{1}{h}\sum_{t=T+1}^{T+h} |y_t - \hat{y}_t|}{\frac{1}{T-m}\sum_{t=m+1}^{T} |y_t - y_{t-m}|}
+\]
+<p>Here \(m\) is the season length, 12 for monthly data. Below 1 you beat the benchmark, above 1 you lose to it, and because it has no units you can average it across many series.</p>
+<pre><code class="language-python">def mae(a, f):  return np.mean(np.abs(a - f))
+def rmse(a, f): return np.sqrt(np.mean((a - f) ** 2))
+def mape(a, f): return 100 * np.mean(np.abs((a - f) / a))
+def mase(a, f, train, m=12):
+    scale = np.mean(np.abs(train[m:] - train[:-m]))  # in-sample seasonal naive MAE
+    return mae(a, f) / scale
+h = 24                                             # hold out the last two years
+train, test = y.values[:-h], y.values[-h:]
+forecasts = {
+    "naive":          np.repeat(train[-1], h),
+    "moving avg 12":  np.repeat(train[-12:].mean(), h),
+    "seasonal naive": np.tile(train[-12:], h // 12),
+}
+for name, f in forecasts.items():
+    print(f"{name:&lt;15} MAE {mae(test, f):4.2f}  RMSE {rmse(test, f):4.2f}  "
+          f"MAPE {mape(test, f):4.2f}%  MASE {mase(test, f, train):4.2f}")</code></pre>
+<pre><code class="language-text">naive           MAE 2.42  RMSE 2.93  MAPE 0.65%  MASE 1.86
+moving avg 12   MAE 2.22  RMSE 2.69  MAPE 0.60%  MASE 1.71
+seasonal naive  MAE 1.88  RMSE 2.07  MAPE 0.51%  MASE 1.45</code></pre>
+<p>A MAPE of half a percent sounds superb, yet all three forecasts ignore a trend anyone can see. MAPE is small only because carbon dioxide sits near 370 ppm, far from zero. MASE tells the truth: all three are worse than the benchmark, partly because by the second year of the forecast they are two years of trend behind.</p>
+<h2>Backtesting: walk forward, never shuffle</h2>
+<p>One holdout period is one sample, and a lucky or unlucky year can mislead you. A <strong>backtest</strong>, or walk-forward validation, repeats the honest experiment several times: pick a forecast origin, train on everything before it, forecast the next \(h\) steps, score them, move the origin forward and repeat.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 560 215" role="img" aria-label="Walk-forward backtesting: four folds, each training on all data before a forecast origin and testing on the twelve months after it, with the origin moving one year later in each fold">
+<text x="10" y="37" class="muted">fold 1</text>
+<rect class="box" x="70" y="20" width="220" height="26" rx="4"/><text x="180" y="38" text-anchor="middle">train</text>
+<rect class="accent" x="290" y="20" width="60" height="26" rx="4" opacity="0.15"/><rect class="accent-stroke" x="290" y="20" width="60" height="26" rx="4"/><text x="320" y="38" text-anchor="middle">test</text>
+<text x="10" y="72" class="muted">fold 2</text>
+<rect class="box" x="70" y="55" width="280" height="26" rx="4"/><text x="210" y="73" text-anchor="middle">train</text>
+<rect class="accent" x="350" y="55" width="60" height="26" rx="4" opacity="0.15"/><rect class="accent-stroke" x="350" y="55" width="60" height="26" rx="4"/><text x="380" y="73" text-anchor="middle">test</text>
+<text x="10" y="107" class="muted">fold 3</text>
+<rect class="box" x="70" y="90" width="340" height="26" rx="4"/><text x="240" y="108" text-anchor="middle">train</text>
+<rect class="accent" x="410" y="90" width="60" height="26" rx="4" opacity="0.15"/><rect class="accent-stroke" x="410" y="90" width="60" height="26" rx="4"/><text x="440" y="108" text-anchor="middle">test</text>
+<text x="10" y="142" class="muted">fold 4</text>
+<rect class="box" x="70" y="125" width="400" height="26" rx="4"/><text x="270" y="143" text-anchor="middle">train</text>
+<rect class="accent" x="470" y="125" width="60" height="26" rx="4" opacity="0.15"/><rect class="accent-stroke" x="470" y="125" width="60" height="26" rx="4"/><text x="500" y="143" text-anchor="middle">test</text>
+<path class="wire" d="M70 175 H545 M537 170 L545 175 L537 180"/>
+<text x="545" y="198" text-anchor="end" class="muted">time</text>
+<text x="70" y="198" class="muted">score every fold, then average</text>
+</svg>
+<figcaption>Every test period lies after all of its training data, exactly as it will in production.</figcaption>
+</figure>
+<p>Random K-fold cross-validation, the default from lesson <a data-ref="ml-fundamentals"></a>, is wrong here. Shuffled folds let the model train on months either side of each test month, so it interpolates instead of forecasting, and features such as rolling means quietly contain the future. This is temporal leakage, and it is the most common way forecasting projects fool themselves. scikit-learn's <code>TimeSeriesSplit</code> produces walk-forward folds; for full control, write the loop yourself.</p>
+<pre><code class="language-python">def backtest(y, forecast_fn, h=12, n_folds=6):
+    """Walk forward: at each origin, train on all earlier data, forecast h steps."""
+    scores = []
+    for k in range(n_folds, 0, -1):
+        cut = len(y) - k * h                       # forecast origin of this fold
+        train, test = y.iloc[:cut], y.iloc[cut:cut + h]
+        f = np.asarray(forecast_fn(train, h))
+        scores.append(mase(test.values, f, train.values))
+    return np.mean(scores)
+def seasonal_naive(train, h):
+    return np.resize(train.values[-12:], h)        # repeat the last year
+def seasonal_naive_drift(train, h):                # ...plus last year's rise
+    rise = train.values[-12:].mean() - train.values[-24:-12].mean()
+    return seasonal_naive(train, h) + rise * (np.arange(h) // 12 + 1)
+for name, fn in [("seasonal naive", seasonal_naive),
+                 ("seasonal naive + drift", seasonal_naive_drift)]:
+    print(f"{name:&lt;24} MASE {backtest(y, fn):.3f}")</code></pre>
+<pre><code class="language-text">seasonal naive           MASE 1.319
+seasonal naive + drift   MASE 0.659</code></pre>
+<p>Adding last year's rise to the seasonal naive forecast halves the error. A two-line baseline with a little domain sense is the bar every real model has to clear.</p>
+<h2>Exponential smoothing and ARIMA</h2>
+<h3>Exponential smoothing</h3>
+<p><strong>Simple exponential smoothing</strong> forecasts with a weighted average of past values whose weights shrink exponentially with age:</p>
+\[
+\hat{y}_{t+1} = \alpha\, y_t + (1-\alpha)\,\hat{y}_t, \qquad 0 &lt; \alpha &lt; 1
+\]
+<p>A large \(\alpha\) reacts quickly; a small one smooths away noise. Holt's method adds a smoothed trend, and <strong>Holt-Winters</strong> adds a smoothed seasonal component, each with its own smoothing parameter, all fitted to minimise one-step-ahead errors.</p>
+<h3>ARIMA</h3>
+<p><strong>ARIMA</strong>(p, d, q) first differences the series \(d\) times to make it stationary, then models each value as a linear function of the previous \(p\) values (the autoregressive part) and the previous \(q\) forecast errors (the moving-average part). Seasonal ARIMA, or SARIMA, adds the same three ingredients at the seasonal lag, written \((P, D, Q)_m\). The augmented Dickey-Fuller (ADF) test checks for stationarity. Its null hypothesis is that the series is not stationary, so after differencing you want a small p-value.</p>
+<pre><code class="language-python">import warnings
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+warnings.filterwarnings("ignore", module="statsmodels")   # convergence chatter
+for name, s in [("raw", y), ("differenced", y.diff(12).diff().dropna())]:
+    print(f"ADF p-value, {name}: {adfuller(s)[1]:.3f}")
+def holt_winters(train, h):
+    fit = ExponentialSmoothing(train.values, trend="add", seasonal="add",
+                               seasonal_periods=12).fit()
+    return fit.forecast(h)
+def sarima(train, h):
+    fit = SARIMAX(train.values, order=(1, 1, 1),
+                  seasonal_order=(0, 1, 1, 12)).fit(disp=False)
+    return fit.forecast(h)
+for name, fn in [("Holt-Winters", holt_winters), ("SARIMA", sarima)]:
+    print(f"{name:&lt;24} MASE {backtest(y, fn):.3f}")</code></pre>
+<pre><code class="language-text">ADF p-value, raw: 0.999
+ADF p-value, differenced: 0.000
+Holt-Winters             MASE 0.364
+SARIMA                   MASE 0.368</code></pre>
+<p>Both models halve the error again. The orders \((1,1,1)(0,1,1)_{12}\) are a reasonable start for monthly data with trend and seasonality; in practice a search picks the orders by AIC (pmdarima's <code>auto_arima</code> and statsforecast's <code>AutoARIMA</code> do this), and the backtest has the final word. On a smooth series with a stable season, these decades-old methods are excellent and fit in a fraction of a second.</p>
+<h3>Prediction intervals</h3>
+<p>A point forecast hides its uncertainty, and most decisions (how much stock to order, how much capacity to buy) need a range. SARIMA derives intervals from its error model. Check them in the backtest: an 80% interval should contain about 80% of the actual values.</p>
+<pre><code class="language-python">hits, widths = [], []
+for k in range(6, 0, -1):                          # the same six folds
+    cut = len(y) - k * 12
+    fit = SARIMAX(y.values[:cut], order=(1, 1, 1),
+                  seasonal_order=(0, 1, 1, 12)).fit(disp=False)
+    lo, hi = fit.get_forecast(12).conf_int(alpha=0.2).T    # 80% interval
+    actual = y.values[cut:cut + 12]
+    hits += list((actual &gt;= lo) &amp; (actual &lt;= hi))
+    widths.append(np.mean(hi - lo))
+print(f"80% intervals covered {np.mean(hits):.0%} of {len(hits)} months, "
+      f"mean width {np.mean(widths):.2f} ppm")</code></pre>
+<pre><code class="language-text">80% intervals covered 71% of 72 months, mean width 1.27 ppm</code></pre>
+<p>71% is too few. Model-based intervals assume the model is right and its parameters known exactly, so they usually come out too narrow. Measure coverage, then widen the intervals using the errors seen in earlier backtest folds, which is the idea behind conformal prediction.</p>
+<h2>Forecasting with machine learning</h2>
+<p>Any forecasting problem can be recast as supervised regression. Each row is a time point, the target is the value to predict, and the features are <strong>lags</strong> (past values), rolling statistics, <strong>calendar features</strong> (month, day of week, holidays) and outside drivers such as price or weather. Then the gradient boosting of lesson <a data-ref="classical-ml"></a> applies. Two traps are waiting.</p>
+<pre><code class="language-python">from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.model_selection import KFold, TimeSeriesSplit, cross_val_score
+X = pd.DataFrame({"t": np.arange(len(y)), "month": y.index.month})
+gbr = HistGradientBoostingRegressor(random_state=0)
+for name, cv in [("shuffled K-fold", KFold(5, shuffle=True, random_state=0)),
+                 ("walk-forward", TimeSeriesSplit(5, test_size=12))]:
+    err = -cross_val_score(gbr, X, y, cv=cv, scoring="neg_mean_absolute_error")
+    print(f"{name:&lt;16} MAE {err.mean():.2f} ppm")</code></pre>
+<pre><code class="language-text">shuffled K-fold  MAE 0.44 ppm
+walk-forward     MAE 2.32 ppm</code></pre>
+<p>Shuffled K-fold reports an error five times smaller than walk-forward, and only walk-forward is honest: with shuffled folds the model always has the neighbouring months in training and simply interpolates. Walk-forward also exposes the second trap. A tree predicts by averaging training targets in a leaf, so it can only output values close to ones it has seen. It cannot continue a trend, and every future CO2 value is higher than anything in its training data.</p>
+<p>The fix is to predict something stationary, here the year-on-year change, and add it back to last year's value. Every feature must also exist at forecast time: to forecast 12 months ahead, every lag must be at least 12 months old. One model on such features for every horizon is the <strong>direct</strong> strategy; the alternative, <strong>recursive</strong> forecasting, predicts one step and feeds the prediction back in as a lag.</p>
+<pre><code class="language-python">def lag_features(s):
+    """Features for month t built only from values at t-12 or earlier."""
+    d = s - s.shift(12)                            # year-on-year change
+    X = pd.DataFrame({
+        "month":    s.index.month,
+        "d_lag12":  d.shift(12),                   # the change a year earlier
+        "d_lag13":  d.shift(13),
+        "d_mean12": d.shift(12).rolling(12).mean(),   # average change that year
+    }, index=s.index)
+    return X, d
+def gbm(train, h):                                 # direct forecast, needs h &lt;= 12
+    future = pd.date_range(train.index[-1], periods=h + 1, freq="MS")[1:]
+    s = pd.concat([train, pd.Series(np.nan, index=future)])
+    X, d = lag_features(s)
+    rows = X.notna().all(axis=1) &amp; d.notna()       # complete rows, all in the past
+    model = HistGradientBoostingRegressor(learning_rate=0.05, random_state=0)
+    model.fit(X[rows], d[rows])
+    return s.shift(12).iloc[-h:].values + model.predict(X.iloc[-h:])
+print(f"{'gradient boosting':&lt;24} MASE {backtest(y, gbm):.3f}")</code></pre>
+<pre><code class="language-text">gradient boosting        MASE 0.545</code></pre>
+<p>Gradient boosting beats the drift baseline but loses to Holt-Winters. That is an honest and common result: on a single smooth series, classical models are hard to beat. Machine learning earns its keep with many related series and outside drivers. In the M5 competition, which forecast tens of thousands of Walmart product sales, most of the top entries used gradient-boosted trees on lag features.</p>
+<h2>Many series, deep models and pretrained forecasters</h2>
+<p>Real forecasting usually means thousands of series: every product in every store. A <strong>local</strong> approach fits one model per series. A <strong>global</strong> approach trains one model on all of them, with each series scaled by its own level and its attributes as features, so a new product borrows patterns from similar old ones. When series form a hierarchy (store, region, country), the forecasts should add up, which reconciliation methods enforce.</p>
+<p>The sequence models of lessons <a data-ref="sequences-embeddings"></a> and <a data-ref="transformers"></a> apply directly: an RNN or transformer reads a window of history and outputs the next values, often as a distribution. There are also pretrained forecasting models, such as Amazon's Chronos and Google's TimesFM, trained on large collections of series and able to forecast a new one with no training at all. They can be strong starting points, especially for short histories, but results vary by domain, so backtest them against seasonal naive and a tuned gradient-boosting model on your own data before you trust them.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: backtest a harder series</p>
+<ol>
+<li>Load the sea-surface temperatures that ship with statsmodels, <code>sm.datasets.elnino.load_pandas().data</code> (one row per year from 1950, one column per month), and reshape them into a monthly Series with a <code>"MS"</code> date index. You should get 732 months.</li>
+<li>Backtest seasonal naive, seasonal naive with drift, Holt-Winters, SARIMA and the gradient-boosting forecaster at \(h = 12\). Does anything beat seasonal naive?</li>
+<li>Write a <code>climatology</code> forecaster that predicts each calendar month's mean over all training years, and backtest it too.</li>
+<li>Backtest seasonal naive and Holt-Winters at \(h\) = 1, 3 and 6, keeping 72 test months (<code>n_folds=72 // h</code>). How does the gap between them change with the horizon?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">el = sm.datasets.elnino.load_pandas().data.set_index("YEAR")   # 61 years x 12 months
+sst = pd.Series(el.values.ravel(),
+                index=pd.date_range("1950-01-01", periods=el.size, freq="MS"))
+print(len(sst), "months, last:", sst.index[-1].date())
+def climatology(train, h):
+    """Each calendar month's mean over all training years."""
+    means = train.groupby(train.index.month).mean()
+    future = pd.date_range(train.index[-1], periods=h + 1, freq="MS")[1:]
+    return means.loc[future.month].values
+for name, fn in [("seasonal naive", seasonal_naive),
+                 ("seasonal naive + drift", seasonal_naive_drift),
+                 ("Holt-Winters", holt_winters), ("SARIMA", sarima),
+                 ("gradient boosting", gbm), ("climatology", climatology)]:
+    print(f"{name:&lt;24} MASE {backtest(sst, fn):.3f}")
+for h in [1, 3, 6]:
+    sn = backtest(sst, seasonal_naive, h=h, n_folds=72 // h)
+    hw = backtest(sst, holt_winters, h=h, n_folds=72 // h)
+    print(f"h={h}: seasonal naive {sn:.3f}, Holt-Winters {hw:.3f}")</code></pre>
+<pre><code class="language-text">732 months, last: 2010-12-01
+seasonal naive           MASE 0.959
+seasonal naive + drift   MASE 1.330
+Holt-Winters             MASE 1.144
+SARIMA                   MASE 1.127
+gradient boosting        MASE 0.977
+climatology              MASE 0.623
+h=1: seasonal naive 0.961, Holt-Winters 0.339
+h=3: seasonal naive 0.961, Holt-Winters 0.606
+h=6: seasonal naive 0.962, Holt-Winters 0.733</code></pre>
+<p>A year ahead, only climatology beats seasonal naive. Seasonal naive copies last year's El Niño anomaly, which has mostly faded twelve months later; climatology averages the anomalies away. The trend models do worse than both, because there is no trend to extrapolate and the trend terms only add noise. One month ahead Holt-Winters wins easily, and its edge shrinks as the horizon grows: these swings are predictable a few months out and largely beyond univariate models a year out. Always include simple baselines, and always report accuracy by horizon.</p>
+</details>
+<hr data-session="2">
+<h2>Recommender systems: the problem</h2>
+<p>A recommender has users, items and a log of interactions between them, and for each user it must produce a short ranked list of items they will value. Picture the log as a matrix with a row per user and a column per item: almost every cell is empty. MovieLens 100k, a classic research dataset, fills 6.3% of its cells, and real catalogues are far sparser.</p>
+<p>Feedback comes in two kinds. <strong>Explicit</strong> feedback, such as star ratings, says how much someone liked an item, but it is rare. <strong>Implicit</strong> feedback, such as clicks, plays, purchases and watch time, is plentiful but one-sided: an empty cell far more often means "never saw it" than "did not like it". Either way the data is <em>missing not at random</em>. People interact with what they were shown and chose, and that depends on popularity and on the recommender itself.</p>
+<h3>The multi-stage architecture</h3>
+<p>Scoring millions of items with a large model on every request is too slow, so production systems work as a funnel. <strong>Candidate generation</strong> uses cheap methods, often several at once, to pull a few hundred to a few thousand plausible items. <strong>Ranking</strong> scores those with a heavier model and richer features. <strong>Re-ranking</strong> applies diversity, freshness and business rules to the final list. Covington and colleagues described YouTube's recommender in these terms in 2016: a candidate generation network followed by a ranking network.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 560 350" role="img" aria-label="The recommender funnel: millions of catalogue items pass through candidate generation, which keeps about a thousand, then ranking, which keeps about a hundred, then re-ranking, which produces the ten to twenty items shown on the page">
+<rect class="box" x="20" y="10" width="520" height="46" rx="6"/>
+<text x="280" y="30" text-anchor="middle">catalogue</text>
+<text x="280" y="47" text-anchor="middle" class="muted">millions of items</text>
+<rect class="box" x="60" y="82" width="440" height="46" rx="6"/>
+<text x="280" y="102" text-anchor="middle">candidate generation</text>
+<text x="280" y="119" text-anchor="middle" class="muted">two-tower + ANN, co-visitation, popularity: about 1,000 left</text>
+<rect class="box" x="110" y="154" width="340" height="46" rx="6"/>
+<text x="280" y="174" text-anchor="middle">ranking</text>
+<text x="280" y="191" text-anchor="middle" class="muted">rich features, bigger model: about 100 left</text>
+<rect class="box" x="145" y="226" width="270" height="46" rx="6"/>
+<text x="280" y="246" text-anchor="middle">re-ranking</text>
+<text x="280" y="263" text-anchor="middle" class="muted">diversity, freshness, business rules</text>
+<rect class="accent" x="200" y="298" width="160" height="46" rx="6" opacity="0.15"/><rect class="accent-stroke" x="200" y="298" width="160" height="46" rx="6"/>
+<text x="280" y="318" text-anchor="middle">the page</text>
+<text x="280" y="335" text-anchor="middle" class="muted">10 to 20 items</text>
+<path class="wire" d="M280 56 V82 M280 128 V154 M280 200 V226 M280 272 V298"/>
+</svg>
+<figcaption>Each stage sees fewer items and can afford a more expensive model per item. The counts are typical orders of magnitude, not fixed rules.</figcaption>
+</figure>
+<h2>A synthetic ratings matrix</h2>
+<p>We generate data with a known structure so we can check what each model recovers. 1,000 users and 500 items each get a hidden vector of 4 taste numbers, items cluster by genre, and a user's true affinity for an item is a bias plus the dot product of their vectors. As in real life, users mostly rate items that are popular and items they expect to like, and about 10% of the items are released late in the year.</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+rng = np.random.default_rng(0)
+n_users, n_items, n_genres, rank = 1000, 500, 8, 4
+genre = rng.integers(0, n_genres, n_items)         # each item has one genre
+centres = rng.normal(0, 1, (n_genres, rank))
+Q_true = centres[genre] + 0.5 * rng.normal(0, 1, (n_items, rank))
+P_true = rng.normal(0, 1, (n_users, rank)) / np.sqrt(rank)
+taste = (3.4 + rng.normal(0, 0.3, (n_users, 1)) + rng.normal(0, 0.4, n_items)
+         + 0.8 * P_true @ Q_true.T)                # true affinity, users x items
+# who rates what: popular items, and items you like, are more likely to be seen
+log_pop = rng.normal(0, 1, n_items)
+gumbel = -np.log(-np.log(rng.random((n_users, n_items))))
+order = np.argsort(-(log_pop + taste + gumbel), axis=1)
+n_rated = rng.integers(10, 80, n_users)
+u_idx = np.repeat(np.arange(n_users), n_rated)
+i_idx = np.concatenate([order[u, :n] for u, n in enumerate(n_rated)])
+# most items exist from day 0; about 10% are released after day 300
+release = np.where(rng.random(n_items) &lt; 0.1, rng.uniform(300, 330, n_items), 0.0)
+day = release[i_idx] + (365 - release[i_idx]) * rng.random(len(u_idx))
+noise = rng.normal(0, 0.5, len(u_idx))
+rating = np.clip(np.round(taste[u_idx, i_idx] + noise), 1, 5).astype(int)
+df = pd.DataFrame({"user": u_idx, "item": i_idx, "rating": rating,
+                   "day": day.round(1)}).sort_values("day", ignore_index=True)
+print(f"{len(df)} ratings, density {len(df) / (n_users * n_items):.1%}")
+print("count of each rating 1-5:", np.bincount(df.rating, minlength=6)[1:])
+top = df.item.value_counts().iloc[:n_items // 10].sum() / len(df)
+print(f"the top 10% of items receive {top:.0%} of all ratings")</code></pre>
+<pre><code class="language-text">44281 ratings, density 8.9%
+count of each rating 1-5: [  495  3111 10520 15257 14898]
+the top 10% of items receive 32% of all ratings</code></pre>
+<p>The ratings skew high because people choose what they expect to enjoy, and a small share of items collects a large share of the attention: the long tail.</p>
+<h2>Baselines first</h2>
+<p>Split by time: train on everything before day 300 and test on what came after. A random split would let the model learn from a user's future to predict their past, and it would hide the new items that a live system must handle.</p>
+<p>The simplest baseline predicts the global mean \(\mu\). The next adds a user bias \(b_u\) (some people rate everything highly) and an item bias \(b_i\) (some items are simply better):</p>
+\[
+\hat{r}_{ui} = \mu + b_u + b_i, \qquad b_i = \frac{\sum_{u} (r_{ui} - \mu)}{n_i + \lambda}
+\]
+<p>The \(\lambda\) in the denominator shrinks the bias of an item with few ratings towards zero, so a single five-star rating does not make it the best item in the catalogue.</p>
+<pre><code class="language-python">train, test = df[df.day &lt; 300], df[df.day &gt;= 300]  # split by time, not at random
+warm = test.user.isin(train.user) &amp; test.item.isin(train.item)
+print(f"train {len(train)}, test {len(test)}: {(~warm).sum()} test ratings are "
+      f"for {test.item[~warm].nunique()} items released after the cut")
+test_w = test[warm]                                # what CF models can score
+def rmse(a, b):
+    return np.sqrt(np.mean((np.asarray(a) - np.asarray(b)) ** 2))
+mu, lam = train.rating.mean(), 5.0                 # lam shrinks small groups to 0
+def shrunk_mean(r, keys):
+    g = r.groupby(keys)
+    return g.sum() / (g.count() + lam)
+b_i = shrunk_mean(train.rating - mu, train.item).reindex(range(n_items), fill_value=0)
+b_u = shrunk_mean(train.rating - mu - b_i[train.item].values, train.user)
+b_u = b_u.reindex(range(n_users), fill_value=0)
+def baseline(d):
+    return mu + b_u[d.user].values + b_i[d.item].values
+print(f"global mean      RMSE {rmse(test_w.rating, mu):.3f}")
+print(f"mean + biases    RMSE {rmse(test_w.rating, baseline(test_w)):.3f}")</code></pre>
+<pre><code class="language-text">train 32714, test 11567: 4543 test ratings are for 45 items released after the cut
+global mean      RMSE 0.977
+mean + biases    RMSE 0.800</code></pre>
+<h2>Collaborative filtering</h2>
+<p><strong>Collaborative filtering</strong> predicts your preferences from other people's: users who agreed in the past tend to agree again. It needs no knowledge of what the items are.</p>
+<h3>Neighbourhood methods</h3>
+<p>User-based filtering finds people similar to you and recommends what they liked. Item-based filtering finds items similar to the ones you rated highly, the "customers who bought this also bought" idea that Amazon made famous. Item-based is the usual choice in practice, because item similarities change slowly and can be precomputed. Below, two items are similar when their columns of residuals (rating minus baseline) point the same way, and a prediction is the similarity-weighted average of your own residuals on the 30 most similar items.</p>
+<pre><code class="language-python">R = np.zeros((n_users, n_items))                   # residuals after the baseline
+M = np.zeros((n_users, n_items))                   # 1 where a rating exists
+R[train.user, train.item] = train.rating - baseline(train)
+M[train.user, train.item] = 1
+norms = np.linalg.norm(R, axis=0) + 1e-9
+S = (R.T @ R) / np.outer(norms, norms)             # item-item cosine similarity
+np.fill_diagonal(S, 0)
+kth = -np.sort(-S, axis=1)[:, [29]]                # 30th largest in each row
+S30 = np.where(S &gt;= kth, S, 0)                     # keep 30 neighbours per item
+# predicted residual = similarity-weighted average of the user's own residuals
+cf_resid = (R @ S30.T) / np.maximum(M @ np.abs(S30).T, 1e-9)
+cf_pred = baseline(test_w) + cf_resid[test_w.user, test_w.item]
+print(f"item-based CF    RMSE {rmse(test_w.rating, cf_pred):.3f}")</code></pre>
+<pre><code class="language-text">item-based CF    RMSE 0.751</code></pre>
+<h3>Matrix factorisation</h3>
+<p><strong>Matrix factorisation</strong> gives every user a vector \(\mathbf{p}_u\) and every item a vector \(\mathbf{q}_i\) in a small shared space of taste dimensions, and predicts with their dot product, much like the embeddings of lesson <a data-ref="sequences-embeddings"></a>:</p>
+\[
+\hat{r}_{ui} = \mu + b_u + b_i + \mathbf{p}_u^\top \mathbf{q}_i
+\]
+<p>Training minimises the squared error over the observed cells only, plus L2 regularisation. Never fill the empty cells with zeros: that teaches the model that unseen means hated.</p>
+\[
+\min_{P,\,Q,\,b} \sum_{(u,i)\ \text{observed}} \left(r_{ui} - \hat{r}_{ui}\right)^2 + \lambda\left(\lVert\mathbf{p}_u\rVert^2 + \lVert\mathbf{q}_i\rVert^2 + b_u^2 + b_i^2\right)
+\]
+<p>With stochastic gradient descent, each rating with error \(e = r_{ui} - \hat{r}_{ui}\) nudges \(\mathbf{p}_u \leftarrow \mathbf{p}_u + \eta\,(e\,\mathbf{q}_i - \lambda\,\mathbf{p}_u)\), and \(\mathbf{q}_i\) symmetrically. The alternative, <strong>alternating least squares</strong> (ALS), fixes the item vectors and solves each user's vector exactly as a small ridge regression, then swaps roles; it parallelises well and has a widely used variant for implicit feedback. This family of models was central to the Netflix Prize, as Koren, Bell and Volinsky describe.</p>
+<pre><code class="language-python">def train_mf(train, k=8, epochs=30, lr=0.05, reg=0.05, seed=0):
+    """Biased matrix factorisation, mini-batch SGD on the observed cells only."""
+    rng = np.random.default_rng(seed)
+    u, i = train.user.values, train.item.values
+    r = train.rating.values.astype(float)
+    mu = r.mean()
+    P = 0.1 * rng.normal(size=(n_users, k))        # user vectors
+    Q = 0.1 * rng.normal(size=(n_items, k))        # item vectors
+    bu, bi = np.zeros(n_users), np.zeros(n_items)
+    for epoch in range(epochs):
+        for b in np.array_split(rng.permutation(len(r)), len(r) // 256):
+            ub, ib = u[b], i[b]
+            err = r[b] - (mu + bu[ub] + bi[ib] + (P[ub] * Q[ib]).sum(1))
+            gP = err[:, None] * Q[ib] - reg * P[ub]
+            gQ = err[:, None] * P[ub] - reg * Q[ib]
+            np.add.at(bu, ub, lr * (err - reg * bu[ub]))   # add.at sums repeats
+            np.add.at(bi, ib, lr * (err - reg * bi[ib]))
+            np.add.at(P, ub, lr * gP)
+            np.add.at(Q, ib, lr * gQ)
+    return lambda us, its: mu + bu[us] + bi[its] + (P[us] * Q[its]).sum(-1)
+mf = train_mf(train)
+print(f"MF train RMSE {rmse(train.rating, mf(train.user.values, train.item.values)):.3f}")
+print(f"MF test  RMSE {rmse(test_w.rating, mf(test_w.user.values, test_w.item.values)):.3f}")
+oracle = np.clip(taste[test_w.user, test_w.item], 1, 5)    # the true taste
+print(f"oracle   RMSE {rmse(test_w.rating, oracle):.3f}")</code></pre>
+<pre><code class="language-text">MF train RMSE 0.445
+MF test  RMSE 0.639
+oracle   RMSE 0.510</code></pre>
+<p>Matrix factorisation clearly beats item-based filtering and the biases. The oracle line shows the floor: even the true taste scores 0.51, because ratings carry noise and are rounded to whole stars. The gap between training and test error is the usual reminder to keep the regularisation.</p>
+<h2>Evaluating recommendations as rankings</h2>
+<p>Users never see an RMSE. They see a top-10 list, so evaluate the list. For each test user, call the test items they rated 4 or 5 <em>relevant</em>, drop everything they rated in training from the candidates, take the model's top \(k\) and count the hits:</p>
+<ul>
+<li><strong>precision@k</strong>: the fraction of the \(k\) recommendations that are relevant;</li>
+<li><strong>recall@k</strong>: the fraction of the relevant items that made the top \(k\);</li>
+<li><strong>NDCG@k</strong> (normalised discounted cumulative gain): hits count more the higher they appear, divided by the best possible score so that a perfect list scores 1.</li>
+</ul>
+\[
+\text{DCG@}k = \sum_{j=1}^{k} \frac{\text{rel}_j}{\log_2(j+1)}, \qquad \text{NDCG@}k = \frac{\text{DCG@}k}{\text{ideal DCG@}k}
+\]
+<pre><code class="language-python">def ranking_metrics(scores, train, test, k=10):
+    """Mean precision@k, recall@k, NDCG@k. Relevant = test items rated 4 or 5."""
+    s = scores.copy()
+    s[train.user, train.item] = -np.inf            # never re-recommend
+    liked = test[test.rating &gt;= 4].groupby("user").item.apply(set)
+    discount = 1 / np.log2(np.arange(2, k + 2))    # 1 / log2(rank + 1)
+    prec, rec, ndcg = [], [], []
+    for u, relevant in liked.items():
+        top = np.argsort(-s[u])[:k]
+        hits = np.array([i in relevant for i in top], dtype=float)
+        prec.append(hits.mean())
+        rec.append(hits.sum() / len(relevant))
+        ndcg.append((hits * discount).sum() / discount[:min(len(relevant), k)].sum())
+    return np.mean(prec), np.mean(rec), np.mean(ndcg)
+all_u, all_i = np.arange(n_users)[:, None], np.arange(n_items)[None, :]
+warm_items = np.isin(np.arange(n_items), train.item)
+popularity = np.bincount(train.item, minlength=n_items).astype(float)
+scorers = {
+    "random":       rng.random((n_users, n_items)),
+    "popularity":   np.tile(popularity, (n_users, 1)),
+    "item CF":      mu + b_u.values[:, None] + b_i.values[None, :] + cf_resid,
+    "matrix fact.": mf(all_u, all_i),
+}
+for name, sc in scorers.items():
+    p, r, n = ranking_metrics(np.where(warm_items, sc, -np.inf), train, test_w)
+    print(f"{name:&lt;13} P@10 {p:.3f}  R@10 {r:.3f}  NDCG@10 {n:.3f}")</code></pre>
+<pre><code class="language-text">random        P@10 0.013  R@10 0.025  NDCG@10 0.019
+popularity    P@10 0.077  R@10 0.168  NDCG@10 0.150
+item CF       P@10 0.034  R@10 0.069  NDCG@10 0.048
+matrix fact.  P@10 0.059  R@10 0.120  NDCG@10 0.090</code></pre>
+<p>Popularity beats every personalised model on every ranking metric, even though matrix factorisation predicts ratings far better. This is not a bug; Cremonesi, Koren and Turrin documented the effect in 2010. The test set contains only the items people chose to rate, and choice is driven by popularity as much as by taste. A rating model learns how much you would like an item <em>if</em> you saw it, and happily recommends obscure items you would enjoy but are unlikely to pick. The lesson: train for the task you are evaluated on, which is what the next session does.</p>
+<h3>Why offline metrics disagree with online tests</h3>
+<p>Even a well-chosen offline metric is a proxy. Logged data comes from the old system, so users could only click what it showed, and offline metrics reward models that imitate it. Clicks are not satisfaction, retention or revenue. A list is judged as a whole, so diversity and novelty matter. And a new model changes the very data it will later be trained on. Use offline metrics to shortlist models and catch regressions, then decide with an online A/B test on the outcome the product exists for (lesson <a data-ref="evaluation"></a>).</p>
+<p>To try the code on real data, this cell downloads MovieLens 100k: 100,000 ratings of 1,682 films by 943 users. Nothing later depends on it.</p>
+<pre><code class="language-python"># Downloads a model or data on first run
+import io, urllib.request, zipfile
+url = "https://files.grouplens.org/datasets/movielens/ml-100k.zip"
+with zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(url).read())) as z:
+    ml = pd.read_csv(z.open("ml-100k/u.data"), sep="\t",
+                     names=["user", "item", "rating", "timestamp"])
+ml[["user", "item"]] -= 1                          # ids start at 1 in the file
+print(ml.shape, ml.user.nunique(), "users", ml.item.nunique(), "items")</code></pre>
+<pre><code class="language-text">(100000, 4) 943 users 1682 items</code></pre>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: tune and blend the factorisation</p>
+<ol>
+<li>Train <code>train_mf</code> with \(k\) = 1, 2, 4, 8 and 16 factors and report the test RMSE. Which \(k\) wins, and does it match the rank of 4 we planted?</li>
+<li>Train with \(k = 16\) and <code>reg=0.0</code>. Compare training and test RMSE.</li>
+<li>Rank by the MF score plus \(w \log(1 + \text{popularity})\) for \(w\) = 0, 0.25, 0.5, 1 and 2, and report NDCG@10. Can a blend beat popularity alone (0.150)?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">for k in [1, 2, 4, 8, 16]:
+    m = train_mf(train, k=k)
+    print(f"k={k:&lt;2}  test RMSE {rmse(test_w.rating, m(test_w.user.values, test_w.item.values)):.3f}")
+m0 = train_mf(train, k=16, reg=0.0)
+print(f"k=16, reg=0: train RMSE {rmse(train.rating, m0(train.user.values, train.item.values)):.3f}, "
+      f"test RMSE {rmse(test_w.rating, m0(test_w.user.values, test_w.item.values)):.3f}")
+mf_scores = mf(all_u, all_i)
+for w in [0, 0.25, 0.5, 1, 2]:
+    blend = mf_scores + w * np.log1p(popularity)[None, :]
+    p, r, n = ranking_metrics(np.where(warm_items, blend, -np.inf), train, test_w)
+    print(f"w={w:&lt;4} NDCG@10 {n:.3f}")</code></pre>
+<pre><code class="language-text">k=1   test RMSE 0.746
+k=2   test RMSE 0.680
+k=4   test RMSE 0.635
+k=8   test RMSE 0.639
+k=16  test RMSE 0.664
+k=16, reg=0: train RMSE 0.272, test RMSE 0.820
+w=0    NDCG@10 0.090
+w=0.25 NDCG@10 0.190
+w=0.5  NDCG@10 0.238
+w=1    NDCG@10 0.258
+w=2    NDCG@10 0.232</code></pre>
+<p>Test RMSE is best at \(k = 4\), the planted rank, with 8 close behind thanks to regularisation; fewer factors underfit and more start to fit noise. Without regularisation, 16 factors memorise the training set (0.27) and fall apart on the test set (0.82). The blend is the most useful result: a modest popularity term lifts NDCG@10 from 0.090 to 0.258, well above popularity alone, because both taste and exposure decide what people pick. A real ranking model learns this trade-off from features instead of a hand-set weight.</p>
+</details>
+<hr data-session="3">
+<h2>Two-tower retrieval</h2>
+<p>A <strong>two-tower model</strong> has two networks. The user tower turns what is known about a user (their id, recent history, context) into a vector; the item tower turns an item's id and content features into a vector in the same space. The score is the dot product. Because the towers meet only at that dot product, every item vector can be computed in advance and stored in an approximate nearest-neighbour index, exactly as in lesson <a data-ref="embeddings-vector-search"></a>. At request time you compute one user vector and search. That is why two-tower models are the standard candidate generator.</p>
+<p>They train on implicit positives (this user chose this item) with <strong>in-batch negatives</strong>: in a batch of \(B\) pairs, each user's own item is the positive and the other \(B-1\) items in the batch act as negatives. With \(s_{jl}\) the similarity of user \(j\) and item \(l\), and a temperature \(\tau\), the loss is a softmax over each row of the \(B \times B\) score matrix, the same contrastive loss that trains text and image embeddings:</p>
+\[
+\mathcal{L} = -\frac{1}{B}\sum_{j=1}^{B} \log \frac{\exp(s_{jj}/\tau)}{\sum_{l=1}^{B} \exp(s_{jl}/\tau)}
+\]
+<p>One correction matters a lot. Items enter batches in proportion to their popularity, so popular items serve as negatives far more often than they should and get pushed down. The <strong>logQ correction</strong>, described by Yi and colleagues at Google in 2019, subtracts the log of each item's sampling probability from its logit during training; at serving time you use the plain dot product. Our item tower also adds a genre embedding to the item id: a content feature that will matter for cold start.</p>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+class TwoTower(nn.Module):
+    def __init__(self, n_users, n_items, n_genres, dim=32):
+        super().__init__()
+        self.user_id = nn.Embedding(n_users, dim)
+        self.item_id = nn.Embedding(n_items, dim)
+        self.genre = nn.Embedding(n_genres, dim)   # a content feature
+        self.user_mlp = nn.Sequential(nn.Linear(dim, dim), nn.ReLU(), nn.Linear(dim, dim))
+        self.item_mlp = nn.Sequential(nn.Linear(dim, dim), nn.ReLU(), nn.Linear(dim, dim))
+    def users(self, u):
+        return F.normalize(self.user_mlp(self.user_id(u)), dim=-1)
+    def items(self, i, g, use_id=True):
+        x = self.genre(g) + (self.item_id(i) if use_id else 0)
+        return F.normalize(self.item_mlp(x), dim=-1)
+torch.manual_seed(0)
+model = TwoTower(n_users, n_items, n_genres)
+opt = torch.optim.Adam(model.parameters(), lr=0.01)
+U, I = torch.tensor(train.user.values), torch.tensor(train.item.values)
+genre_t = torch.tensor(genre)
+log_q = torch.tensor(np.log(np.bincount(train.item, minlength=n_items) / len(train)
+                            + 1e-12), dtype=torch.float32)   # log sampling prob.
+tau = 0.1                                          # softmax temperature
+for epoch in range(6):
+    total = 0.0
+    for b in torch.randperm(len(U)).split(512):
+        u, i = U[b], I[b]
+        logits = model.users(u) @ model.items(i, genre_t[i]).T / tau   # (B, B)
+        logits = logits - log_q[i]                 # logQ correction, per column
+        loss = F.cross_entropy(logits, torch.arange(len(b)))   # diagonal = positive
+        opt.zero_grad(); loss.backward(); opt.step()
+        total += loss.item() * len(b)
+    print(f"epoch {epoch}: loss {total / len(U):.3f}")</code></pre>
+<pre><code class="language-text">epoch 0: loss 6.428
+epoch 1: loss 6.208
+epoch 2: loss 6.135
+epoch 3: loss 6.086
+epoch 4: loss 6.058
+epoch 5: loss 6.038</code></pre>
+<p>The loss looks high because each row is a 512-way choice; what matters is how well the model ranks the test items.</p>
+<pre><code class="language-python">with torch.no_grad():
+    user_vecs = model.users(torch.arange(n_users))             # (1000, 32)
+    item_vecs = model.items(torch.arange(n_items), genre_t)    # (500, 32): index these
+two_tower = (user_vecs @ item_vecs.T).numpy()
+for name, sc in [("popularity", scorers["popularity"]),
+                 ("matrix fact.", scorers["matrix fact."]),
+                 ("two-tower", two_tower)]:
+    p, r, n = ranking_metrics(np.where(warm_items, sc, -np.inf), train, test_w)
+    print(f"{name:&lt;13} P@10 {p:.3f}  R@10 {r:.3f}  NDCG@10 {n:.3f}")</code></pre>
+<pre><code class="language-text">popularity    P@10 0.077  R@10 0.168  NDCG@10 0.150
+matrix fact.  P@10 0.059  R@10 0.120  NDCG@10 0.090
+two-tower     P@10 0.130  R@10 0.263  NDCG@10 0.239</code></pre>
+<p>Trained on what users chose rather than how they rated it, the two-tower model beats popularity by a wide margin and matrix factorisation by more. In production, <code>item_vecs</code> goes into the vector index, and the user tower runs once per request.</p>
+<h2>Ranking models</h2>
+<p>Retrieval returns a few hundred candidates; a <strong>ranking model</strong> then scores each one carefully. It can use features the towers cannot, because it sees the user and the item together: has this user watched this creator before, how well does the genre match their last week, what time is it, which device. Gradient-boosted trees (lesson <a data-ref="classical-ml"></a>) make a strong first ranker; large systems use deep networks that learn feature crosses and embeddings. Rankers usually predict several outcomes (click, watch time, like, purchase) and combine them with weights that encode business priorities.</p>
+<p>Two pitfalls. <strong>Position bias</strong>: items shown higher get clicked more whatever their quality, so a naive model learns that whatever the old system put first is good. A common fix is to train with position as a feature and set it to the same value for every candidate when serving. And <strong>calibration</strong>: combining several predicted outcomes only works if each probability means what it says.</p>
+<h2>Cold start</h2>
+<p><strong>Cold start</strong> is recommending to new users, or recommending new items, with no history. Collaborative filtering cannot score the 45 items released after our cut at all. The standard remedies:</p>
+<ul>
+<li><strong>Content features</strong> describe items by category, creator, and text or image embeddings, so the item tower can place a new item before anyone has touched it.</li>
+<li><strong>Popularity and context</strong> serve new users: what is popular in their region or on their device, then what they clicked earlier in this session. A few onboarding questions help too.</li>
+<li><strong>Exploration</strong> deliberately shows new items to some users to learn about them quickly. This is the multi-armed bandit problem of lesson <a data-ref="reinforcement-learning"></a>: balance exploiting what you know against exploring what you do not.</li>
+</ul>
+<h2>Feedback loops, popularity bias and fairness</h2>
+<p>A recommender decides what people see, people can only respond to what they see, and tomorrow's model trains on those responses. Popular items get more exposure, so more clicks, so more exposure. Left alone, this <strong>feedback loop</strong> starves the long tail and can narrow what each person sees, the "filter bubble" (how strong that effect is in practice is still debated). The defences:</p>
+<ul>
+<li>log what was shown and with what probability, so later training can correct for exposure;</li>
+<li>reserve a little traffic for exploration;</li>
+<li>re-rank for diversity, for example by capping the items per genre or creator;</li>
+<li>track catalogue coverage and how exposure is spread, not just accuracy.</li>
+</ul>
+<p>Fairness has two sides: users (does the system work as well for every group?) and providers (do creators and sellers get a fair share of exposure?). Neither falls out of accuracy metrics, so both need measuring.</p>
+<h2>LLMs and embeddings in recommendation</h2>
+<p>Text and image embeddings (lesson <a data-ref="embeddings-vector-search"></a>) are now common item features: they place a new item near similar old ones from its description alone, which helps cold start. LLMs can also rerank a short candidate list given a user's history, explain recommendations, and power conversational recommenders, although cost and latency usually confine them to small catalogues or the last stage. A research direction called <strong>generative retrieval</strong> gives each item a short code of discrete tokens (a semantic ID) and trains a sequence model to generate the code of the next item a user will want. Early results are promising, but two-tower retrieval plus a ranker remains the production workhorse.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: cold-start items and the logQ correction</p>
+<ol>
+<li>Embed every item with <code>model.items(..., use_id=False)</code>, so the 45 new items are described by their genre alone. For each user, rank only the new items, and compute recall@10 and NDCG@10 against the test ratings of 4 or 5 on them. Compare with a random ranking.</li>
+<li>Train a second two-tower model identical to the first but without the logQ correction, and evaluate it on warm items as above. What happens, and why?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">cold_items = ~warm_items                           # released after the cut
+test_cold = test[np.isin(test.item, np.where(cold_items)[0])]
+with torch.no_grad():
+    cold_vecs = model.items(torch.arange(n_items), genre_t, use_id=False)
+genre_only = (user_vecs @ cold_vecs.T).numpy()
+for name, sc in [("random", np.random.default_rng(1).random((n_users, n_items))),
+                 ("genre tower", genre_only)]:
+    p, r, n = ranking_metrics(np.where(cold_items, sc, -np.inf), train, test_cold)
+    print(f"cold items, {name:&lt;12} R@10 {r:.3f}  NDCG@10 {n:.3f}")
+torch.manual_seed(0)
+plain = TwoTower(n_users, n_items, n_genres)
+opt2 = torch.optim.Adam(plain.parameters(), lr=0.01)
+for epoch in range(6):
+    for b in torch.randperm(len(U)).split(512):
+        u, i = U[b], I[b]
+        logits = plain.users(u) @ plain.items(i, genre_t[i]).T / tau   # no correction
+        loss = F.cross_entropy(logits, torch.arange(len(b)))
+        opt2.zero_grad(); loss.backward(); opt2.step()
+with torch.no_grad():
+    sc = (plain.users(torch.arange(n_users)) @ plain.items(torch.arange(n_items), genre_t).T).numpy()
+p, r, n = ranking_metrics(np.where(warm_items, sc, -np.inf), train, test_w)
+print(f"warm items, no logQ correction R@10 {r:.3f}  NDCG@10 {n:.3f}")</code></pre>
+<pre><code class="language-text">cold items, random       R@10 0.207  NDCG@10 0.137
+cold items, genre tower  R@10 0.451  NDCG@10 0.292
+warm items, no logQ correction R@10 0.057  NDCG@10 0.043</code></pre>
+<p>Genre alone more than doubles the hit rate of a random ranking on items nobody had rated at training time: content features are what make cold start tractable. Without the logQ correction, recall drops from 0.263 to 0.057, barely above random. The in-batch loss punishes popular items so often that the model learns to avoid exactly the items people are most likely to pick. A one-line change has a large effect.</p>
+</details>
+<hr data-session="4">
+<h2>Graphs: connected data</h2>
+<p>A graph is a set of nodes joined by edges. Edges can be directed (follows, pays) or undirected (is friends with), and weighted. Both can carry features: a user's age, an atom's element, a payment's amount. Three representations are common:</p>
+<ul>
+<li>an <strong>edge list</strong>, one row per edge, which is how graph data usually arrives;</li>
+<li>an <strong>adjacency list</strong> of each node's neighbours, fast to traverse and what networkx uses inside;</li>
+<li>an <strong>adjacency matrix</strong> \(A\), with \(A_{uv} = 1\) when there is an edge, which turns graph operations into matrix products and is stored sparse for large graphs.</li>
+</ul>
+<p>Our example is Zachary's karate club, a 1970s study of a university club that split in two after a dispute between its instructor (node 0, "Mr. Hi") and an officer (node 33). networkx ships the friendship network along with the club each member joined.</p>
+<h3>Classic algorithms that matter in ML</h3>
+<p><strong>PageRank</strong> scores importance as the long-run share of time a random surfer spends at each node: at every step they follow a random edge with probability \(d\), or jump to a random node otherwise.</p>
+\[
+r_v = \frac{1-d}{n} + d \sum_{u \in \mathcal{N}(v)} \frac{r_u}{\deg(u)}
+\]
+<p><strong>Shortest paths</strong> give distances, such as how many hops an account is from a known fraudster. <strong>Community detection</strong> finds groups with many edges inside and few between; the Louvain method greedily maximises a score called modularity.</p>
+<pre><code class="language-python">import numpy as np
+import networkx as nx
+G = nx.karate_club_graph()
+club = np.array([G.nodes[v]["club"] == "Officer" for v in G], dtype=int)
+A = nx.to_numpy_array(G, weight=None)              # 34 x 34 adjacency matrix
+print(G.number_of_nodes(), "members,", G.number_of_edges(), "friendships")
+print("neighbours of node 0:", list(G[0])[:8], "...")
+print("degree of nodes 0, 33, 11:", A.sum(1)[[0, 33, 11]].astype(int))
+def pagerank(A, d=0.85, iters=100):
+    """Power iteration: long-run share of time a random surfer spends at each node."""
+    T = A / A.sum(1, keepdims=True)                # step to a random neighbour
+    r = np.full(len(A), 1 / len(A))
+    for _ in range(iters):
+        r = (1 - d) / len(A) + d * T.T @ r
+    return r
+pr = pagerank(A)
+same = np.allclose(pr, list(nx.pagerank(G, weight=None).values()), atol=1e-4)
+print("highest PageRank:", np.argsort(-pr)[:4], "| matches networkx:", same)
+print("shortest path from 16 to 25:", nx.shortest_path(G, 16, 25))
+communities = nx.community.louvain_communities(G, seed=0)
+purity = sum(np.bincount(club[list(c)]).max() for c in communities) / len(club)
+print(f"{len(communities)} communities, sizes {[len(c) for c in communities]}, "
+      f"purity {purity:.0%}")</code></pre>
+<pre><code class="language-text">34 members, 78 friendships
+neighbours of node 0: [1, 2, 3, 4, 5, 6, 7, 8] ...
+degree of nodes 0, 33, 11: [16 17  1]
+highest PageRank: [33  0 32  2] | matches networkx: True
+shortest path from 16 to 25: [16, 5, 0, 31, 25]
+4 communities, sizes [11, 5, 14, 4], purity 97%</code></pre>
+<p>The two leaders have the highest PageRank, and Louvain finds four communities that almost never straddle the real split, without seeing a single label. Features like these (degree, PageRank, community, distance to known bad actors) fed into gradient boosting are a strong, cheap baseline before any neural network.</p>
+<h2>Node embeddings: word2vec on random walks</h2>
+<p>DeepWalk turns a graph into text. Walk the graph at random, treat each walk as a sentence of node ids, and train word2vec (lesson <a data-ref="sequences-embeddings"></a>) on the sentences: nodes that turn up in the same walks get similar vectors. node2vec adds two parameters that bias the walks towards staying local or wandering far. Skip-gram word2vec is closely related to factorising a matrix of pointwise mutual information, so we can take the counting shortcut from that lesson: co-occurrence counts, PPMI, then the SVD.</p>
+<pre><code class="language-python">rng = np.random.default_rng(0)
+neighbours = [list(G[v]) for v in G]
+walks = []
+for _ in range(20):                                # 20 walks of length 10 per node
+    for start in G:
+        walk = [start]
+        for _ in range(9):
+            nbrs = neighbours[walk[-1]]
+            walk.append(nbrs[rng.integers(len(nbrs))])
+        walks.append(walk)
+print("one walk:", walks[0])
+C = np.zeros((34, 34))                             # co-occurrence within 3 steps
+for walk in walks:
+    for j, v in enumerate(walk):
+        for u in walk[max(0, j - 3):j] + walk[j + 1:j + 4]:
+            C[v, u] += 1
+ppmi = np.maximum(np.log(C * C.sum() / np.outer(C.sum(1), C.sum(0)) + 1e-12), 0)
+U, S, _ = np.linalg.svd(ppmi)
+emb = U[:, :4] * np.sqrt(S[:4])                    # 4-d node embeddings
+emb /= np.linalg.norm(emb, axis=1, keepdims=True)
+# label each member by the leader (0 or 33) whose embedding is closer
+pred = (emb @ emb[33] &gt; emb @ emb[0]).astype(int)
+others = np.setdiff1d(np.arange(34), [0, 33])
+print(f"accuracy on the other 32 members: {(pred[others] == club[others]).mean():.3f}")</code></pre>
+<pre><code class="language-text">one walk: [0, 19, 1, 13, 1, 3, 0, 2, 0, 3]
+accuracy on the other 32 members: 0.969</code></pre>
+<p>From the friendships alone, plus the two leaders, the embedding puts 31 of the other 32 members on the right side. Node embeddings like these are useful features, but they ignore node features, and a new node has no vector until you rerun the whole procedure.</p>
+<h2>Graph neural networks</h2>
+<h3>Message passing</h3>
+<p>A <strong>graph neural network</strong> (GNN) learns node vectors from features and structure together. Each layer performs <strong>message passing</strong>: every node gathers its neighbours' vectors, aggregates them with a function that ignores order (sum, mean or max, because neighbours have no natural order), and updates its own vector with a learned transformation. After \(L\) layers, a node's vector depends on everything within \(L\) hops.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 560 225" role="img" aria-label="Message passing: three neighbours u1, u2 and u3 send their vectors to node v, which gathers them, aggregates them with a sum, mean or max, and updates its own vector with a learned weight matrix">
+<path class="wire" d="M75.3 49.5 L152.0 97.5"/><path class="accent" d="M159.6 102.3 L149.6 101.3 L154.4 93.7 Z"/>
+<path class="wire" d="M63.0 115.0 L147.0 115.0"/><path class="accent" d="M156.0 115.0 L147.0 119.5 L147.0 110.5 Z"/>
+<path class="wire" d="M75.3 180.5 L152.0 132.5"/><path class="accent" d="M159.6 127.7 L154.4 136.3 L149.6 128.7 Z"/>
+<circle class="box" cx="60" cy="40" r="18"/><text x="60" y="45" text-anchor="middle">u1</text>
+<circle class="box" cx="45" cy="115" r="18"/><text x="45" y="120" text-anchor="middle">u2</text>
+<circle class="box" cx="60" cy="190" r="18"/><text x="60" y="195" text-anchor="middle">u3</text>
+<circle class="accent" cx="180" cy="115" r="24" opacity="0.15"/><circle class="accent-stroke" cx="180" cy="115" r="24"/>
+<text x="180" y="120" text-anchor="middle">v</text>
+<path class="accent-stroke" d="M204 115 H280" stroke-dasharray="5 4"/>
+<rect class="box" x="280" y="20" width="270" height="50" rx="6"/>
+<text x="295" y="40">1. gather</text>
+<text x="295" y="58" class="muted">each neighbour u sends its vector</text>
+<rect class="box" x="280" y="90" width="270" height="50" rx="6"/>
+<text x="295" y="110">2. aggregate</text>
+<text x="295" y="128" class="muted">sum, mean or max over neighbours</text>
+<rect class="box" x="280" y="160" width="270" height="50" rx="6"/>
+<text x="295" y="180">3. update</text>
+<text x="295" y="198" class="muted">new h_v = &#963;(W &#183; (aggregate + h_v))</text>
+<path class="wire" d="M415 70 V90 M415 140 V160"/>
+</svg>
+<figcaption>One layer of message passing. Every node does this at once, and each extra layer lets information travel one more hop.</figcaption>
+</figure>
+<h3>A graph convolutional network from scratch</h3>
+<p>The graph convolutional network (GCN) of Kipf and Welling writes one layer as two matrix products:</p>
+\[
+H^{(l+1)} = \sigma\left(\hat{D}^{-1/2} \hat{A} \hat{D}^{-1/2} H^{(l)} W^{(l)}\right), \qquad \hat{A} = A + I
+\]
+<p>\(H^{(l)}\) holds one row per node, \(W^{(l)}\) is an ordinary weight matrix, and multiplying by the normalised adjacency averages each node with its neighbours. The self-loops in \(\hat{A}\) keep each node's own information, and dividing by the square roots of the degrees in \(\hat{D}\) stops well-connected nodes from blowing up the scale. The karate club has no node features, so each node's input is a one-hot vector of its id. We label only the two leaders and train the network to classify everyone else: <strong>semi-supervised node classification</strong>, where the loss covers a few nodes but the graph connects them all.</p>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+A_hat = torch.tensor(A, dtype=torch.float32) + torch.eye(34)   # add self-loops
+deg = A_hat.sum(1)
+A_norm = A_hat / torch.sqrt(deg[:, None] * deg[None, :])       # D^-1/2 A D^-1/2
+class GCN(nn.Module):
+    def __init__(self, n_in, n_hidden, n_out):
+        super().__init__()
+        self.lin1 = nn.Linear(n_in, n_hidden)
+        self.lin2 = nn.Linear(n_hidden, n_out)
+    def forward(self, X, A_norm):
+        h = torch.relu(A_norm @ self.lin1(X))      # transform, then mix neighbours
+        return A_norm @ self.lin2(h)               # class scores for every node
+X = torch.eye(34)                                  # no features: one-hot node ids
+labels = torch.tensor(club)
+labelled = torch.tensor([0, 33])                   # we only know the two leaders
+def train_nodes(model, A_used, epochs=200):
+    opt = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+    for _ in range(epochs):
+        loss = F.cross_entropy(model(X, A_used)[labelled], labels[labelled])
+        opt.zero_grad(); loss.backward(); opt.step()
+    pred = model(X, A_used).argmax(1).numpy()
+    return (pred[others] == club[others]).mean(), others[pred[others] != club[others]]
+torch.manual_seed(0)
+acc, wrong = train_nodes(GCN(34, 16, 2), A_norm)
+print(f"GCN accuracy {acc:.3f}, misclassified: {wrong}")
+torch.manual_seed(0)
+acc, _ = train_nodes(GCN(34, 16, 2), torch.eye(34))   # no edges: just an MLP
+print(f"MLP accuracy {acc:.3f}")</code></pre>
+<pre><code class="language-text">GCN accuracy 0.969, misclassified: [8]
+MLP accuracy 0.500</code></pre>
+<p>With two labels the GCN gets 31 of 32 right. The miss is node 8, who joined Mr. Hi's club although three of their five friends went the other way: no method that reads only the friendships could be sure about them. Passing the identity matrix instead of the adjacency removes the edges and turns the same code into a plain MLP, which scores 50%, chance. The unlabelled nodes' one-hot inputs were never trained, and nothing connects them to the labelled ones.</p>
+<h3>GraphSAGE, GAT and over-smoothing</h3>
+<ul>
+<li><strong>GraphSAGE</strong> samples a fixed number of neighbours per node and learns the aggregator, so it scales to huge graphs and works on nodes it never saw in training. Pinterest's PinSage recommender built on it.</li>
+<li><strong>GAT</strong> (graph attention network) learns how much weight to give each neighbour: the attention of lesson <a data-ref="transformers"></a>, restricted to edges.</li>
+<li><strong>Over-smoothing</strong>: every layer averages neighbours, so after many layers all node vectors drift towards the same vector and the network can no longer tell nodes apart. Most GNNs use two to four layers, with residual connections and normalisation when they go deeper.</li>
+</ul>
+<p>For real work use a library such as PyTorch Geometric or DGL, which handle sparse adjacency, mini-batches of large graphs and dozens of layer types.</p>
+<h2>Where graphs show up</h2>
+<ul>
+<li><strong>Fraud</strong>: accounts that share devices, cards or addresses form rings that row-by-row models miss.</li>
+<li><strong>Molecules</strong>: atoms are nodes and bonds are edges; pooling all the node vectors gives one prediction per molecule, such as solubility or toxicity.</li>
+<li><strong>Recommendation</strong>: users and items form a two-sided graph, and message passing over it spreads taste between them.</li>
+<li><strong>Traffic</strong>: road sensors are nodes, and spatio-temporal GNNs combine this session with the first.</li>
+<li><strong>Knowledge graphs</strong> store facts as (subject, relation, object) triples. GraphRAG uses an LLM to extract entities and relations from documents into a graph, summarises its communities, and retrieves over it to answer questions that need facts joined across many documents, an extension of the RAG of lesson <a data-ref="rag"></a>. It costs far more to build than a vector index, so reach for it when plain retrieval fails at exactly those questions.</li>
+</ul>
+<p>The independence trap appears here too. When you predict new edges (link prediction), remove the test edges from the graph before computing embeddings or features, or the model is handed the answers.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: watch over-smoothing happen</p>
+<ol>
+<li>Generalise <code>GCN</code> to any number of layers (hidden size 16, ReLU between layers), train versions with 2, 4, 8 and 16 layers using <code>train_nodes</code>, and report their accuracy.</li>
+<li>Without any training, take random features \(H\) (34 by 16) and compute \(\tilde{A}^L H\) for \(L\) = 1, 2, 4, 8, 16 and 32, where \(\tilde{A}\) is <code>A_norm</code>. Report the mean cosine similarity between different nodes' vectors.</li>
+<li>Explain how the two results are connected.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">class DeepGCN(nn.Module):
+    def __init__(self, n_in, n_hidden, n_out, n_layers):
+        super().__init__()
+        dims = [n_in] + [n_hidden] * (n_layers - 1) + [n_out]
+        self.layers = nn.ModuleList(nn.Linear(a, b) for a, b in zip(dims, dims[1:]))
+    def forward(self, X, A_norm):
+        h = X
+        for j, layer in enumerate(self.layers):
+            h = A_norm @ layer(h)
+            if j &lt; len(self.layers) - 1:
+                h = torch.relu(h)
+        return h
+for n_layers in [2, 4, 8, 16]:
+    torch.manual_seed(0)
+    acc, _ = train_nodes(DeepGCN(34, 16, 2, n_layers), A_norm)
+    print(f"{n_layers:&gt;2} layers: accuracy {acc:.3f}")
+H0 = torch.randn(34, 16, generator=torch.Generator().manual_seed(0))
+for L in [1, 2, 4, 8, 16, 32]:
+    H = torch.linalg.matrix_power(A_norm, L) @ H0
+    Hn = F.normalize(H, dim=1)
+    sim = (Hn @ Hn.T)[~torch.eye(34, dtype=torch.bool)].mean()
+    print(f"L={L:&gt;2}: mean cosine similarity between nodes {sim:.3f}")</code></pre>
+<pre><code class="language-text"> 2 layers: accuracy 0.969
+ 4 layers: accuracy 0.969
+ 8 layers: accuracy 0.531
+16 layers: accuracy 0.531
+L= 1: mean cosine similarity between nodes 0.158
+L= 2: mean cosine similarity between nodes 0.429
+L= 4: mean cosine similarity between nodes 0.721
+L= 8: mean cosine similarity between nodes 0.911
+L=16: mean cosine similarity between nodes 0.988
+L=32: mean cosine similarity between nodes 1.000</code></pre>
+<p>Accuracy holds at 2 and 4 layers and collapses to near chance at 8 and 16. The untrained propagation shows why: each multiplication by the normalised adjacency averages neighbours, and after 16 steps the node vectors are almost identical (cosine 0.99), so no final layer can separate them. More layers means a wider neighbourhood, and on a small graph a few hops already reach everyone.</p>
+</details>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>You validate a demand forecaster with shuffled 5-fold cross-validation and get an excellent score. What is the main problem?</p>
+<ul>
+<li>The folds are too small</li>
+<li class="correct">The model trains on data from after each test point, so it interpolates and the score overstates real forecasting accuracy</li>
+<li>Shuffling changes the seasonal period</li>
+<li>K-fold cannot be used with gradient boosting</li>
+</ul>
+<p class="why">A forecast may only use the past. Walk-forward backtesting keeps every test period after its training data.</p>
+</div>
+<div class="q">
+<p>A forecast has a MASE of 0.8. What does that mean?</p>
+<ul>
+<li>It is 80% accurate</li>
+<li>Its MAPE is 0.8%</li>
+<li class="correct">Its mean absolute error is 20% lower than that of the in-sample seasonal naive forecast</li>
+<li>It explains 80% of the variance</li>
+</ul>
+<p class="why">MASE divides the forecast's MAE by the naive benchmark's MAE, so values below 1 beat the benchmark.</p>
+</div>
+<div class="q">
+<p>Matrix factorisation has a much better test RMSE than a popularity baseline, but a worse recall@10. What is the most likely explanation?</p>
+<ul>
+<li>The RMSE was computed incorrectly</li>
+<li class="correct">The model predicts how much users would like items, while the test set records which items they chose, and choice depends heavily on popularity</li>
+<li>Recall@10 always favours popularity</li>
+<li>The model has too many factors</li>
+</ul>
+<p class="why">Rating prediction and top-k ranking are different tasks. Train on the signal you will be judged on, or blend in exposure.</p>
+</div>
+<div class="q">
+<p>Why are two-tower models the usual choice for candidate generation?</p>
+<ul>
+<li>They are more accurate than any ranking model</li>
+<li>They need no training data</li>
+<li class="correct">Item vectors can be precomputed and indexed for nearest-neighbour search, so each request needs only one pass of the user tower</li>
+<li>They remove position bias automatically</li>
+</ul>
+<p class="why">The towers interact only through a dot product, which is exactly what an approximate nearest-neighbour index searches.</p>
+</div>
+<div class="q">
+<p>In the karate club, why does an MLP on one-hot node ids score only chance on the unlabelled members, while the GCN scores 97%?</p>
+<ul>
+<li>The MLP has too few parameters</li>
+<li class="correct">The MLP never trained on the unlabelled nodes' inputs and has no edges to carry information from the labelled ones; message passing spreads it along friendships</li>
+<li>The GCN uses a better optimiser</li>
+<li>The MLP needs more epochs</li>
+</ul>
+<p class="why">Message passing lets labels influence the nodes they are connected to, which is the point of learning on graphs.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Time series, recommendations and graphs break the independent-rows assumption, and the costliest mistakes come from validating as if they did not.</li>
+<li>Forecast against seasonal naive baselines, score with MASE rather than MAPE, backtest walk-forward, and check that prediction intervals cover what they claim.</li>
+<li>Holt-Winters and ARIMA are hard to beat on a single smooth series. Gradient boosting on lag features shines across many series, provided the target is stationary and every feature exists at forecast time.</li>
+<li>Recommenders are funnels: cheap candidate generation, a richer ranker, then re-ranking. Evaluate the ranked list with recall@k and NDCG@k on a time-based split, and confirm with A/B tests.</li>
+<li>Matrix factorisation predicts ratings; two-tower models trained on implicit feedback with in-batch negatives and the logQ correction retrieve; content features handle cold start; feedback loops need exploration and diversity.</li>
+<li>Graph algorithms such as PageRank and community detection make strong features. GNNs learn by message passing, a GCN layer is a normalised adjacency times a linear layer, and too many layers over-smooth.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Rob J. Hyndman and George Athanasopoulos, <a href="https://otexts.com/fpp3/"><em>Forecasting: Principles and Practice</em></a>, 3rd edition, free online</li>
+<li>Yehuda Koren, Robert Bell and Chris Volinsky, "Matrix Factorization Techniques for Recommender Systems", <em>IEEE Computer</em> (2009)</li>
+<li>Paul Covington, Jay Adams and Emre Sargin, "Deep Neural Networks for YouTube Recommendations", RecSys (2016)</li>
+<li>Thomas Kipf and Max Welling, "Semi-Supervised Classification with Graph Convolutional Networks", ICLR 2017 (arXiv 1609.02907)</li>
+<li>William L. Hamilton, <a href="https://www.cs.mcgill.ca/~wlh/grl_book/"><em>Graph Representation Learning</em></a> (2020), free online</li>
+<li><a href="https://pytorch-geometric.readthedocs.io/">PyTorch Geometric documentation</a></li>
+</ul>
