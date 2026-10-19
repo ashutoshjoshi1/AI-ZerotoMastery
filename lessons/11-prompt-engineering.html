@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt engineering | AI Engineering</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="is-lesson" data-root="../" data-page="prompt-engineering">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
+<div class="search" role="search">
+<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<div class="search-results" hidden></div>
+</div>
+<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+</header>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg is-current" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="layout">
+<nav class="course-map" aria-label="Course map">
+<ul class="map-pages">
+<li><a href="../index.html">Course home</a></li>
+<li><a href="../schedule.html">Daily schedule</a></li>
+<li><a href="../glossary.html">Glossary</a></li>
+<li><a href="../resources.html">Further resources</a></li>
+</ul>
+<section class="map-part" style="--pc:#ab19c8">
+<p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#6d1ce3">
+<p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1c44e3">
+<p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1ce3c5">
+<p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#65e31c">
+<p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#e37e1c">
+<p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
+<li><a href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#d41a1a">
+<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
+<li><a href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#b21616">
+<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
+<li><a href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+</ol></section>
+</nav>
+<main id="main" tabindex="-1">
+<article class="lesson" data-lesson="prompt-engineering" style="--lc:#c9cc19;--lct:#939518;--lctd:#e8ea7b">
+<header class="lesson-head">
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part VI, Building with LLMs <span class="wl">579 nm</span></p>
+<h1><span class="lesson-num">11</span> Prompt engineering</h1>
+<p class="lesson-summary">Write prompts that work reliably, not just once, through clear instructions, context, examples and structure, along with reasoning and chaining techniques, and treat prompts as tested, versioned code.</p>
+<div class="study-plan">
+<p class="plan-title">Study plan: 3 sessions of about an hour</p>
+<ol class="sessions"><li><label><input type="checkbox" data-session="prompt-engineering:0"><span>Principles: clarity, context, examples and structure</span></label></li><li><label><input type="checkbox" data-session="prompt-engineering:1"><span>Techniques: few-shot, reasoning, output control and prompt chaining</span></label></li><li><label><input type="checkbox" data-session="prompt-engineering:2"><span>Prompts as code: templates, versions, tests and failure modes</span></label></li></ol>
+<p class="plan-note">Tick a session when you finish it. Progress is saved in this browser only.</p>
+<p class="plan-notebook">Code for this lesson: <a href="../notebooks/11-prompt-engineering.ipynb" download>notebooks/11-prompt-engineering.ipynb</a>, with worked solutions in <code>notebooks/solutions/</code>.</p>
+</div>
+</header>
+<div class="prose">
+<h2 id="what-prompt-engineering-really-is">What prompt engineering really is<a class="headerlink" href="#what-prompt-engineering-really-is" title="Link to this section">#</a></h2>
+<p>Prompt engineering is writing a specification for a very capable colleague who knows a lot about the world and nothing about your situation. The model has no idea who your users are, what "good" looks like for your product, or which of several reasonable interpretations you meant. A prompt fills that gap.</p>
+<p>It is less about magic phrases than about clear writing and disciplined testing. The most reliable test of a prompt: <strong>would a smart new hire, given only this text, do the task the way you want?</strong> If they would need to ask questions, so does the model, except it will not ask; it will guess.</p>
+<h2 id="principles">Principles<a class="headerlink" href="#principles" title="Link to this section">#</a></h2>
+<h3 id="1-be-explicit-about-the-task-the-audience-and-the-output">1. Be explicit about the task, the audience and the output<a class="headerlink" href="#1-be-explicit-about-the-task-the-audience-and-the-output" title="Link to this section">#</a></h3>
+<p>Compare:</p>
+<div class="highlight"><span class="filename">Vague</span><pre><span></span><code>Summarise this incident report.
+</code></pre></div>
+<div class="highlight"><span class="filename">Specific</span><pre><span></span><code>Summarise the incident report below for the on-call engineering manager, who will
+decide within five minutes whether to wake up the hardware team.
+
+Write at most 5 bullet points:
+- what failed, where, and since when
+- current impact on data collection
+- what has already been tried
+- the single most likely cause, if the report supports one
+- the decision needed, phrased as a yes/no question
+
+If the report does not say something, write &quot;not stated&quot; rather than guessing.
+</code></pre></div>
+<p>The second prompt says who the reader is, why they need it, the format, the length, and what to do when information is missing. Each of those removes a guess.</p>
+<h3 id="2-give-context-and-explain-why">2. Give context and explain why<a class="headerlink" href="#2-give-context-and-explain-why" title="Link to this section">#</a></h3>
+<p>Rules without reasons get applied rigidly or inconsistently. Reasons let the model generalise. "Never use abbreviations" is weaker than "Readers include non-specialist field staff, so spell out technical abbreviations the first time you use them."</p>
+<h3 id="3-show-examples">3. Show examples<a class="headerlink" href="#3-show-examples" title="Link to this section">#</a></h3>
+<p>A couple of well-chosen examples often beat a paragraph of description, especially for format and tone. Make examples <strong>diverse</strong> (cover different cases, including edge cases), or the model will copy their surface features too closely.</p>
+<h3 id="4-structure-the-prompt">4. Structure the prompt<a class="headerlink" href="#4-structure-the-prompt" title="Link to this section">#</a></h3>
+<p>Long prompts mix instructions, reference material and input data. Separate them clearly so the model never confuses data with instructions. XML-style tags work well and are easy to parse back out:</p>
+<div class="highlight"><pre><span></span><code>&lt;instructions&gt;
+Classify the support email into exactly one category and explain briefly.
+&lt;/instructions&gt;
+
+&lt;categories&gt;
+hardware: physical faults, power, cables, sensors, enclosures
+software: firmware, drivers, the acquisition application, updates
+data: missing, corrupted or suspicious measurements, processing results
+other: anything else, including billing and scheduling
+&lt;/categories&gt;
+
+&lt;email&gt;
+{email_text}
+&lt;/email&gt;
+
+Answer in the form:
+&lt;category&gt;...&lt;/category&gt;
+&lt;reason&gt;one sentence&lt;/reason&gt;
+</code></pre></div>
+<p>Put long reference documents <strong>before</strong> the question; models tend to handle "documents first, question last" better, and it suits prompt caching (lesson 10).</p>
+<h3 id="5-say-what-to-do-not-only-what-to-avoid">5. Say what to do, not only what to avoid<a class="headerlink" href="#5-say-what-to-do-not-only-what-to-avoid" title="Link to this section">#</a></h3>
+<p>"Don't be verbose" leaves the target vague. "Answer in at most three sentences" is actionable. Negative instructions also tend to put the unwanted thing in the model's mind. Prefer positive, concrete instructions, and keep "never do X" for genuine hard limits.</p>
+<h2 id="techniques">Techniques<a class="headerlink" href="#techniques" title="Link to this section">#</a></h2>
+<h3 id="few-shot-prompting">Few-shot prompting<a class="headerlink" href="#few-shot-prompting" title="Link to this section">#</a></h3>
+<p>Include worked input-output pairs. In a chat API you can write them as earlier conversation turns, which models treat as strong evidence of the desired behaviour.</p>
+<div class="highlight"><pre><span></span><code><span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Reading: &#39;NO2 412 ppb at 03:00, all other hours 10-25 ppb&#39;&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;SUSPECT: isolated spike roughly 20x the surrounding values.&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Reading: &#39;NO2 rises from 15 to 38 ppb between 07:00 and 09:00&#39;&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;PLAUSIBLE: gradual morning increase consistent with traffic.&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Reading: &#39;</span><span class="si">{</span><span class="n">new_reading</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+</code></pre></div>
+<h3 id="let-the-model-reason-before-answering">Let the model reason before answering<a class="headerlink" href="#let-the-model-reason-before-answering" title="Link to this section">#</a></h3>
+<p>For multi-step problems, asking the model to work through the problem before giving the final answer improves accuracy, because each generated token is extra computation the model can build on. This is <strong>chain-of-thought</strong> prompting. Ask for the reasoning in a separate section so your code can discard it and keep only the answer:</p>
+<div class="highlight"><pre><span></span><code>Work out the answer step by step inside &lt;thinking&gt; tags.
+Then give only the final number inside &lt;answer&gt; tags.
+</code></pre></div>
+<p>Reasoning models (lesson 09) do this internally, controlled by a thinking budget setting; with them, explicit "think step by step" instructions matter less, and over-prescribing the steps can even hurt. Either way, reasoning costs tokens and latency, so use it where accuracy on harder problems justifies it, not for simple lookups.</p>
+<h3 id="control-the-output">Control the output<a class="headerlink" href="#control-the-output" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Specify the format exactly</strong>, with an example of it.</li>
+<li><strong>Use structured output features</strong> for machine-read results (lesson 10).</li>
+<li><strong>Prefill</strong> (where supported): with the Anthropic API you can end the message list with a partial assistant turn, for instance <code>{"role": "assistant", "content": "&lt;category&gt;"}</code>, and the model continues from there. This pins the format and skips preamble.</li>
+<li><strong>Stop sequences</strong> end generation at a delimiter such as <code>&lt;/answer&gt;</code>.</li>
+</ul>
+<h3 id="prompt-chaining">Prompt chaining<a class="headerlink" href="#prompt-chaining" title="Link to this section">#</a></h3>
+<p>One giant prompt that researches, drafts, critiques and formats is hard to debug. Break the job into steps, each a separate call with a focused prompt, passing outputs forward:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">answer_with_review</span><span class="p">(</span><span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">document</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">quotes</span> <span class="o">=</span> <span class="n">llm</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;doc&gt;</span><span class="si">{</span><span class="n">document</span><span class="si">}</span><span class="s2">&lt;/doc&gt;</span><span class="se">\n</span><span class="s2">List verbatim quotes relevant to: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">draft</span> <span class="o">=</span> <span class="n">llm</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;quotes&gt;</span><span class="si">{</span><span class="n">quotes</span><span class="si">}</span><span class="s2">&lt;/quotes&gt;</span><span class="se">\n</span><span class="s2">Answer &#39;</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">&#39; using only these quotes, citing them.&quot;</span><span class="p">)</span>
+    <span class="n">review</span> <span class="o">=</span> <span class="n">llm</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;quotes&gt;</span><span class="si">{</span><span class="n">quotes</span><span class="si">}</span><span class="s2">&lt;/quotes&gt;</span><span class="se">\n</span><span class="s2">&lt;answer&gt;</span><span class="si">{</span><span class="n">draft</span><span class="si">}</span><span class="s2">&lt;/answer&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                 <span class="s2">&quot;List any claim in the answer not supported by the quotes, or reply NONE.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">review</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;NONE&quot;</span><span class="p">:</span>
+        <span class="n">draft</span> <span class="o">=</span> <span class="n">llm</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rewrite the answer removing unsupported claims.</span><span class="se">\n</span><span class="s2">&lt;problems&gt;</span><span class="si">{</span><span class="n">review</span><span class="si">}</span><span class="s2">&lt;/problems&gt;</span><span class="se">\n</span><span class="s2">&lt;answer&gt;</span><span class="si">{</span><span class="n">draft</span><span class="si">}</span><span class="s2">&lt;/answer&gt;&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">draft</span>
+</code></pre></div>
+<p>Each step can be tested, logged, cached and given a different (cheaper or stronger) model. The extract-then-answer pattern above is also a strong defence against hallucination over long documents.</p>
+<h3 id="self-consistency-and-verification">Self-consistency and verification<a class="headerlink" href="#self-consistency-and-verification" title="Link to this section">#</a></h3>
+<p>For questions with a checkable answer, sample several responses at a moderate temperature and take the majority answer. Or have the model (or a second model) check the first answer against explicit criteria. Both trade cost for reliability.</p>
+<h3 id="roles-and-personas">Roles and personas<a class="headerlink" href="#roles-and-personas" title="Link to this section">#</a></h3>
+<p>A system prompt that sets a role ("You are an experienced field technician writing for colleagues") shifts vocabulary, assumptions and tone. It works best alongside concrete instructions, not as a substitute for them.</p>
+<h2 id="prompts-as-code">Prompts as code<a class="headerlink" href="#prompts-as-code" title="Link to this section">#</a></h2>
+<p>In a product, prompts are code: they need version control, review and tests.</p>
+<h3 id="templates">Templates<a class="headerlink" href="#templates" title="Link to this section">#</a></h3>
+<p>Keep prompts in files or constants, separate from logic, and fill them with variables. Escape or delimit user input so it cannot break your structure.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">string</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span>
+
+<span class="n">CLASSIFY_V3</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;&lt;instructions&gt;</span>
+<span class="s2">Classify the email into exactly one category: hardware, software, data or other.</span>
+<span class="s2">&lt;/instructions&gt;</span>
+<span class="s2">&lt;email&gt;</span>
+<span class="s2">$email</span>
+<span class="s2">&lt;/email&gt;</span>
+<span class="s2">Reply with only the category name, in lower case.&quot;&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">classify</span><span class="p">(</span><span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">CLASSIFY_V3</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;/email&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                               <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}])</span>
+    <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="test-prompts-against-examples-not-vibes">Test prompts against examples, not vibes<a class="headerlink" href="#test-prompts-against-examples-not-vibes" title="Link to this section">#</a></h3>
+<p>A prompt that looks great on three examples you tried can fail on the fourth. Build a small labelled set (even 20 to 50 cases, including tricky ones), run every prompt version against it, and track the score. This is the seed of the evaluation discipline in lesson 15, and the single habit that most separates professionals from tinkerers.</p>
+<div class="highlight"><pre><span></span><code><span class="n">cases</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;The fan in the enclosure is grinding loudly&quot;</span><span class="p">,</span> <span class="s2">&quot;hardware&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;After updating to 2.4 the GUI crashes on start&quot;</span><span class="p">,</span> <span class="s2">&quot;software&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Yesterday&#39;s ozone column values are all exactly zero&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Can we move the calibration visit to March?&quot;</span><span class="p">,</span> <span class="s2">&quot;other&quot;</span><span class="p">),</span>
+    <span class="c1"># ... at least 20, including ambiguous ones</span>
+<span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="n">classify_fn</span><span class="p">):</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[(</span><span class="n">text</span><span class="p">,</span> <span class="n">gold</span><span class="p">,</span> <span class="n">classify_fn</span><span class="p">(</span><span class="n">text</span><span class="p">))</span> <span class="k">for</span> <span class="n">text</span><span class="p">,</span> <span class="n">gold</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">]</span>
+    <span class="n">acc</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">g</span> <span class="o">==</span> <span class="n">p</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">results</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">text</span><span class="p">,</span> <span class="n">gold</span><span class="p">,</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">gold</span> <span class="o">!=</span> <span class="n">pred</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MISS  gold=</span><span class="si">{</span><span class="n">gold</span><span class="si">:</span><span class="s2">&lt;9</span><span class="si">}</span><span class="s2"> pred=</span><span class="si">{</span><span class="n">pred</span><span class="si">:</span><span class="s2">&lt;9</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">acc</span>
+</code></pre></div>
+<p>Read the misses. They tell you exactly what the prompt fails to specify.</p>
+<h3 id="common-failure-modes">Common failure modes<a class="headerlink" href="#common-failure-modes" title="Link to this section">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inconsistent formats</td>
+<td>Format described, not shown</td>
+<td>Add an exact example; use structured output or prefill</td>
+</tr>
+<tr>
+<td>Ignores an instruction in a long prompt</td>
+<td>Buried among many others or contradicted elsewhere</td>
+<td>Shorten, move key instructions to the end, remove conflicts</td>
+</tr>
+<tr>
+<td>Makes up facts</td>
+<td>No source given, or no permission to say "unknown"</td>
+<td>Provide the source; instruct to answer "not stated" when absent</td>
+</tr>
+<tr>
+<td>Overly long, hedged answers</td>
+<td>No length or audience specified</td>
+<td>State length and reader; give an example</td>
+</tr>
+<tr>
+<td>Copies example content into new answers</td>
+<td>Examples too similar to each other</td>
+<td>Use diverse examples; label them clearly as examples</td>
+</tr>
+<tr>
+<td>Agrees with whatever the user asserts</td>
+<td>Leading phrasing</td>
+<td>Ask neutrally; ask the model to evaluate claims critically</td>
+</tr>
+<tr>
+<td>Follows instructions found inside the data</td>
+<td>Data and instructions not separated</td>
+<td>Delimit input; treat retrieved text as untrusted (lesson 18)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="let-the-model-help">Let the model help<a class="headerlink" href="#let-the-model-help" title="Link to this section">#</a></h3>
+<p>Models are good at improving prompts. Paste your prompt and a few failing cases and ask: "Here is a prompt and examples where it produced the wrong output. Explain what in the prompt caused each failure and propose a revised prompt." Then test the revision on your full set; never accept it on the model's say-so.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: iterate a classifier prompt to 90%+</p>
+<ol>
+<li>Write 30 short support messages across the four categories above. Make at least 8 deliberately ambiguous ones (a firmware update that bricked a sensor; a data gap caused by a power cut).</li>
+<li>Write the simplest possible classification prompt and score it with <code>score()</code>.</li>
+<li>Iterate: add category definitions, add tie-break rules for the ambiguous cases ("classify by root cause if stated, otherwise by symptom"), add two or three examples. Score each version and keep a table in your log.</li>
+<li>Try a smaller, cheaper model with your best prompt. Is the accuracy loss acceptable for the cost saving?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show what usually happens</summary>
+<p>A typical log looks something like this:</p>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Change</th>
+<th>Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td>"Classify into hardware, software, data or other"</td>
+<td>70%</td>
+</tr>
+<tr>
+<td>v2</td>
+<td>Added one-line definitions of each category</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>v3</td>
+<td>Added tie-break rule: root cause if stated, else the symptom the user reports</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>v4</td>
+<td>Added three diverse examples, including one ambiguous case</td>
+<td>93%</td>
+</tr>
+<tr>
+<td>v4 on small model</td>
+<td>Same prompt, cheaper model</td>
+<td>90%</td>
+</tr>
+</tbody>
+</table>
+<p>Your numbers will differ. What matters is the pattern: the biggest jumps come from <strong>removing ambiguity</strong> (definitions, tie-break rules), not from clever wording, and the ambiguous cases decide the final score. The remaining misses are often cases where <em>you</em> are not sure of the right label either, which is a sign to clarify the labelling policy itself. The small-model result is a business decision: if 3 points of accuracy cost a fifth of the price, many teams take it, perhaps routing low-confidence cases to the larger model.</p>
+</details>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" title="Link to this section">#</a></h2>
+<div class="quiz" data-quiz>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">1.</span> What is the best quick test of whether a prompt is clear enough?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">It is longer than 200 words</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">A capable new colleague with only this text would do the task the way you want without asking questions</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">It uses the word "please"</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">It starts with "You are an expert"</button></li>
+</ol>
+<p class="quiz-expl" hidden>If a person would need clarification, the model will guess instead of asking.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">2.</span> Why use XML-style tags to separate instructions from input data?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="1">So the model can tell instructions from data, and your code can parse sections back out</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Because models only understand XML</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">To make the prompt shorter</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">To enable streaming</button></li>
+</ol>
+<p class="quiz-expl" hidden>Clear delimiters reduce confusion and make prompt injection harder (though not impossible).</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">3.</span> Your prompt works on the three examples you tried but fails in production. What should you have done?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Used a higher temperature</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Added "be accurate" to the prompt</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Tested every prompt version against a labelled set of realistic, including tricky, cases</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Used a longer system prompt</button></li>
+</ol>
+<p class="quiz-expl" hidden>Prompts need tests just like code. Read the failures to learn what the prompt leaves unspecified.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">4.</span> When is asking the model to reason step by step most worthwhile?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Always; it never hurts</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">For simple factual lookups</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">For multi-step problems where accuracy matters enough to justify extra tokens and latency</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Only when temperature is above 1</button></li>
+</ol>
+<p class="quiz-expl" hidden>Reasoning costs tokens and time. Use it where it buys accuracy.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">5.</span> What is the main advantage of prompt chaining over one large prompt?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">It always uses fewer tokens</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Each step is focused, testable, debuggable and can use a different model</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">It removes the need for evaluation</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Models cannot handle long prompts</button></li>
+</ol>
+<p class="quiz-expl" hidden>Decomposition is software engineering applied to prompts.</p>
+</div>
+<p class="quiz-score" aria-live="polite"></p></div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>A prompt is a specification for a capable colleague who knows nothing of your situation: state the task, audience, format, length and what to do with missing information.</li>
+<li>Give context and reasons, diverse examples and clear structure. Documents first, question last.</li>
+<li>Use reasoning for hard multi-step problems, structured output and prefill for format control, chaining for complex jobs, and self-consistency where reliability matters.</li>
+<li>Treat prompts as code: templates, version control and a labelled test set. Iterate on the misses.</li>
+</ul>
+</div>
+<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" title="Link to this section">#</a></h3>
+<ul>
+<li><a href="https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview">Anthropic prompt engineering guide</a></li>
+<li><a href="https://platform.openai.com/docs/guides/prompt-engineering">OpenAI prompt engineering guide</a></li>
+<li>Wei et al., "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models" (arXiv 2201.11903)</li>
+<li>Wang et al., "Self-Consistency Improves Chain of Thought Reasoning in Language Models" (arXiv 2203.11171)</li>
+</ul>
+</div>
+<footer class="lesson-foot">
+<button type="button" class="complete-btn" data-complete="prompt-engineering" data-sessions="3">Mark all sessions done</button>
+<nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/10-llm-apis.html"><span>Previous</span>10 Working with LLM APIs</a><a class="next" href="../lessons/12-embeddings-vector-search.html"><span>Next</span>12 Embeddings and vector search</a></nav>
+</footer>
+</article>
+</main>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#what-prompt-engineering-really-is">What prompt engineering really is</a></li><li><a href="#principles">Principles</a><ul><li><a href="#1-be-explicit-about-the-task-the-audience-and-the-output">1. Be explicit about the task, the audience and the output</a></li><li><a href="#2-give-context-and-explain-why">2. Give context and explain why</a></li><li><a href="#3-show-examples">3. Show examples</a></li><li><a href="#4-structure-the-prompt">4. Structure the prompt</a></li><li><a href="#5-say-what-to-do-not-only-what-to-avoid">5. Say what to do, not only what to avoid</a></li></ul></li><li><a href="#techniques">Techniques</a><ul><li><a href="#few-shot-prompting">Few-shot prompting</a></li><li><a href="#let-the-model-reason-before-answering">Let the model reason before answering</a></li><li><a href="#control-the-output">Control the output</a></li><li><a href="#prompt-chaining">Prompt chaining</a></li><li><a href="#self-consistency-and-verification">Self-consistency and verification</a></li><li><a href="#roles-and-personas">Roles and personas</a></li></ul></li><li><a href="#prompts-as-code">Prompts as code</a><ul><li><a href="#templates">Templates</a></li><li><a href="#test-prompts-against-examples-not-vibes">Test prompts against examples, not vibes</a></li><li><a href="#common-failure-modes">Common failure modes</a></li><li><a href="#let-the-model-help">Let the model help</a></li></ul></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
+</div>
+<script src="../assets/course-data.js"></script>
+<script src="../assets/app.js"></script>
+</body>
+</html>

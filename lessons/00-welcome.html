@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome and your AI workbench | AI Engineering</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="is-lesson" data-root="../" data-page="welcome">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
+<div class="search" role="search">
+<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<div class="search-results" hidden></div>
+</div>
+<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+</header>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg is-current" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="layout">
+<nav class="course-map" aria-label="Course map">
+<ul class="map-pages">
+<li><a href="../index.html">Course home</a></li>
+<li><a href="../schedule.html">Daily schedule</a></li>
+<li><a href="../glossary.html">Glossary</a></li>
+<li><a href="../resources.html">Further resources</a></li>
+</ul>
+<section class="map-part" style="--pc:#ab19c8">
+<p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#6d1ce3">
+<p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1c44e3">
+<p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1ce3c5">
+<p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#65e31c">
+<p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#e37e1c">
+<p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
+<li><a href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#d41a1a">
+<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
+<li><a href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#b21616">
+<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
+<li><a href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+</ol></section>
+</nav>
+<main id="main" tabindex="-1">
+<article class="lesson" data-lesson="welcome" style="--lc:#ab19c8;--lct:#801895;--lctd:#d77bea">
+<header class="lesson-head">
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part I, Orientation <span class="wl">390 nm</span></p>
+<h1><span class="lesson-num">00</span> Welcome and your AI workbench</h1>
+<p class="lesson-summary">What an AI engineer actually does, how the field fits together, how to study it an hour at a time, and a working Python setup you will use for the rest of the course.</p>
+<div class="study-plan">
+<p class="plan-title">Study plan: 2 sessions of about an hour</p>
+<ol class="sessions"><li><label><input type="checkbox" data-session="welcome:0"><span>What AI engineers do, and how AI, ML, deep learning and LLMs nest together</span></label></li><li><label><input type="checkbox" data-session="welcome:1"><span>Set up Python, a project template, Jupyter, Git and your API keys</span></label></li></ol>
+<p class="plan-note">Tick a session when you finish it. Progress is saved in this browser only.</p>
+<p class="plan-notebook">Code for this lesson: <a href="../notebooks/00-welcome.ipynb" download>notebooks/00-welcome.ipynb</a>, with worked solutions in <code>notebooks/solutions/</code>.</p>
+</div>
+</header>
+<div class="prose">
+<h2 id="what-an-ai-engineer-does">What an AI engineer does<a class="headerlink" href="#what-an-ai-engineer-does" title="Link to this section">#</a></h2>
+<p>An AI engineer builds products and systems whose behaviour depends on a learned model. Most of the time today that model is a large language model (LLM) reached through an API or served from your own hardware, but the job also covers classical machine learning, embeddings, retrieval systems, evaluation pipelines and the plumbing that keeps all of it fast, cheap and safe.</p>
+<p>It helps to see how the role differs from its neighbours:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Main question</th>
+<th>Typical output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Research scientist</td>
+<td>Can we make a better model?</td>
+<td>Papers, new architectures, training recipes</td>
+</tr>
+<tr>
+<td>ML engineer</td>
+<td>Can we train and serve this model reliably?</td>
+<td>Training pipelines, feature stores, model servers</td>
+</tr>
+<tr>
+<td>Data scientist</td>
+<td>What does the data say, and what should we do?</td>
+<td>Analyses, experiments, forecasts, dashboards</td>
+</tr>
+<tr>
+<td><strong>AI engineer</strong></td>
+<td>Can we build a useful, dependable product on top of models?</td>
+<td>Applications, RAG systems, agents, eval suites, fine-tuned models</td>
+</tr>
+</tbody>
+</table>
+<p>The boundaries are blurry and the best AI engineers borrow from all three neighbours. You need enough maths and deep learning to understand <em>why</em> a model behaves the way it does, enough software engineering to ship it, and enough scientific discipline to measure whether it actually works. This course is built around that combination.</p>
+<h3 id="the-work-concretely">The work, concretely<a class="headerlink" href="#the-work-concretely" title="Link to this section">#</a></h3>
+<p>A week in the life of an AI engineer might include:</p>
+<ul>
+<li>Designing a prompt and a retrieval pipeline so a support assistant answers from the company's own manuals, with citations.</li>
+<li>Writing an evaluation set of 200 real questions, then measuring how a model change moves accuracy, latency and cost.</li>
+<li>Giving an agent tools (a database query, a ticketing API) and making sure it cannot do anything destructive.</li>
+<li>Fine-tuning a small open model so it can run on cheap hardware for a narrow task.</li>
+<li>Debugging why answers got worse after a "harmless" change to the chunking code.</li>
+</ul>
+<p>Notice how much of this is engineering and measurement rather than model invention. That is the job.</p>
+<h2 id="how-the-field-fits-together">How the field fits together<a class="headerlink" href="#how-the-field-fits-together" title="Link to this section">#</a></h2>
+<p>The vocabulary is nested, and people use the words loosely, so it is worth pinning them down once.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 640 300" role="img" aria-label="Nested fields: AI contains machine learning, which contains deep learning, which contains large language models">
+<rect class="box" x="10" y="10" width="620" height="280" rx="10"/>
+<text x="28" y="38">Artificial intelligence: any technique that makes machines act intelligently</text>
+<rect class="box" x="40" y="55" width="560" height="220" rx="10"/>
+<text x="58" y="82">Machine learning: behaviour learned from data, not hand-written rules</text>
+<rect class="box" x="70" y="100" width="500" height="160" rx="10"/>
+<text x="88" y="127">Deep learning: many-layered neural networks</text>
+<rect x="100" y="145" width="440" height="100" rx="10" class="accent" opacity="0.18"/>
+<rect x="100" y="145" width="440" height="100" rx="10" class="accent-stroke"/>
+<text x="118" y="175">Large language models: transformers trained on</text>
+<text x="118" y="195">huge text corpora to predict the next token, then</text>
+<text x="118" y="215">tuned to follow instructions</text>
+</svg>
+<figcaption>Each field is a subset of the one around it. Generative AI cuts across the inner two circles: any model that produces new text, images, audio or code.</figcaption>
+</figure>
+
+<p><strong>Artificial intelligence</strong> is the broadest term. A chess engine that searches moves with hand-written rules is AI, but it does not learn.</p>
+<p><strong>Machine learning (ML)</strong> means the behaviour comes from data. You show a spam filter thousands of labelled emails and it works out the rules itself. Classical ML (linear models, decision trees, gradient boosting) still powers a huge share of real systems, especially on tabular data.</p>
+<p><strong>Deep learning</strong> is ML with neural networks that have many layers. It took over around 2012 because, given enough data and GPU compute, deep networks learn their own features from raw pixels, audio or text.</p>
+<p><strong>Large language models</strong> are deep networks, almost always transformers, trained on trillions of tokens of text to predict the next token. That simple objective, at enormous scale, produces models that can write, summarise, translate, reason through problems and use tools.</p>
+<h3 id="a-short-history-so-the-names-make-sense">A short history, so the names make sense<a class="headerlink" href="#a-short-history-so-the-names-make-sense" title="Link to this section">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Milestone</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1950</td>
+<td>Turing's "Computing Machinery and Intelligence"</td>
+<td>Frames the question "can machines think?"</td>
+</tr>
+<tr>
+<td>1958</td>
+<td>Rosenblatt's perceptron</td>
+<td>The first trainable artificial neuron</td>
+</tr>
+<tr>
+<td>1986</td>
+<td>Backpropagation popularised (Rumelhart, Hinton, Williams)</td>
+<td>A practical way to train multi-layer networks</td>
+</tr>
+<tr>
+<td>1997</td>
+<td>LSTM (Hochreiter and Schmidhuber)</td>
+<td>Neural networks that can remember across long sequences</td>
+</tr>
+<tr>
+<td>2012</td>
+<td>AlexNet wins ImageNet</td>
+<td>GPUs plus deep networks beat hand-engineered vision features</td>
+</tr>
+<tr>
+<td>2013</td>
+<td>word2vec</td>
+<td>Words as vectors whose geometry captures meaning</td>
+</tr>
+<tr>
+<td>2017</td>
+<td>"Attention Is All You Need"</td>
+<td>The transformer: the architecture behind every modern LLM</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>BERT and GPT</td>
+<td>Pretrain once on lots of text, then adapt to many tasks</td>
+</tr>
+<tr>
+<td>2020</td>
+<td>GPT-3 and scaling laws</td>
+<td>Bigger models plus more data give predictable gains; prompting replaces task-specific training</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Instruction-tuned chat models reach the public</td>
+<td>RLHF turns raw predictors into helpful assistants</td>
+</tr>
+<tr>
+<td>2023 onward</td>
+<td>Open-weight models, tool use, agents, multimodality</td>
+<td>Models you can run yourself; models that act, see and hear</td>
+</tr>
+<tr>
+<td>2024 onward</td>
+<td>Reasoning models</td>
+<td>Spending more compute at inference time to think before answering</td>
+</tr>
+</tbody>
+</table>
+<p>You will meet most of these ideas again, in order, as you go through the course.</p>
+<h2 id="how-to-study-this-an-hour-at-a-time">How to study this, an hour at a time<a class="headerlink" href="#how-to-study-this-an-hour-at-a-time" title="Link to this section">#</a></h2>
+<p>Learning a field this wide is a long game. Three habits matter more than any particular resource.</p>
+<p><strong>Retrieval beats rereading.</strong> At the end of each session, close the page and write a short summary from memory in a learning log. The effort of recall is what makes it stick. The quizzes at the end of each lesson exist for the same reason.</p>
+<p><strong>Build, then read.</strong> When an idea feels abstract, run the code, change a number, and watch what happens. Every lesson has at least one hands-on exercise with a hidden solution. Try the exercise for real before you open the solution, even if you only get halfway.</p>
+<p><strong>Spaced review.</strong> Once a week, skim the key takeaways of the last two or three lessons. Five minutes of review saves hours of relearning later.</p>
+<div class="admonition tip">
+<p class="admonition-title">Your learning log</p>
+<p>Create a repository called <code>ai-engineering-log</code> with one Markdown file per lesson. Each entry gets three things: what you learned in your own words, the code you wrote, and one question you still have. By the end of the course this repository is a portfolio, a reference manual and proof of work, all in one.</p>
+</div>
+<h2 id="set-up-your-workbench">Set up your workbench<a class="headerlink" href="#set-up-your-workbench" title="Link to this section">#</a></h2>
+<p>You need Python, an isolated environment per project, a notebook for exploration, an editor for real code, Git, and a safe way to store API keys.</p>
+<h3 id="python-and-environments">Python and environments<a class="headerlink" href="#python-and-environments" title="Link to this section">#</a></h3>
+<p>Use Python 3.11 or newer. The easiest modern way to manage Python versions and packages is <a href="https://docs.astral.sh/uv/">uv</a>, a fast replacement for <code>pip</code> and <code>venv</code>. The classic <code>venv</code> plus <code>pip</code> route works just as well; both are shown.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">uv (recommended)</label><label for="__tabbed_1_2">venv + pip</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="c1"># install uv (macOS / Linux); see the uv docs for Windows</span>
+curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+
+mkdir<span class="w"> </span>ai-engineering-log<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>ai-engineering-log
+uv<span class="w"> </span>init<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12<span class="w">          </span><span class="c1"># creates pyproject.toml and a .venv on first sync</span>
+uv<span class="w"> </span>add<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>matplotlib<span class="w"> </span>scikit-learn<span class="w"> </span>jupyterlab<span class="w"> </span>python-dotenv
+uv<span class="w"> </span>run<span class="w"> </span>jupyter<span class="w"> </span>lab<span class="w">             </span><span class="c1"># runs inside the project&#39;s environment</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>ai-engineering-log<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>ai-engineering-log
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">      </span><span class="c1"># Windows: .venv\Scripts\activate</span>
+pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
+pip<span class="w"> </span>install<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>matplotlib<span class="w"> </span>scikit-learn<span class="w"> </span>jupyterlab<span class="w"> </span>python-dotenv
+jupyter<span class="w"> </span>lab
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Why bother with environments? Every project pins its own library versions. Without isolation, upgrading a package for one project silently breaks another. AI libraries move fast and break compatibility often, so this matters more here than almost anywhere else.</p>
+<h3 id="notebooks-versus-scripts">Notebooks versus scripts<a class="headerlink" href="#notebooks-versus-scripts" title="Link to this section">#</a></h3>
+<p>Jupyter notebooks are excellent for exploring data and trying ideas cell by cell. They are poor for anything you want to rerun, test or deploy, because hidden state builds up as you run cells out of order. A good rule: explore in a notebook, then move anything you want to keep into a <code>.py</code> file with functions you can import and test.</p>
+<p>For an editor, VS Code with the Python and Jupyter extensions is the common choice. It opens notebooks too, so you can stay in one tool.</p>
+<h3 id="gpus-without-buying-one">GPUs without buying one<a class="headerlink" href="#gpus-without-buying-one" title="Link to this section">#</a></h3>
+<p>You will not need a GPU until part IV. When you do, <a href="https://colab.research.google.com">Google Colab</a> gives you a free NVIDIA GPU in the browser (Runtime, then Change runtime type). Kaggle notebooks offer similar free quotas. For heavier work later, cloud GPU providers rent by the hour.</p>
+<h3 id="git">Git<a class="headerlink" href="#git" title="Link to this section">#</a></h3>
+<p>Initialise Git now and commit after every session. Small, frequent commits make your log readable and give you an undo button.</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>init
+<span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;.venv/\n.env\n__pycache__/\n.ipynb_checkpoints/\n*.pt\ndata/raw/\n&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>.gitignore
+git<span class="w"> </span>add<span class="w"> </span>.<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Lesson 00: workbench set up&quot;</span>
+</code></pre></div>
+<h3 id="api-keys-safely">API keys, safely<a class="headerlink" href="#api-keys-safely" title="Link to this section">#</a></h3>
+<p>In part VI you will call hosted models. Their API keys are secrets that cost you money if leaked. <strong>Never paste a key into code or a notebook.</strong> Put it in a <code>.env</code> file that Git ignores, and load it at runtime.</p>
+<div class="highlight"><span class="filename">.env</span><pre><span></span><code><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>sk-ant-...
+<span class="nv">OPENAI_API_KEY</span><span class="o">=</span>sk-...
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>                      <span class="c1"># reads .env into environment variables</span>
+<span class="n">key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ANTHROPIC_API_KEY&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;key loaded&quot;</span> <span class="k">if</span> <span class="n">key</span> <span class="k">else</span> <span class="s2">&quot;no key found&quot;</span><span class="p">)</span>   <span class="c1"># never print the key itself</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">If a key leaks</p>
+<p>Revoke it in the provider's console immediately, then create a new one. Bots scan public GitHub repositories for keys within minutes of a push. Rewriting Git history afterwards is not enough, because the key has already been copied.</p>
+</div>
+<h3 id="a-project-layout-that-scales">A project layout that scales<a class="headerlink" href="#a-project-layout-that-scales" title="Link to this section">#</a></h3>
+<div class="highlight"><pre><span></span><code>ai-engineering-log/
+├── pyproject.toml        # dependencies (uv) or requirements.txt (pip)
+├── .env                  # secrets, git-ignored
+├── notes/                # one markdown file per lesson
+├── notebooks/            # exploration
+├── src/                  # reusable code you import from notebooks and scripts
+├── data/                 # small datasets; large ones stay out of git
+└── tests/                # yes, even for AI projects
+</code></pre></div>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: prove your workbench works</p>
+<p>Create <code>src/check_env.py</code> that prints your Python version and the versions of NumPy, pandas, scikit-learn and Matplotlib, then reports whether an API key is present (without printing it). Run it with <code>uv run python src/check_env.py</code> or <code>python src/check_env.py</code>. Commit the file and write your first log entry.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<div class="highlight"><span class="filename">src/check_env.py</span><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span><span class="p">,</span> <span class="n">PackageNotFoundError</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Python </span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;numpy&quot;</span><span class="p">,</span> <span class="s2">&quot;pandas&quot;</span><span class="p">,</span> <span class="s2">&quot;scikit-learn&quot;</span><span class="p">,</span> <span class="s2">&quot;matplotlib&quot;</span><span class="p">,</span> <span class="s2">&quot;jupyterlab&quot;</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pkg</span><span class="si">:</span><span class="s2">&lt;14</span><span class="si">}{</span><span class="n">version</span><span class="p">(</span><span class="n">pkg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">PackageNotFoundError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pkg</span><span class="si">:</span><span class="s2">&lt;14</span><span class="si">}</span><span class="s2">MISSING: install it with uv add </span><span class="si">{</span><span class="n">pkg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ANTHROPIC_API_KEY&quot;</span><span class="p">,</span> <span class="s2">&quot;OPENAI_API_KEY&quot;</span><span class="p">]:</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;present&quot;</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;not set (fine until part VI)&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">:</span><span class="s2">&lt;20</span><span class="si">}{</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><code>importlib.metadata.version</code> reads installed package metadata, which works even for packages whose import name differs from their install name (scikit-learn installs as <code>sklearn</code>).</p>
+</details>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" title="Link to this section">#</a></h2>
+<div class="quiz" data-quiz>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">1.</span> Which statement best describes the relationship between the fields?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Deep learning and machine learning are separate fields that both belong to AI</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">LLMs are a kind of deep learning model, which is a kind of machine learning, which is a kind of AI</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Machine learning is a subset of deep learning</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Generative AI and LLMs are the same thing</button></li>
+</ol>
+<p class="quiz-expl" hidden>The fields nest. Generative AI is broader than LLMs: it also covers image, audio and video generators.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">2.</span> Why should every project have its own virtual environment?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">It makes Python run faster</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">So each project can pin its own library versions without breaking other projects</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Because Jupyter only works inside virtual environments</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">To keep API keys secret</button></li>
+</ol>
+<p class="quiz-expl" hidden>Isolation stops one project's upgrades from silently breaking another. AI libraries change quickly, so this matters a lot.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">3.</span> You accidentally pushed an API key to a public repository. What is the first thing to do?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Delete the file and push again</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Rewrite the Git history to remove the commit</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Revoke the key in the provider's console</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Make the repository private</button></li>
+</ol>
+<p class="quiz-expl" hidden>Assume the key was copied the moment it was pushed. Revoke it first, then clean up the history.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">4.</span> What is the most effective way to make a session's learning stick?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Reread the lesson twice</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Highlight the key sentences</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Close the page and write down what you learned from memory</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Watch a video on the same topic</button></li>
+</ol>
+<p class="quiz-expl" hidden>Retrieval practice, the effort of recalling without looking, beats passive rereading in study after study.</p>
+</div>
+<p class="quiz-score" aria-live="polite"></p></div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>An AI engineer builds dependable products on top of learned models. Most of the work is engineering and measurement, not inventing models.</li>
+<li>AI contains machine learning, which contains deep learning, which contains LLMs.</li>
+<li>Use one isolated environment per project, keep secrets in a git-ignored <code>.env</code>, and commit after every session.</li>
+<li>Retrieval practice and building things beat rereading. Keep a learning log from day one.</li>
+</ul>
+</div>
+</div>
+<footer class="lesson-foot">
+<button type="button" class="complete-btn" data-complete="welcome" data-sessions="2">Mark all sessions done</button>
+<nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../index.html"><span>Previous</span>Course home</a><a class="next" href="../lessons/01-python-for-ai.html"><span>Next</span>01 Python for AI work</a></nav>
+</footer>
+</article>
+</main>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#what-an-ai-engineer-does">What an AI engineer does</a><ul><li><a href="#the-work-concretely">The work, concretely</a></li></ul></li><li><a href="#how-the-field-fits-together">How the field fits together</a><ul><li><a href="#a-short-history-so-the-names-make-sense">A short history, so the names make sense</a></li></ul></li><li><a href="#how-to-study-this-an-hour-at-a-time">How to study this, an hour at a time</a></li><li><a href="#set-up-your-workbench">Set up your workbench</a><ul><li><a href="#python-and-environments">Python and environments</a></li><li><a href="#notebooks-versus-scripts">Notebooks versus scripts</a></li><li><a href="#gpus-without-buying-one">GPUs without buying one</a></li><li><a href="#git">Git</a></li><li><a href="#api-keys-safely">API keys, safely</a></li><li><a href="#a-project-layout-that-scales">A project layout that scales</a></li></ul></li><li><a href="#check-yourself">Check yourself</a></li></ul></aside>
+</div>
+<script src="../assets/course-data.js"></script>
+<script src="../assets/app.js"></script>
+</body>
+</html>

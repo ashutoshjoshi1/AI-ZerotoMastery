@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary | AI Engineering</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/katex/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="is-page" data-root="" data-page="glossary">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<a class="brand" href="index.html">AI Engineering<span>from zero to mastery</span></a>
+<div class="search" role="search">
+<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<div class="search-results" hidden></div>
+</div>
+<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+</header>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="layout">
+<nav class="course-map" aria-label="Course map">
+<ul class="map-pages">
+<li><a href="index.html">Course home</a></li>
+<li><a href="schedule.html">Daily schedule</a></li>
+<li><a href="glossary.html" aria-current="page">Glossary</a></li>
+<li><a href="resources.html">Further resources</a></li>
+</ul>
+<section class="map-part" style="--pc:#ab19c8">
+<p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
+<li><a href="lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#6d1ce3">
+<p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
+<li><a href="lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1c44e3">
+<p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
+<li><a href="lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1ce3c5">
+<p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
+<li><a href="lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#65e31c">
+<p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
+<li><a href="lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#e37e1c">
+<p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
+<li><a href="lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
+<li><a href="lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
+<li><a href="lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#d41a1a">
+<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
+<li><a href="lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
+<li><a href="lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#b21616">
+<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
+<li><a href="lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
+<li><a href="lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+</ol></section>
+</nav>
+<main id="main" tabindex="-1">
+<div class="prose plain-page"><h1>Glossary</h1><p>Plain-language definitions of the terms used in this course. The lesson number after each definition links to where the idea is explained properly. Press <kbd>/</kbd> to search for any term.</p>
+<h2 id="a">A<a class="headerlink" href="#a" title="Link to this section">#</a></h2>
+<dl>
+<dt>Activation function</dt>
+<dd>The non-linear function applied after a layer's weighted sum (ReLU, GELU, sigmoid). Without it, stacked layers collapse into one linear layer. <a href="lessons/05-neural-networks.html">05</a></dd>
+<dt>Adam / AdamW</dt>
+<dd>The default optimiser for deep learning. Keeps running averages of gradients and squared gradients to give each parameter its own step size; AdamW adds decoupled weight decay. <a href="lessons/05-neural-networks.html">05</a></dd>
+<dt>Agent</dt>
+<dd>A model using tools in a loop, deciding for itself what to do next until a task is done. <a href="lessons/14-agents.html">14</a></dd>
+<dt>ANN (approximate nearest neighbour)</dt>
+<dd>Index structures such as HNSW and IVF that find most of the nearest vectors far faster than exact search. <a href="lessons/12-embeddings-vector-search.html">12</a></dd>
+<dt>Attention</dt>
+<dd>The mechanism by which each token computes a weighted mix of other tokens' information, using query-key similarity: softmax(QKᵀ/√d)V. <a href="lessons/08-transformers.html">08</a></dd>
+<dt>Autograd</dt>
+<dd>Automatic differentiation: a framework records operations and computes gradients by applying the chain rule backwards. <a href="lessons/06-pytorch.html">06</a></dd>
+</dl>
+<h2 id="b">B<a class="headerlink" href="#b" title="Link to this section">#</a></h2>
+<dl>
+<dt>Backpropagation</dt>
+<dd>The algorithm that computes the gradient of the loss with respect to every weight by applying the chain rule from the output back to the input. <a href="lessons/05-neural-networks.html">05</a></dd>
+<dt>Base model</dt>
+<dd>A model after pretraining only. It continues text rather than following instructions. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Batch (mini-batch)</dt>
+<dd>A group of examples processed together in one training step. <a href="lessons/05-neural-networks.html">05</a></dd>
+<dt>Bias-variance trade-off</dt>
+<dd>Simple models err through wrong assumptions (bias, underfitting); flexible models err through sensitivity to the training sample (variance, overfitting). <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>BM25</dt>
+<dd>A classic keyword-ranking function that rewards rare query terms, with diminishing returns for repeats and a document-length correction. <a href="lessons/13-rag.html">13</a></dd>
+<dt>Bootstrap</dt>
+<dd>Resampling your data with replacement many times to estimate the uncertainty of a metric. <a href="lessons/15-evaluation.html">15</a></dd>
+<dt>BPE (byte-pair encoding)</dt>
+<dd>A tokenizer training method that repeatedly merges the most frequent adjacent pair of tokens into a new token. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Broadcasting</dt>
+<dd>NumPy and PyTorch rules for combining arrays of different shapes by virtually stretching size-1 dimensions. <a href="lessons/01-python-for-ai.html">01</a></dd>
+</dl>
+<h2 id="c">C<a class="headerlink" href="#c" title="Link to this section">#</a></h2>
+<dl>
+<dt>Chain-of-thought</dt>
+<dd>Prompting or training a model to produce intermediate reasoning before its final answer. <a href="lessons/11-prompt-engineering.html">11</a></dd>
+<dt>Chat template</dt>
+<dd>The special-token format a chat model was trained with to mark system, user and assistant turns. Training and serving must use the same one. <a href="lessons/16-fine-tuning.html">16</a></dd>
+<dt>Chunking</dt>
+<dd>Splitting documents into retrievable pieces for RAG. <a href="lessons/13-rag.html">13</a></dd>
+<dt>CLIP</dt>
+<dd>A model that embeds images and text into a shared space, enabling zero-shot image classification and cross-modal search. <a href="lessons/19-multimodal.html">19</a></dd>
+<dt>Context window</dt>
+<dd>The maximum number of tokens (input plus output) a model can attend to in one request. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Contrastive learning</dt>
+<dd>Training that pulls matching pairs together and pushes non-matching pairs apart in an embedding space. <a href="lessons/12-embeddings-vector-search.html">12</a></dd>
+<dt>Cosine similarity</dt>
+<dd>The cosine of the angle between two vectors: 1 for same direction, 0 for perpendicular. The standard similarity for embeddings. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>Cross-encoder</dt>
+<dd>A model that reads a query and a document together to score relevance. Accurate but slow; used for reranking. <a href="lessons/13-rag.html">13</a></dd>
+<dt>Cross-entropy</dt>
+<dd>The loss −log p(correct answer). The training objective of classifiers and LLMs. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>Cross-validation</dt>
+<dd>Training and validating k times on different splits of the data and averaging, for a more reliable estimate. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+</dl>
+<h2 id="d">D<a class="headerlink" href="#d" title="Link to this section">#</a></h2>
+<dl>
+<dt>Data leakage</dt>
+<dd>Information in training or evaluation data that would not be available at prediction time, producing falsely good scores. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>Decoder-only</dt>
+<dd>A transformer with causal attention trained to predict the next token. The architecture of GPT-style LLMs. <a href="lessons/08-transformers.html">08</a></dd>
+<dt>Diffusion model</dt>
+<dd>A generative model that learns to remove noise step by step, generating images (or audio, video) from pure noise. <a href="lessons/19-multimodal.html">19</a></dd>
+<dt>Distillation</dt>
+<dd>Training a small student model to imitate a larger teacher. <a href="lessons/16-fine-tuning.html">16</a></dd>
+<dt>DPO (direct preference optimisation)</dt>
+<dd>Training directly on preference pairs (chosen versus rejected) without a separate reward model or RL loop. <a href="lessons/09-how-llms-are-built.html">09</a>, <a href="lessons/16-fine-tuning.html">16</a></dd>
+<dt>Dropout</dt>
+<dd>Randomly zeroing activations during training to reduce overfitting. <a href="lessons/05-neural-networks.html">05</a></dd>
+</dl>
+<h2 id="e">E<a class="headerlink" href="#e" title="Link to this section">#</a></h2>
+<dl>
+<dt>Embedding</dt>
+<dd>A learned vector representation whose geometry reflects meaning. <a href="lessons/07-sequences-embeddings.html">07</a>, <a href="lessons/12-embeddings-vector-search.html">12</a></dd>
+<dt>Epoch</dt>
+<dd>One full pass over the training data. <a href="lessons/05-neural-networks.html">05</a></dd>
+<dt>Evaluation set (golden dataset)</dt>
+<dd>A curated set of inputs with expected outcomes or grading criteria used to measure a system. <a href="lessons/15-evaluation.html">15</a></dd>
+</dl>
+<h2 id="f">F<a class="headerlink" href="#f" title="Link to this section">#</a></h2>
+<dl>
+<dt>F1 score</dt>
+<dd>The harmonic mean of precision and recall. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>Few-shot prompting</dt>
+<dd>Including worked examples of the task in the prompt. <a href="lessons/11-prompt-engineering.html">11</a></dd>
+<dt>Fine-tuning</dt>
+<dd>Continuing to train a pretrained model on task-specific data. <a href="lessons/16-fine-tuning.html">16</a></dd>
+<dt>FlashAttention</dt>
+<dd>An exact attention algorithm that avoids materialising the full attention matrix in slow GPU memory, making long contexts faster. <a href="lessons/08-transformers.html">08</a></dd>
+<dt>FLOPs</dt>
+<dd>Floating-point operations; training a transformer costs about 6 × parameters × tokens. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+</dl>
+<h2 id="g">G<a class="headerlink" href="#g" title="Link to this section">#</a></h2>
+<dl>
+<dt>Gradient</dt>
+<dd>The vector of partial derivatives of the loss with respect to each parameter; points uphill. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>Gradient boosting</dt>
+<dd>An ensemble of shallow trees added one at a time, each correcting the errors of the ones before. Often the best model for tabular data. <a href="lessons/04-classical-ml.html">04</a></dd>
+<dt>Gradient descent</dt>
+<dd>Repeatedly stepping parameters against the gradient to reduce the loss. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>Grouped-query attention (GQA)</dt>
+<dd>Many query heads sharing fewer key-value heads, shrinking the KV cache. <a href="lessons/08-transformers.html">08</a></dd>
+<dt>Guardrails</dt>
+<dd>Controls around a model: input and output checks, permissions, approvals and limits. <a href="lessons/18-safety-security.html">18</a></dd>
+</dl>
+<h2 id="h">H<a class="headerlink" href="#h" title="Link to this section">#</a></h2>
+<dl>
+<dt>Hallucination</dt>
+<dd>Fluent, confident output that is false or unsupported. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>HNSW</dt>
+<dd>A graph-based approximate nearest-neighbour index, the default in many vector databases. <a href="lessons/12-embeddings-vector-search.html">12</a></dd>
+<dt>Hybrid search</dt>
+<dd>Combining keyword and embedding retrieval, typically with reciprocal rank fusion. <a href="lessons/13-rag.html">13</a></dd>
+<dt>Hyperparameter</dt>
+<dd>A setting chosen rather than learned, such as learning rate, tree depth or LoRA rank. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+</dl>
+<h2 id="i">I<a class="headerlink" href="#i" title="Link to this section">#</a></h2>
+<dl>
+<dt>Inference</dt>
+<dd>Using a trained model to make predictions or generate output. <a href="lessons/17-deployment-llmops.html">17</a></dd>
+<dt>Isolation Forest</dt>
+<dd>An anomaly detector that isolates points with random splits; anomalies isolate quickly. <a href="lessons/04-classical-ml.html">04</a></dd>
+</dl>
+<h2 id="k">K<a class="headerlink" href="#k" title="Link to this section">#</a></h2>
+<dl>
+<dt>KL divergence</dt>
+<dd>A measure of how one probability distribution differs from another; used in distillation and RLHF. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>KV cache</dt>
+<dd>Stored keys and values of previous tokens that make generation efficient at the cost of memory. <a href="lessons/08-transformers.html">08</a></dd>
+</dl>
+<h2 id="l">L<a class="headerlink" href="#l" title="Link to this section">#</a></h2>
+<dl>
+<dt>Layer normalisation</dt>
+<dd>Rescaling each token's features to zero mean and unit variance; stabilises transformer training. <a href="lessons/05-neural-networks.html">05</a></dd>
+<dt>Learning rate</dt>
+<dd>The step size in gradient descent; the most important training hyperparameter. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>LLM-as-judge</dt>
+<dd>Using a model to grade outputs against a rubric; must be calibrated against human judgement. <a href="lessons/15-evaluation.html">15</a></dd>
+<dt>Logits</dt>
+<dd>Raw, unnormalised model scores before softmax. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>LoRA</dt>
+<dd>Low-rank adaptation: fine-tuning by learning a small low-rank update beside frozen weights. <a href="lessons/16-fine-tuning.html">16</a></dd>
+<dt>Loss function</dt>
+<dd>The number training minimises, measuring how wrong the model is. <a href="lessons/02-math-for-ai.html">02</a></dd>
+</dl>
+<h2 id="m">M<a class="headerlink" href="#m" title="Link to this section">#</a></h2>
+<dl>
+<dt>MCP (Model Context Protocol)</dt>
+<dd>An open standard for exposing tools, resources and prompts to AI applications. <a href="lessons/14-agents.html">14</a></dd>
+<dt>Mixed precision</dt>
+<dd>Training or inference mostly in 16-bit floating point for speed and memory, keeping sensitive parts in 32-bit. <a href="lessons/06-pytorch.html">06</a></dd>
+<dt>Mixture of experts (MoE)</dt>
+<dd>Layers with many expert sub-networks and a router that sends each token to a few of them. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Multi-head attention</dt>
+<dd>Several attention operations in parallel on smaller subspaces, then combined. <a href="lessons/08-transformers.html">08</a></dd>
+</dl>
+<h2 id="o">O<a class="headerlink" href="#o" title="Link to this section">#</a></h2>
+<dl>
+<dt>Overfitting</dt>
+<dd>Learning the noise in the training data; low training error, high validation error. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+</dl>
+<h2 id="p">P<a class="headerlink" href="#p" title="Link to this section">#</a></h2>
+<dl>
+<dt>PagedAttention</dt>
+<dd>vLLM's technique of storing the KV cache in pages to avoid memory fragmentation. <a href="lessons/17-deployment-llmops.html">17</a></dd>
+<dt>PCA</dt>
+<dd>Projecting data onto its directions of greatest variance, for compression or visualisation. <a href="lessons/04-classical-ml.html">04</a></dd>
+<dt>Positional encoding</dt>
+<dd>Information about token order added to a transformer, which is otherwise order-blind (learned, sinusoidal or RoPE). <a href="lessons/08-transformers.html">08</a></dd>
+<dt>Precision and recall</dt>
+<dd>Precision: of the positives predicted, the fraction that were right. Recall: of the real positives, the fraction found. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>Prefill</dt>
+<dd>Processing the prompt before generating the first token; also, starting the assistant's reply with given text. <a href="lessons/11-prompt-engineering.html">11</a>, <a href="lessons/17-deployment-llmops.html">17</a></dd>
+<dt>Pretraining</dt>
+<dd>Training a model on a huge unlabelled corpus with next-token prediction. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Prompt caching</dt>
+<dd>Reusing the processed form of a repeated prompt prefix at reduced cost and latency. <a href="lessons/10-llm-apis.html">10</a></dd>
+<dt>Prompt injection</dt>
+<dd>Text that tries to override a system's instructions, directly from a user or indirectly via content the model reads. <a href="lessons/18-safety-security.html">18</a></dd>
+</dl>
+<h2 id="q">Q<a class="headerlink" href="#q" title="Link to this section">#</a></h2>
+<dl>
+<dt>QLoRA</dt>
+<dd>LoRA on top of a base model stored in 4-bit precision. <a href="lessons/16-fine-tuning.html">16</a></dd>
+<dt>Quantisation</dt>
+<dd>Storing weights (or activations, or the KV cache) in fewer bits to save memory and speed up inference. <a href="lessons/17-deployment-llmops.html">17</a></dd>
+</dl>
+<h2 id="r">R<a class="headerlink" href="#r" title="Link to this section">#</a></h2>
+<dl>
+<dt>RAG (retrieval-augmented generation)</dt>
+<dd>Retrieving relevant documents at question time and asking the model to answer from them. <a href="lessons/13-rag.html">13</a></dd>
+<dt>Reasoning model</dt>
+<dd>A model trained to produce extended reasoning before answering, improving with more test-time compute. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Reciprocal rank fusion (RRF)</dt>
+<dd>Merging rankings by summing 1/(k + rank) across retrievers. <a href="lessons/13-rag.html">13</a></dd>
+<dt>Regularisation</dt>
+<dd>Techniques that discourage overly complex models, such as weight penalties, dropout and early stopping. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>Reranker</dt>
+<dd>A model, usually a cross-encoder, that reorders retrieved candidates by relevance. <a href="lessons/13-rag.html">13</a></dd>
+<dt>Residual connection</dt>
+<dd>Adding a layer's input to its output (x + f(x)), letting gradients flow through deep networks. <a href="lessons/05-neural-networks.html">05</a></dd>
+<dt>RLHF</dt>
+<dd>Reinforcement learning from human feedback: optimising a model against a reward model trained on human preferences. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>RoPE</dt>
+<dd>Rotary position embeddings, which encode relative position by rotating queries and keys. <a href="lessons/08-transformers.html">08</a></dd>
+</dl>
+<h2 id="s">S<a class="headerlink" href="#s" title="Link to this section">#</a></h2>
+<dl>
+<dt>Scaling laws</dt>
+<dd>Empirical power laws relating model loss to parameters, data and compute. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Self-supervised learning</dt>
+<dd>Learning from labels derived from the data itself, such as the next word. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>SFT (supervised fine-tuning)</dt>
+<dd>Fine-tuning on examples of desired inputs and outputs. <a href="lessons/09-how-llms-are-built.html">09</a>, <a href="lessons/16-fine-tuning.html">16</a></dd>
+<dt>Softmax</dt>
+<dd>Converts logits to probabilities that sum to 1. <a href="lessons/02-math-for-ai.html">02</a></dd>
+<dt>Streaming</dt>
+<dd>Sending generated tokens to the client as they are produced. <a href="lessons/10-llm-apis.html">10</a></dd>
+<dt>Structured output</dt>
+<dd>Constraining model output to a schema, then validating it. <a href="lessons/10-llm-apis.html">10</a></dd>
+<dt>System prompt</dt>
+<dd>Standing instructions and context for a conversation. <a href="lessons/10-llm-apis.html">10</a></dd>
+</dl>
+<h2 id="t">T<a class="headerlink" href="#t" title="Link to this section">#</a></h2>
+<dl>
+<dt>Temperature</dt>
+<dd>Divides logits before softmax; low values make output more deterministic, high values more random. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Tensor</dt>
+<dd>A multi-dimensional array, the core data structure of deep learning frameworks. <a href="lessons/06-pytorch.html">06</a></dd>
+<dt>Test-time compute</dt>
+<dd>Spending more computation at inference (longer reasoning, sampling several answers) to improve accuracy. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Token</dt>
+<dd>The unit of text a model reads and writes, typically a word piece of about four characters in English. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Tool use (function calling)</dt>
+<dd>A model requesting structured calls to functions your code executes. <a href="lessons/14-agents.html">14</a></dd>
+<dt>Top-p (nucleus) sampling</dt>
+<dd>Sampling only from the smallest set of tokens whose probabilities sum to p. <a href="lessons/09-how-llms-are-built.html">09</a></dd>
+<dt>Tracing</dt>
+<dd>Recording every step of a request (retrieval, model calls, tools) for debugging and monitoring. <a href="lessons/17-deployment-llmops.html">17</a></dd>
+<dt>Transfer learning</dt>
+<dd>Reusing a model trained on one task as the starting point for another. <a href="lessons/06-pytorch.html">06</a></dd>
+<dt>Transformer</dt>
+<dd>The architecture of stacked attention and MLP blocks with residual connections and normalisation behind modern LLMs. <a href="lessons/08-transformers.html">08</a></dd>
+<dt>TTFT (time to first token)</dt>
+<dd>Latency until the first output token appears; dominated by prompt length. <a href="lessons/17-deployment-llmops.html">17</a></dd>
+</dl>
+<h2 id="uz">U–Z<a class="headerlink" href="#uz" title="Link to this section">#</a></h2>
+<dl>
+<dt>Underfitting</dt>
+<dd>A model too simple to capture the pattern; high training and validation error. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>Vector database</dt>
+<dd>A database that stores embeddings with metadata and supports similarity search with filters. <a href="lessons/12-embeddings-vector-search.html">12</a></dd>
+<dt>Vision transformer (ViT)</dt>
+<dd>A transformer that processes images as sequences of patches. <a href="lessons/19-multimodal.html">19</a></dd>
+<dt>VLM (vision-language model)</dt>
+<dd>A model that accepts images alongside text. <a href="lessons/19-multimodal.html">19</a></dd>
+<dt>Weight decay</dt>
+<dd>An L2-style penalty that shrinks weights during training. <a href="lessons/03-ml-fundamentals.html">03</a></dd>
+<dt>Zero-shot</dt>
+<dd>Performing a task with no task-specific examples or training. <a href="lessons/19-multimodal.html">19</a></dd>
+</dl></div>
+</main>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#a">A</a></li><li><a href="#b">B</a></li><li><a href="#c">C</a></li><li><a href="#d">D</a></li><li><a href="#e">E</a></li><li><a href="#f">F</a></li><li><a href="#g">G</a></li><li><a href="#h">H</a></li><li><a href="#i">I</a></li><li><a href="#k">K</a></li><li><a href="#l">L</a></li><li><a href="#m">M</a></li><li><a href="#o">O</a></li><li><a href="#p">P</a></li><li><a href="#q">Q</a></li><li><a href="#r">R</a></li><li><a href="#s">S</a></li><li><a href="#t">T</a></li><li><a href="#uz">U–Z</a></li></ul></aside>
+</div>
+<script src="assets/course-data.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

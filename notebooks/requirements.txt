@@ -1,0 +1,30 @@
+# Everything the notebooks use. Most lessons need only a few of these; each notebook's
+# setup cell installs its own. PyTorch is large: on Colab it is already installed, and
+# locally you may prefer the command from pytorch.org for your OS and GPU.
+accelerate
+anthropic
+bitsandbytes
+chromadb
+datasets
+diffusers
+faiss-cpu
+fastapi
+httpx
+matplotlib
+mcp[cli]
+numpy
+openai
+pandas
+peft
+pillow
+pydantic
+python-dotenv
+scikit-learn
+sentence-transformers
+tiktoken
+torch
+torchvision
+transformers
+trl
+uvicorn[standard]
+jupyterlab

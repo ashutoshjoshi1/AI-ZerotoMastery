@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluating LLM systems | AI Engineering</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="is-lesson" data-root="../" data-page="evaluation">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
+<div class="search" role="search">
+<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<div class="search-results" hidden></div>
+</div>
+<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+</header>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg is-current" href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="layout">
+<nav class="course-map" aria-label="Course map">
+<ul class="map-pages">
+<li><a href="../index.html">Course home</a></li>
+<li><a href="../schedule.html">Daily schedule</a></li>
+<li><a href="../glossary.html">Glossary</a></li>
+<li><a href="../resources.html">Further resources</a></li>
+</ul>
+<section class="map-part" style="--pc:#ab19c8">
+<p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#6d1ce3">
+<p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1c44e3">
+<p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1ce3c5">
+<p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#65e31c">
+<p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#e37e1c">
+<p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
+<li><a href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#d41a1a">
+<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
+<li><a href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#b21616">
+<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
+<li><a href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+</ol></section>
+</nav>
+<main id="main" tabindex="-1">
+<article class="lesson" data-lesson="evaluation" style="--lc:#e31c1c;--lct:#951818;--lctd:#ea7b7b">
+<header class="lesson-head">
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part VI, Building with LLMs <span class="wl">647 nm</span></p>
+<h1><span class="lesson-num">15</span> Evaluating LLM systems</h1>
+<p class="lesson-summary">The discipline that separates demos from products, covering golden datasets, code-based graders and LLM judges done properly, statistics that tell you whether a change really helped, an evaluation harness, regression tests, and the limits of public benchmarks.</p>
+<div class="study-plan">
+<p class="plan-title">Study plan: 3 sessions of about an hour</p>
+<ol class="sessions"><li><label><input type="checkbox" data-session="evaluation:0"><span>Why evaluation is the core skill, the kinds of evals, and building a golden dataset</span></label></li><li><label><input type="checkbox" data-session="evaluation:1"><span>Graders: code checks, reference metrics, and LLM-as-judge done well</span></label></li><li><label><input type="checkbox" data-session="evaluation:2"><span>An eval harness with statistics, regression tests in CI, benchmarks and online evaluation</span></label></li></ol>
+<p class="plan-note">Tick a session when you finish it. Progress is saved in this browser only.</p>
+<p class="plan-notebook">Code for this lesson: <a href="../notebooks/15-evaluation.ipynb" download>notebooks/15-evaluation.ipynb</a>, with worked solutions in <code>notebooks/solutions/</code>.</p>
+</div>
+</header>
+<div class="prose">
+<h2 id="why-evaluation-is-the-core-skill">Why evaluation is the core skill<a class="headerlink" href="#why-evaluation-is-the-core-skill" title="Link to this section">#</a></h2>
+<p>Traditional software is mostly deterministic: write a unit test, it passes or fails forever. LLM systems are probabilistic, sensitive to wording, and change underneath you when providers update models. Without measurement, every prompt tweak, model swap and chunking change is a guess, and teams end up shipping regressions they never notice.</p>
+<p>Experienced AI engineers spend a large share of their time on evaluation, and the best ones start building evals <strong>before</strong> they build the system. An evaluation set turns arguments ("I think the new prompt is better") into evidence ("it fixes 9 cases and breaks 2, here they are"). It is also what lets you adopt a new, cheaper model with confidence on the day it is released.</p>
+<h2 id="kinds-of-evaluation">Kinds of evaluation<a class="headerlink" href="#kinds-of-evaluation" title="Link to this section">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Question it answers</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit-style checks</td>
+<td>Does output satisfy hard rules (valid JSON, required fields, no banned content, length)?</td>
+<td>Every change, in CI</td>
+</tr>
+<tr>
+<td>Offline dataset evals</td>
+<td>How well does the system do on representative cases with known good answers?</td>
+<td>Every prompt, model or pipeline change</td>
+</tr>
+<tr>
+<td>Component evals</td>
+<td>Is each stage working (retrieval recall, classifier accuracy, tool-call correctness)?</td>
+<td>When diagnosing</td>
+</tr>
+<tr>
+<td>Human review</td>
+<td>Do experts judge the outputs useful, correct and appropriate?</td>
+<td>Calibrating automated graders; high-stakes launches</td>
+</tr>
+<tr>
+<td>Online evaluation</td>
+<td>How does it behave with real users (feedback, task completion, escalations)?</td>
+<td>Continuously in production</td>
+</tr>
+<tr>
+<td>Red teaming</td>
+<td>Can it be made to fail badly or be misused?</td>
+<td>Before launch and periodically (lesson 18)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="building-a-golden-dataset">Building a golden dataset<a class="headerlink" href="#building-a-golden-dataset" title="Link to this section">#</a></h2>
+<p>A <strong>golden dataset</strong> (or eval set) is a collection of inputs, ideally with reference outputs or grading criteria, that represents what the system must handle.</p>
+<p><strong>Where cases come from:</strong></p>
+<ul>
+<li><strong>Real usage</strong> is best: logged questions, support tickets, documents users uploaded (with appropriate privacy handling).</li>
+<li><strong>Experts</strong> write cases for important or rare situations that real logs do not yet contain.</li>
+<li><strong>Synthetic generation</strong>: an LLM drafts variations, edge cases and adversarial inputs. Always review them; synthetic cases tend to be cleaner and easier than reality.</li>
+<li><strong>Failures</strong>: every bug report and every production failure becomes a new test case. Over time this is the most valuable part of the set.</li>
+</ul>
+<p><strong>What good sets contain:</strong></p>
+<ul>
+<li>The <strong>common cases</strong>, in roughly their real proportions.</li>
+<li><strong>Hard and ambiguous cases</strong>, deliberately over-represented, since that is where systems differ.</li>
+<li><strong>Negative cases</strong>: questions that should be refused, answered with "I don't know", or escalated.</li>
+<li><strong>Slices</strong> labelled by type (language, product, difficulty) so you can see <em>where</em> a change helps or hurts.</li>
+</ul>
+<p><strong>How big?</strong> Start with 20 to 50 cases on day one; a small set used daily beats a perfect set that never exists. Grow towards a few hundred. As the statistics section shows, you need hundreds before small differences become detectable.</p>
+<div class="highlight"><span class="filename">eval_cases.jsonl (one JSON object per line)</span><pre><span></span><code><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;t-001&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;Unit P-204 shows status ok but no data since 06:00&quot;</span><span class="p">,</span> <span class="s2">&quot;expected&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">},</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ambiguous&quot;</span><span class="p">]}</span>
+<span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;t-002&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;Please reschedule the March calibration visit&quot;</span><span class="p">,</span> <span class="s2">&quot;expected&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;other&quot;</span><span class="p">},</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;easy&quot;</span><span class="p">]}</span>
+<span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;q-014&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;How often should the desiccant be replaced at coastal sites?&quot;</span><span class="p">,</span> <span class="s2">&quot;reference&quot;</span><span class="p">:</span> <span class="s2">&quot;Every six months in humid climates.&quot;</span><span class="p">,</span> <span class="s2">&quot;gold_chunk&quot;</span><span class="p">:</span> <span class="s2">&quot;manual-x#12&quot;</span><span class="p">,</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;rag&quot;</span><span class="p">,</span> <span class="s2">&quot;lookup&quot;</span><span class="p">]}</span>
+<span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;q-031&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;What is the warranty period for model Z?&quot;</span><span class="p">,</span> <span class="s2">&quot;reference&quot;</span><span class="p">:</span> <span class="s2">&quot;NOT_IN_DOCS&quot;</span><span class="p">,</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;rag&quot;</span><span class="p">,</span> <span class="s2">&quot;unanswerable&quot;</span><span class="p">]}</span>
+</code></pre></div>
+<h2 id="graders">Graders<a class="headerlink" href="#graders" title="Link to this section">#</a></h2>
+<p>A <strong>grader</strong> turns an output into a score. Use the cheapest grader that measures what matters.</p>
+<h3 id="code-based-graders">Code-based graders<a class="headerlink" href="#code-based-graders" title="Link to this section">#</a></h3>
+<p>Fast, free, deterministic. Use them for everything you can express as a rule.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">exact_match</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expected</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">expected</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">contains_all</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">required</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">required</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">numeric_close</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expected</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">nums</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;-?\d+(?:\.\d+)?&quot;</span><span class="p">,</span> <span class="n">output</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">expected</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">rel_tol</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">expected</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nums</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">valid_schema</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cites_only_given_sources</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_sources</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">cited</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\[(\d+)\]&quot;</span><span class="p">,</span> <span class="n">output</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">cited</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">c</span> <span class="o">&lt;=</span> <span class="n">n_sources</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cited</span><span class="p">))</span>
+</code></pre></div>
+<h3 id="reference-based-text-metrics">Reference-based text metrics<a class="headerlink" href="#reference-based-text-metrics" title="Link to this section">#</a></h3>
+<p>Classic metrics such as BLEU and ROUGE count word overlap with a reference answer. They are cheap but correlate poorly with quality for open-ended generation: a correct answer phrased differently scores low. Embedding similarity to the reference is somewhat better. For most LLM applications, a well-designed LLM judge beats both.</p>
+<h3 id="llm-as-judge">LLM-as-judge<a class="headerlink" href="#llm-as-judge" title="Link to this section">#</a></h3>
+<p>A capable model grades outputs against a rubric. It scales human-like judgement to thousands of cases, but judges have known biases: they favour longer answers, answers in the first position in pairwise comparisons, and outputs that resemble their own style. They can also be confidently wrong on facts they do not know. Good practice:</p>
+<ul>
+<li><strong>Grade one specific criterion at a time</strong> ("Is every claim supported by the sources?"), not "rate quality 1 to 10".</li>
+<li><strong>Prefer binary or small categorical scales</strong> with explicit definitions over fine-grained numbers.</li>
+<li><strong>Give the judge what it needs</strong>: the sources, the reference answer, the rubric.</li>
+<li><strong>Ask for reasoning before the verdict</strong>, in a structured format your code can parse.</li>
+<li><strong>For pairwise comparisons, run both orders</strong> and count only consistent wins.</li>
+<li><strong>Calibrate against humans</strong>: have people grade 50 to 100 cases, measure agreement with the judge, and refine the rubric until agreement is high. An uncalibrated judge is a random number generator with good manners.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">anthropic</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">Anthropic</span><span class="p">()</span>
+<span class="n">JUDGE_MODEL</span> <span class="o">=</span> <span class="s2">&quot;claude-sonnet-5-5&quot;</span>
+
+<span class="n">FAITHFULNESS_RUBRIC</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are grading whether an answer is fully supported by source documents.</span>
+
+<span class="s2">&lt;sources&gt;</span>
+<span class="si">{sources}</span>
+<span class="s2">&lt;/sources&gt;</span>
+
+<span class="s2">&lt;answer&gt;</span>
+<span class="si">{answer}</span>
+<span class="s2">&lt;/answer&gt;</span>
+
+<span class="s2">Go through the answer claim by claim. A claim is SUPPORTED if the sources state it or it follows</span>
+<span class="s2">directly from them. Ignore style and completeness; judge only support.</span>
+
+<span class="s2">Return JSON only:</span>
+<span class="s2">{{&quot;unsupported_claims&quot;: [&quot;...&quot;], &quot;verdict&quot;: &quot;PASS&quot; or &quot;FAIL&quot;}}</span>
+<span class="s2">PASS means there are no unsupported factual claims.&quot;&quot;&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">judge_faithfulness</span><span class="p">(</span><span class="n">answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sources</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">JUDGE_MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">FAITHFULNESS_RUBRIC</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">answer</span><span class="o">=</span><span class="n">answer</span><span class="p">)},</span>
+                  <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;{&quot;</span><span class="p">}],</span>                <span class="c1"># prefill: start the JSON</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div>
+<p>The prefill trick (starting the assistant turn with <code>{</code>) keeps the judge's output parseable; a structured-output tool call (lesson 10) is even more robust.</p>
+<h2 id="an-evaluation-harness">An evaluation harness<a class="headerlink" href="#an-evaluation-harness" title="Link to this section">#</a></h2>
+<p>Put it together: run every case through a system variant, grade it, save everything, and summarise by slice.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_eval</span><span class="p">(</span><span class="n">system_fn</span><span class="p">,</span> <span class="n">cases</span><span class="p">,</span> <span class="n">graders</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;system_fn(input) -&gt; output string; graders: {metric: fn(case, output) -&gt; float in [0, 1]}&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_one</span><span class="p">(</span><span class="n">case</span><span class="p">):</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">system_fn</span><span class="p">(</span><span class="n">case</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">]),</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">latency</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="p">(</span><span class="n">g</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">graders</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="n">case</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tags&quot;</span><span class="p">,</span> <span class="p">[]),</span> <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
+                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">error</span><span class="p">,</span> <span class="s2">&quot;latency&quot;</span><span class="p">:</span> <span class="n">latency</span><span class="p">,</span> <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">scores</span><span class="p">}</span>
+
+    <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">run_one</span><span class="p">,</span> <span class="n">cases</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;results_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.jsonl&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>              <span class="c1"># keep every output: you will want to read them</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">summary</span><span class="p">[(</span><span class="n">m</span><span class="p">,</span> <span class="s2">&quot;ALL&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]:</span>
+                <span class="n">summary</span><span class="p">[(</span><span class="n">m</span><span class="p">,</span> <span class="n">tag</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">tag</span><span class="p">),</span> <span class="n">vals</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">&lt;12</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">&lt;14</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">tag</span><span class="si">:</span><span class="s2">&lt;14</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="n">graders</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">case</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="n">exact_match</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;expected&quot;</span><span class="p">][</span><span class="s2">&quot;category&quot;</span><span class="p">]),</span>
+<span class="p">}</span>
+<span class="c1"># baseline = run_eval(classify_v3, cases, graders, &quot;prompt_v3&quot;)</span>
+<span class="c1"># candidate = run_eval(classify_v4, cases, graders, &quot;prompt_v4&quot;)</span>
+</code></pre></div>
+<p>Then <strong>read the diffs</strong>: which cases did the new version fix, and which did it break? The aggregate number tells you whether to look; the individual cases tell you what is going on.</p>
+<h2 id="is-the-difference-real">Is the difference real?<a class="headerlink" href="#is-the-difference-real" title="Link to this section">#</a></h2>
+<p>With small eval sets, random variation is large. An accuracy of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">p</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span> measured on <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> cases has a 95% margin of error of roughly <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.96</mn><msqrt><mrow><mi>p</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>p</mi><mo stretchy="false">)</mo><mi mathvariant="normal">/</mi><mi>n</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">1.96\sqrt{p(1-p)/n}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.24em;vertical-align:-0.305em;"></span><span class="mord">1.96</span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.935em;"><span class="svg-align" style="top:-3.2em;"><span class="pstrut" style="height:3.2em;"></span><span class="mord" style="padding-left:1em;"><span class="mord mathnormal">p</span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal">p</span><span class="mclose">)</span><span class="mord">/</span><span class="mord mathnormal">n</span></span></span><span style="top:-2.895em;"><span class="pstrut" style="height:3.2em;"></span><span class="hide-tail" style="min-width:1.02em;height:1.28em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.28em" viewBox="0 0 400000 1296" preserveAspectRatio="xMinYMin slice"><path d="M263,681c0.7,0,18,39.7,52,119
+c34,79.3,68.167,158.7,102.5,238c34.3,79.3,51.8,119.3,52.5,120
+c340,-704.7,510.7,-1060.3,512,-1067
+l0 -0
+c4.7,-7.3,11,-11,19,-11
+H40000v40H1012.3
+s-271.3,567,-271.3,567c-38.7,80.7,-84,175,-136,283c-52,108,-89.167,185.3,-111.5,232
+c-22.3,46.7,-33.8,70.3,-34.5,71c-4.7,4.7,-12.3,7,-23,7s-12,-1,-12,-1
+s-109,-253,-109,-253c-72.7,-168,-109.3,-252,-110,-252c-10.7,8,-22,16.7,-34,26
+c-22,17.3,-33.3,26,-34,26s-26,-26,-26,-26s76,-59,76,-59s76,-60,76,-60z
+M1001 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.305em;"><span></span></span></span></span></span></span></span></span>:</p>
+<table>
+<thead>
+<tr>
+<th>Cases</th>
+<th>Margin of error at 80% accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>20</td>
+<td>± 17.5 points</td>
+</tr>
+<tr>
+<td>100</td>
+<td>± 7.8 points</td>
+</tr>
+<tr>
+<td>400</td>
+<td>± 3.9 points</td>
+</tr>
+<tr>
+<td>1,000</td>
+<td>± 2.5 points</td>
+</tr>
+</tbody>
+</table>
+<p>So "75% versus 80% on 100 cases" is not, on its own, evidence of improvement. Two tools help.</p>
+<p><strong>Bootstrap confidence intervals</strong> resample your per-case scores to estimate uncertainty without formulas:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">bootstrap_ci</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">n_boot</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">means</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_boot</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Paired comparison</strong>: both systems ran on the <em>same</em> cases, so compare them case by case. Most cases are answered the same way by both; what matters is the cases that changed. A paired bootstrap on per-case differences is much more sensitive than comparing two independent intervals:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">paired_bootstrap</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">n_boot</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean improvement of b over a, and the fraction of resamples where b is not better.&quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="n">diffs</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_boot</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)))]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="p">(</span><span class="n">diffs</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+</code></pre></div>
+<p>In a simulation with 100 cases where the new version fixes 5 cases and breaks none, accuracy goes from 75% to 80%. The two separate confidence intervals overlap heavily, yet the paired test gives a "not better" fraction of about 0.005: strong evidence the change helped. If instead the new version fixed 9 cases and broke 4, the same 5-point gain would be far less certain. <strong>Always look at fixes and breaks, not just the averages.</strong></p>
+<p>Also remember that model outputs vary between runs. For important decisions, run each variant two or three times, or use temperature 0, and check the result is stable.</p>
+<h2 id="regression-testing-and-ci">Regression testing and CI<a class="headerlink" href="#regression-testing-and-ci" title="Link to this section">#</a></h2>
+<p>Treat the eval suite like a test suite:</p>
+<ul>
+<li><strong>Fast checks on every commit</strong>: schema validity, a small smoke set of 20 to 50 cases, safety cases. Fail the build on hard-rule violations.</li>
+<li><strong>Full evaluation before merging</strong> prompt or model changes, with the report attached to the review.</li>
+<li><strong>Thresholds per slice</strong>, not just overall: "unanswerable questions must stay above 95% abstention" protects behaviour that a global average would hide.</li>
+<li><strong>Pin everything</strong>: model version, prompt version, retrieval index version, so a result can be reproduced.</li>
+<li><strong>Re-run on provider model updates</strong> before switching.</li>
+</ul>
+<p>Tools such as promptfoo, Inspect, DeepEval, or the evaluation features in observability platforms (lesson 17) package much of this. A short Python harness like the one above is a perfectly good start.</p>
+<h2 id="public-benchmarks-and-their-limits">Public benchmarks and their limits<a class="headerlink" href="#public-benchmarks-and-their-limits" title="Link to this section">#</a></h2>
+<p>Model releases quote benchmarks: MMLU and its harder variants for broad knowledge, GPQA for graduate-level science, SWE-bench for real software engineering tasks, coding and maths competition sets, and human-preference leaderboards such as LMArena. They are useful for shortlisting models. They are not a substitute for your own evals, because:</p>
+<ul>
+<li><strong>Contamination</strong>: benchmark questions leak onto the web and into training data, inflating scores.</li>
+<li><strong>Saturation</strong>: once top models score above 90%, the benchmark stops discriminating.</li>
+<li><strong>Mismatch</strong>: your task, data, format and failure costs are not the benchmark's.</li>
+<li><strong>Optimisation pressure</strong>: anything that becomes a target gets gamed, deliberately or not.</li>
+</ul>
+<p>The model that wins a leaderboard is often not the best one for your specific workload at your price and latency. Your eval set decides.</p>
+<h2 id="online-evaluation">Online evaluation<a class="headerlink" href="#online-evaluation" title="Link to this section">#</a></h2>
+<p>Offline sets go stale as users and the world change. In production, also measure:</p>
+<ul>
+<li><strong>Explicit feedback</strong>: thumbs up or down, corrections, ratings (sparse and biased towards strong feelings, but valuable).</li>
+<li><strong>Implicit signals</strong>: did the user retry, rephrase, copy the answer, escalate to a human, complete the task?</li>
+<li><strong>Sampled review</strong>: experts grade a random sample of live traffic weekly, with LLM judges extending coverage.</li>
+<li><strong>A/B tests</strong> for significant changes, measuring the outcome the product exists for.</li>
+<li><strong>Drift monitoring</strong>: shifts in input topics, lengths, languages or refusal rates.</li>
+</ul>
+<p>Then feed what you learn back into the offline eval set. That loop, production to dataset to improvement to production, is how AI products get better rather than just older.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: an eval suite for your RAG system</p>
+<p>Using your system from lesson 13:</p>
+<ol>
+<li>Turn your evaluation questions into <code>eval_cases.jsonl</code> with tags (<code>lookup</code>, <code>comparison</code>, <code>unanswerable</code>, and so on). Aim for at least 40 cases.</li>
+<li>Implement graders: retrieval hit (gold chunk in top 5), abstention (for <code>unanswerable</code> cases, did the answer say the documents do not contain it?), and an LLM faithfulness judge.</li>
+<li>Hand-grade faithfulness for 20 answers and measure your judge's agreement with you. Refine the rubric until it agrees on at least 17 of 20.</li>
+<li>Compare two variants (for example, with and without the reranker) using <code>run_eval</code> and <code>paired_bootstrap</code>. List the cases fixed and broken.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution sketch</summary>
+<p><div class="highlight"><pre><span></span><code><span class="n">cases</span> <span class="o">=</span> <span class="p">[</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;eval_cases.jsonl&quot;</span><span class="p">)]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rag_system</span><span class="p">(</span><span class="n">question</span><span class="p">):</span>                      <span class="c1"># return a JSON string so graders can see sources too</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">rag</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>
+    <span class="n">ans</span> <span class="o">=</span> <span class="n">rag</span><span class="o">.</span><span class="n">answer</span><span class="p">(</span><span class="n">question</span><span class="p">)[</span><span class="s2">&quot;answer&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="n">ans</span><span class="p">,</span> <span class="s2">&quot;ids&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">],</span>
+                       <span class="s2">&quot;sources&quot;</span><span class="p">:</span> <span class="n">format_sources</span><span class="p">(</span><span class="n">hits</span><span class="p">)})</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">retrieval_hit</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s2">&quot;gold_chunk&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">case</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">case</span><span class="p">[</span><span class="s2">&quot;gold_chunk&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">out</span><span class="p">)[</span><span class="s2">&quot;ids&quot;</span><span class="p">])</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">abstains</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reference&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;NOT_IN_DOCS&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">out</span><span class="p">)[</span><span class="s2">&quot;answer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">p</span> <span class="ow">in</span> <span class="n">text</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;not in the&quot;</span><span class="p">,</span> <span class="s2">&quot;do not contain&quot;</span><span class="p">,</span> <span class="s2">&quot;doesn&#39;t contain&quot;</span><span class="p">,</span> <span class="s2">&quot;no information&quot;</span><span class="p">]))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">faithful</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">judge_faithfulness</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="s2">&quot;answer&quot;</span><span class="p">],</span> <span class="n">o</span><span class="p">[</span><span class="s2">&quot;sources&quot;</span><span class="p">])[</span><span class="s2">&quot;verdict&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;PASS&quot;</span><span class="p">)</span>
+
+<span class="n">graders</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;retrieval_hit&quot;</span><span class="p">:</span> <span class="n">retrieval_hit</span><span class="p">,</span> <span class="s2">&quot;abstains&quot;</span><span class="p">:</span> <span class="n">abstains</span><span class="p">,</span> <span class="s2">&quot;faithful&quot;</span><span class="p">:</span> <span class="n">faithful</span><span class="p">}</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">run_eval</span><span class="p">(</span><span class="n">rag_system</span><span class="p">,</span> <span class="n">cases</span><span class="p">,</span> <span class="n">graders</span><span class="p">,</span> <span class="s2">&quot;with_rerank&quot;</span><span class="p">)</span>
+<span class="c1"># ... switch the reranker off, then:</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">run_eval</span><span class="p">(</span><span class="n">rag_system_no_rerank</span><span class="p">,</span> <span class="n">cases</span><span class="p">,</span> <span class="n">graders</span><span class="p">,</span> <span class="s2">&quot;no_rerank&quot;</span><span class="p">)</span>
+<span class="n">sa</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="s2">&quot;retrieval_hit&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span>
+<span class="n">sb</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="s2">&quot;retrieval_hit&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">b</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">paired_bootstrap</span><span class="p">(</span><span class="n">sb</span><span class="p">,</span> <span class="n">sa</span><span class="p">))</span>
+<span class="n">fixed</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="s2">&quot;retrieval_hit&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="s2">&quot;retrieval_hit&quot;</span><span class="p">]]</span>
+<span class="n">broken</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="s2">&quot;retrieval_hit&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="s2">&quot;retrieval_hit&quot;</span><span class="p">]]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;fixed:&quot;</span><span class="p">,</span> <span class="n">fixed</span><span class="p">,</span> <span class="s2">&quot;broken:&quot;</span><span class="p">,</span> <span class="n">broken</span><span class="p">)</span>
+</code></pre></div>
+The keyword-based abstention grader is crude and will miss some phrasings; that is fine for a start, and the misses you find when reading outputs tell you how to improve it (or to replace it with a judge). Judge calibration usually needs two or three rubric revisions; the typical early problem is the judge treating reasonable paraphrases as unsupported, or letting general-knowledge claims through.</p>
+</details>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" title="Link to this section">#</a></h2>
+<div class="quiz" data-quiz>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">1.</span> When should you start building an evaluation set for an LLM feature?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="1">Before or alongside building the feature, starting small</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">After launch, once users complain</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Only once you have 1,000 examples</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Never; public benchmarks cover it</button></li>
+</ol>
+<p class="quiz-expl" hidden>A small set used from day one guides every decision and grows over time.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">2.</span> Which is the best way to use an LLM as a judge?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Ask it to rate overall quality from 1 to 10</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Grade one specific criterion with a clear rubric and the needed context, and calibrate it against human grades</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Use the same model that generated the answer, at high temperature</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Always show it the candidate answers in the same order</button></li>
+</ol>
+<p class="quiz-expl" hidden>Specific criteria, structured verdicts, order-swapping for pairwise, and calibration against humans.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">3.</span> Version B scores 80% and version A 75% on the same 100 cases. What should you do before concluding B is better?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Nothing; 5 points is a clear win</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Look at which cases were fixed and broken, and run a paired comparison</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Increase the temperature and rerun</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Switch to a public benchmark</button></li>
+</ol>
+<p class="quiz-expl" hidden>On 100 cases the margin of error is around ±8 points. Paired analysis of fixes and breaks is far more informative.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">4.</span> Why are public benchmark scores an incomplete guide for choosing a model?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">They are always fabricated</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Contamination, saturation and mismatch with your task mean your own eval set should decide</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">They only test small models</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Benchmarks measure latency, not quality</button></li>
+</ol>
+<p class="quiz-expl" hidden>Use them to shortlist; use your data to decide.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">5.</span> A production failure is reported. What should happen to it?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">Fix the prompt and move on</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Add it to the evaluation set as a test case, then fix it and confirm the fix without breaking others</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Ignore it unless it happens three times</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Retrain the model</button></li>
+</ol>
+<p class="quiz-expl" hidden>Every failure becomes a regression test. That is how the eval set becomes valuable.</p>
+</div>
+<p class="quiz-score" aria-live="polite"></p></div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Evaluation is the core discipline of AI engineering: it turns opinions into evidence and makes model upgrades safe.</li>
+<li>Build a golden dataset early from real usage, expert cases, reviewed synthetic cases and every failure; include hard, ambiguous and negative cases, tagged by slice.</li>
+<li>Use code graders wherever possible; use LLM judges with specific rubrics, structured output, order-swapping and human calibration.</li>
+<li>Small sets are noisy. Use bootstrap intervals and paired comparisons, and always read the fixed and broken cases.</li>
+<li>Run evals in CI with per-slice thresholds and pinned versions; treat public benchmarks as a shortlist; close the loop with online evaluation.</li>
+</ul>
+</div>
+<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" title="Link to this section">#</a></h3>
+<ul>
+<li>Hamel Husain, "Your AI Product Needs Evals" and related posts (hamel.dev)</li>
+<li>Zheng et al., "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena" (arXiv 2306.05685)</li>
+<li>Anthropic documentation on creating strong empirical evaluations</li>
+<li>Shreya Shankar et al., "Who Validates the Validators?" (EvalGen, arXiv 2404.12272)</li>
+<li>The promptfoo and Inspect documentation for ready-made harnesses</li>
+</ul>
+</div>
+<footer class="lesson-foot">
+<button type="button" class="complete-btn" data-complete="evaluation" data-sessions="3">Mark all sessions done</button>
+<nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/14-agents.html"><span>Previous</span>14 Agents, tool use and MCP</a><a class="next" href="../lessons/16-fine-tuning.html"><span>Next</span>16 Fine-tuning language models</a></nav>
+</footer>
+</article>
+</main>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#why-evaluation-is-the-core-skill">Why evaluation is the core skill</a></li><li><a href="#kinds-of-evaluation">Kinds of evaluation</a></li><li><a href="#building-a-golden-dataset">Building a golden dataset</a></li><li><a href="#graders">Graders</a><ul><li><a href="#code-based-graders">Code-based graders</a></li><li><a href="#reference-based-text-metrics">Reference-based text metrics</a></li><li><a href="#llm-as-judge">LLM-as-judge</a></li></ul></li><li><a href="#an-evaluation-harness">An evaluation harness</a></li><li><a href="#is-the-difference-real">Is the difference real?</a></li><li><a href="#regression-testing-and-ci">Regression testing and CI</a></li><li><a href="#public-benchmarks-and-their-limits">Public benchmarks and their limits</a></li><li><a href="#online-evaluation">Online evaluation</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
+</div>
+<script src="../assets/course-data.js"></script>
+<script src="../assets/app.js"></script>
+</body>
+</html>

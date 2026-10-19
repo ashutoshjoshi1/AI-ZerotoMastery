@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agents, tool use and MCP | AI Engineering</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+</head>
+<body class="is-lesson" data-root="../" data-page="agents">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
+<div class="search" role="search">
+<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<div class="search-results" hidden></div>
+</div>
+<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+</header>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg is-current" href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="layout">
+<nav class="course-map" aria-label="Course map">
+<ul class="map-pages">
+<li><a href="../index.html">Course home</a></li>
+<li><a href="../schedule.html">Daily schedule</a></li>
+<li><a href="../glossary.html">Glossary</a></li>
+<li><a href="../resources.html">Further resources</a></li>
+</ul>
+<section class="map-part" style="--pc:#ab19c8">
+<p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#6d1ce3">
+<p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1c44e3">
+<p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#1ce3c5">
+<p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#65e31c">
+<p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#e37e1c">
+<p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
+<li><a href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#d41a1a">
+<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
+<li><a href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#b21616">
+<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
+<li><a href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+</ol></section>
+</nav>
+<main id="main" tabindex="-1">
+<article class="lesson" data-lesson="agents" style="--lc:#e34a1c;--lct:#953518;--lctd:#ea957b">
+<header class="lesson-head">
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part VI, Building with LLMs <span class="wl">630 nm</span></p>
+<h1><span class="lesson-num">14</span> Agents, tool use and MCP</h1>
+<p class="lesson-summary">Give models the ability to act by writing the tool-use loop by hand, designing tools models use well, choosing between workflows and autonomous agents, and building an MCP server, then add the guardrails and evaluation that make agents safe to deploy.</p>
+<div class="study-plan">
+<p class="plan-title">Study plan: 5 sessions of about an hour</p>
+<ol class="sessions"><li><label><input type="checkbox" data-session="agents:0"><span>What an agent is, and the tool-use loop written by hand</span></label></li><li><label><input type="checkbox" data-session="agents:1"><span>Designing good tools, and handling results, errors and parallel calls</span></label></li><li><label><input type="checkbox" data-session="agents:2"><span>Patterns: workflows versus agents, planning, memory and multi-agent systems</span></label></li><li><label><input type="checkbox" data-session="agents:3"><span>The Model Context Protocol: build an MCP server for your own data</span></label></li><li><label><input type="checkbox" data-session="agents:4"><span>Build a research agent with guardrails, budgets and an evaluation</span></label></li></ol>
+<p class="plan-note">Tick a session when you finish it. Progress is saved in this browser only.</p>
+<p class="plan-notebook">Code for this lesson: <a href="../notebooks/14-agents.ipynb" download>notebooks/14-agents.ipynb</a>, with worked solutions in <code>notebooks/solutions/</code>.</p>
+</div>
+</header>
+<div class="prose">
+<h2 id="what-makes-something-an-agent">What makes something an agent<a class="headerlink" href="#what-makes-something-an-agent" title="Link to this section">#</a></h2>
+<p>A chatbot produces text. An <strong>agent</strong> uses a model to decide on <em>actions</em>, takes them through <strong>tools</strong>, observes the results, and keeps going until the task is done. The model is no longer just answering; it is controlling a loop.</p>
+<p>A useful working definition: an agent is <strong>a model using tools in a loop, deciding for itself what to do next</strong>. A useful working caution: autonomy costs latency, money and predictability, so use the least autonomy that solves the problem.</p>
+<h2 id="tool-use-the-mechanism">Tool use: the mechanism<a class="headerlink" href="#tool-use-the-mechanism" title="Link to this section">#</a></h2>
+<p>You describe tools to the model with a name, a description and a JSON schema for the inputs. The model cannot run anything itself. When it wants a tool, it replies with a structured <strong>tool call</strong> (name plus arguments) and stops. <em>Your code</em> runs the tool and sends back the result, and the model continues, possibly calling more tools, until it gives a final answer.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 620 210" role="img" aria-label="The agent loop: model decides, your code executes tools and returns results, repeat until the model answers">
+<rect class="box" x="20" y="80" width="120" height="50" rx="8"/><text x="80" y="102" text-anchor="middle">user task</text><text x="80" y="119" text-anchor="middle" font-size="11" class="muted">+ tool descriptions</text>
+<rect x="220" y="70" width="150" height="70" rx="8" class="accent" opacity="0.15"/><rect x="220" y="70" width="150" height="70" rx="8" class="accent-stroke"/>
+<text x="295" y="100" text-anchor="middle">model decides</text><text x="295" y="118" text-anchor="middle" font-size="11" class="muted">answer, or call a tool?</text>
+<rect class="box" x="450" y="20" width="150" height="50" rx="8"/><text x="525" y="42" text-anchor="middle">your code runs</text><text x="525" y="59" text-anchor="middle">the tool</text>
+<rect class="box" x="450" y="140" width="150" height="50" rx="8"/><text x="525" y="170" text-anchor="middle">final answer</text>
+<path class="wire" d="M140 105 H220"/>
+<path class="wire" d="M370 90 C 410 70, 420 50, 450 45"/>
+<text x="400" y="56" font-size="11" class="muted">tool call</text>
+<path class="wire" d="M450 60 C 400 75, 390 100, 370 108" stroke-dasharray="4 3"/>
+<text x="385" y="132" font-size="11" class="muted">result</text>
+<path class="wire" d="M370 125 C 410 150, 420 160, 450 165"/>
+<text x="400" y="175" font-size="11" class="muted">done</text>
+</svg>
+<figcaption>The loop lives in your code. The model only ever proposes actions.</figcaption>
+</figure>
+
+<h3 id="define-tools">Define tools<a class="headerlink" href="#define-tools" title="Link to this section">#</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">math</span><span class="o">,</span><span class="w"> </span><span class="nn">ast</span><span class="o">,</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">op</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">anthropic</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">Anthropic</span><span class="p">()</span>
+<span class="n">MODEL</span> <span class="o">=</span> <span class="s2">&quot;claude-sonnet-5-5&quot;</span>
+
+<span class="c1"># --- the actual tool implementations -------------------------------------------</span>
+<span class="n">FLEET</span> <span class="o">=</span> <span class="p">{</span>   <span class="c1"># stand-in for a real database or API</span>
+    <span class="s2">&quot;P-117&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;site&quot;</span><span class="p">:</span> <span class="s2">&quot;coastal&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;offline&quot;</span><span class="p">,</span> <span class="s2">&quot;last_data&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-10-18T02:00Z&quot;</span><span class="p">,</span> <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="s2">&quot;2.3&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;P-204&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;site&quot;</span><span class="p">:</span> <span class="s2">&quot;urban&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;last_data&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-10-19T09:55Z&quot;</span><span class="p">,</span> <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="s2">&quot;2.4&quot;</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_instrument_status</span><span class="p">(</span><span class="n">instrument_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">instrument_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FLEET</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;unknown instrument &#39;</span><span class="si">{</span><span class="n">instrument_id</span><span class="si">}</span><span class="s2">&#39;. Known ids: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">FLEET</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">FLEET</span><span class="p">[</span><span class="n">instrument_id</span><span class="p">]</span>
+
+<span class="n">OPS</span> <span class="o">=</span> <span class="p">{</span><span class="n">ast</span><span class="o">.</span><span class="n">Add</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Sub</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">sub</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Mult</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Div</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">truediv</span><span class="p">,</span>
+       <span class="n">ast</span><span class="o">.</span><span class="n">Pow</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">pow</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Mod</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">mod</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">USub</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">neg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">UAdd</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">pos</span><span class="p">}</span>
+<span class="n">FUNCS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sqrt&quot;</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="s2">&quot;exp&quot;</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">,</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span> <span class="nb">abs</span><span class="p">,</span> <span class="s2">&quot;round&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate arithmetic safely: never call eval() on model output.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ev</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">BinOp</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">op</span><span class="p">)</span> <span class="ow">in</span> <span class="n">OPS</span><span class="p">:</span>
+            <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">ev</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">),</span> <span class="n">ev</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Pow</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">right</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;exponent too large&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">OPS</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">op</span><span class="p">)](</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">UnaryOp</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">op</span><span class="p">)</span> <span class="ow">in</span> <span class="n">OPS</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OPS</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">op</span><span class="p">)](</span><span class="n">ev</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">operand</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">FUNCS</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FUNCS</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">id</span><span class="p">](</span><span class="o">*</span><span class="p">[</span><span class="n">ev</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;pi&quot;</span><span class="p">,</span> <span class="s2">&quot;e&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">math</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unsupported expression&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ev</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;eval&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+
+<span class="c1"># --- what the model sees ---------------------------------------------------------</span>
+<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;get_instrument_status&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;Look up the current status of one field instrument by its id (format &#39;P-123&#39;). &quot;</span>
+                        <span class="s2">&quot;Returns site, status (ok/degraded/offline), time of last data (UTC) and firmware version.&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;input_schema&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;instrument_id&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Instrument id, e.g. &#39;P-117&#39;&quot;</span><span class="p">}},</span>
+            <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;instrument_id&quot;</span><span class="p">],</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;calculate&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Evaluate an arithmetic expression exactly. Use for any calculation instead of mental arithmetic.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;input_schema&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;expression&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;e.g. &#39;(17 - 2.5) * 3600&#39;&quot;</span><span class="p">}},</span>
+            <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;expression&quot;</span><span class="p">],</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+<span class="n">TOOL_FUNCS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;get_instrument_status&quot;</span><span class="p">:</span> <span class="n">get_instrument_status</span><span class="p">,</span> <span class="s2">&quot;calculate&quot;</span><span class="p">:</span> <span class="n">calculate</span><span class="p">}</span>
+</code></pre></div>
+<h3 id="the-loop">The loop<a class="headerlink" href="#the-loop" title="Link to this section">#</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run_agent</span><span class="p">(</span><span class="n">task</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">}]</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_steps</span><span class="p">):</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1500</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">TOOLS</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+            <span class="n">system</span><span class="o">=</span><span class="s2">&quot;You are an operations assistant for a fleet of field instruments. &quot;</span>
+                   <span class="s2">&quot;Use tools to check facts rather than guessing. Be concise.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">})</span>   <span class="c1"># keep the tool calls in history</span>
+
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">!=</span> <span class="s2">&quot;tool_use&quot;</span><span class="p">:</span>                                 <span class="c1"># the model has finished</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span> <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>                                         <span class="c1"># may contain several calls</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;tool_use&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">input</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">TOOL_FUNCS</span><span class="p">[</span><span class="n">block</span><span class="o">.</span><span class="n">name</span><span class="p">](</span><span class="o">**</span><span class="n">block</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;tool_result&quot;</span><span class="p">,</span> <span class="s2">&quot;tool_use_id&quot;</span><span class="p">:</span> <span class="n">block</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output</span><span class="p">)})</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>                                         <span class="c1"># report errors to the model</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;tool_result&quot;</span><span class="p">,</span> <span class="s2">&quot;tool_use_id&quot;</span><span class="p">:</span> <span class="n">block</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;is_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+        <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">})</span>              <span class="c1"># results go back as a user turn</span>
+    <span class="k">return</span> <span class="s2">&quot;Stopped: step limit reached before the task was finished.&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">run_agent</span><span class="p">(</span><span class="s2">&quot;Is P-117 healthy? If not, how many hours has it been without data as of 2026-10-19T10:00Z?&quot;</span><span class="p">))</span>
+<span class="c1">#   -&gt; get_instrument_status({&#39;instrument_id&#39;: &#39;P-117&#39;})</span>
+<span class="c1">#   -&gt; calculate({&#39;expression&#39;: &#39;24 + 8&#39;})</span>
+<span class="c1"># P-117 is offline. Its last data arrived at 02:00 UTC on 18 October, so it has been</span>
+<span class="c1"># without data for 32 hours as of 10:00 UTC today.</span>
+</code></pre></div>
+<p>That is a complete agent. Every agent framework is this loop plus conveniences. Note three details that trip people up: the assistant's tool-call blocks must be kept in the history, each result must reference its <code>tool_use_id</code>, and results are sent in a <strong>user</strong> turn.</p>
+<h2 id="designing-tools-models-use-well">Designing tools models use well<a class="headerlink" href="#designing-tools-models-use-well" title="Link to this section">#</a></h2>
+<p>Tools are a user interface whose user is a model. Most agent failures are tool design failures.</p>
+<ul>
+<li><strong>Write descriptions like documentation for a new colleague</strong>: what it does, when to use it, what it returns, the format of each argument, with an example. The description is the only thing the model knows about your tool.</li>
+<li><strong>Few, well-scoped tools beat many overlapping ones.</strong> If two tools could plausibly answer the same request, the model will sometimes pick the wrong one.</li>
+<li><strong>Return what the model needs, compactly.</strong> Not 5,000 rows of raw JSON; filter, paginate and summarise. Every returned token costs context.</li>
+<li><strong>Make errors instructive.</strong> "unknown instrument 'P117'. Known ids look like 'P-117'" lets the model fix its own mistake; a stack trace does not.</li>
+<li><strong>Make tools safe by construction.</strong> Validate inputs, use read-only credentials where possible, and never pass model output to <code>eval</code>, a shell or raw SQL. The calculator above parses an expression tree instead of calling <code>eval</code>.</li>
+<li><strong>Separate reading from acting.</strong> Tools that change the world (send email, restart an instrument, delete data) deserve confirmation steps, narrow permissions and logs.</li>
+</ul>
+<p>Models can request <strong>several tool calls in one turn</strong> (for example, checking five instruments at once). The loop above handles this; run independent calls concurrently when they are slow.</p>
+<h2 id="workflows-agents-and-when-to-use-which">Workflows, agents and when to use which<a class="headerlink" href="#workflows-agents-and-when-to-use-which" title="Link to this section">#</a></h2>
+<p>Many "agent" problems are better solved with <strong>workflows</strong>: predefined code paths that call models at fixed points. They are cheaper, faster and easier to test. Anthropic's guide "Building effective agents" names a useful set of patterns:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>How it works</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prompt chaining</td>
+<td>Fixed sequence of calls, each using the previous output</td>
+<td>Extract facts, then draft, then check</td>
+</tr>
+<tr>
+<td>Routing</td>
+<td>A classifier sends input to a specialised prompt or model</td>
+<td>Hardware questions to one flow, billing to another</td>
+</tr>
+<tr>
+<td>Parallelisation</td>
+<td>Run independent calls at once, then combine (or vote)</td>
+<td>Review a document for five risks in parallel</td>
+</tr>
+<tr>
+<td>Orchestrator-workers</td>
+<td>A model breaks a task into subtasks and delegates them</td>
+<td>Research a topic across many sources</td>
+</tr>
+<tr>
+<td>Evaluator-optimiser</td>
+<td>One call drafts, another critiques, loop until good enough</td>
+<td>Translate, critique, revise</td>
+</tr>
+<tr>
+<td>Autonomous agent</td>
+<td>Model chooses tools and steps freely in a loop</td>
+<td>Open-ended debugging or research</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of thumb:</strong> if you can draw the flowchart in advance, write a workflow. Use an autonomous agent when the number and order of steps genuinely cannot be known beforehand, and when the value of the task justifies the cost and unpredictability.</p>
+<h3 id="planning-and-react">Planning and ReAct<a class="headerlink" href="#planning-and-react" title="Link to this section">#</a></h3>
+<p>The <strong>ReAct</strong> pattern (reason, act, observe) interleaves short reasoning with tool calls: think about what to do, call a tool, read the result, think again. Modern models do this naturally inside the tool loop, especially with reasoning enabled. For long tasks, asking the agent to write an explicit plan first, then revise it as results come in, helps it stay on track.</p>
+<h3 id="memory">Memory<a class="headerlink" href="#memory" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Short-term memory</strong> is the conversation and tool history in the context window. It fills up: summarise or drop old tool results in long runs.</li>
+<li><strong>Long-term memory</strong> is anything stored outside the context and retrieved when relevant: a database of facts about the user, notes files the agent writes and later reads, a vector store of past interactions. It is RAG (lesson 13) applied to the agent's own history.</li>
+<li><strong>Scratchpads</strong>: letting an agent write intermediate results to files keeps its context small and makes its work inspectable.</li>
+</ul>
+<h3 id="multi-agent-systems">Multi-agent systems<a class="headerlink" href="#multi-agent-systems" title="Link to this section">#</a></h3>
+<p>Splitting work across several agents (an orchestrator plus specialised sub-agents with their own context windows) can help on broad tasks such as deep research, because each sub-agent explores in parallel with a clean context. It also multiplies token use and adds coordination failure modes. Start with one agent and add more only when a single context demonstrably becomes the bottleneck.</p>
+<h2 id="the-model-context-protocol">The Model Context Protocol<a class="headerlink" href="#the-model-context-protocol" title="Link to this section">#</a></h2>
+<p>Every application used to wire up its own tools. The <strong>Model Context Protocol (MCP)</strong> is an open standard, introduced by Anthropic in 2024 and since adopted widely, for connecting AI applications to tools and data. Write an <strong>MCP server</strong> once, and any MCP-capable client (Claude's apps, IDEs, agent frameworks, your own code) can use it. Think of it as USB for AI tools.</p>
+<p>An MCP server can expose:</p>
+<ul>
+<li><strong>Tools</strong>: functions the model can call (like the ones above).</li>
+<li><strong>Resources</strong>: data the application can read into context (files, records).</li>
+<li><strong>Prompts</strong>: reusable prompt templates.</li>
+</ul>
+<h3 id="build-a-server">Build a server<a class="headerlink" href="#build-a-server" title="Link to this section">#</a></h3>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;mcp[cli]&quot;</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">fleet_server.py</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">mcp.server.fastmcp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastMCP</span>
+
+<span class="n">mcp</span> <span class="o">=</span> <span class="n">FastMCP</span><span class="p">(</span><span class="s2">&quot;instrument-fleet&quot;</span><span class="p">)</span>
+
+<span class="n">FLEET</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;P-117&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;site&quot;</span><span class="p">:</span> <span class="s2">&quot;coastal&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;offline&quot;</span><span class="p">,</span> <span class="s2">&quot;last_data&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-10-18T02:00Z&quot;</span><span class="p">,</span> <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="s2">&quot;2.3&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;P-204&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;site&quot;</span><span class="p">:</span> <span class="s2">&quot;urban&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;last_data&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-10-19T09:55Z&quot;</span><span class="p">,</span> <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="s2">&quot;2.4&quot;</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_instrument_status</span><span class="p">(</span><span class="n">instrument_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Current status of one instrument by id (format &#39;P-123&#39;): site, status, last data time (UTC), firmware.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">FLEET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">instrument_id</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;unknown id; known ids: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">FLEET</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+
+<span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_instruments</span><span class="p">(</span><span class="n">status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List instrument ids, optionally only those with a given status (&#39;ok&#39;, &#39;degraded&#39;, &#39;offline&#39;).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">FLEET</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">status</span><span class="p">]</span>
+
+<span class="nd">@mcp</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;fleet://firmware-notes&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">firmware_notes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Release notes for instrument firmware versions.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;2.4: fixes overnight logging stall on cellular modems. 2.3: adds GPS time sync.&quot;</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">mcp</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>          <span class="c1"># speaks MCP over stdin/stdout by default</span>
+</code></pre></div>
+<p>The decorators turn type hints and docstrings into the tool schemas and descriptions, so write them carefully: they are what the model reads. Test the server interactively with the MCP Inspector (<code>uv run mcp dev fleet_server.py</code>), then register it with a client. For Claude Desktop, add it to the configuration file:</p>
+<div class="highlight"><span class="filename">claude_desktop_config.json</span><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;fleet&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--directory&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;/path/to/project&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;fleet_server.py&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>After a restart, you can ask in plain language which instruments are offline and whether a firmware update might help, and the client will call your tools and read your resource. Servers can also run remotely over HTTP for shared use, which brings authentication and permissions into play.</p>
+<div class="admonition warning">
+<p class="admonition-title">MCP servers are code you run with your permissions</p>
+<p>Only install servers you trust, give them the narrowest credentials that work, and remember that tool results are untrusted input to the model: a document or web page fetched by one tool can contain instructions trying to hijack the agent (prompt injection, lesson 18).</p>
+</div>
+<h2 id="guardrails-budgets-and-evaluation">Guardrails, budgets and evaluation<a class="headerlink" href="#guardrails-budgets-and-evaluation" title="Link to this section">#</a></h2>
+<p>An agent that loops forever, burns your budget or deletes the wrong thing is worse than no agent. Build in:</p>
+<ul>
+<li><strong>Hard limits</strong>: maximum steps, maximum tokens or cost per task, wall-clock timeouts.</li>
+<li><strong>Least privilege</strong>: read-only by default; separate credentials per tool; scope to the user's own data.</li>
+<li><strong>Human approval</strong> for consequential or irreversible actions: show the exact action and wait for a yes.</li>
+<li><strong>Validation</strong> of tool arguments before execution, and of outputs before they reach users.</li>
+<li><strong>Idempotency and dry-runs</strong> for actions that might be retried.</li>
+<li><strong>Full tracing</strong>: log every model call, tool call, argument, result, token count and latency. You cannot debug an agent from its final answer alone (lesson 17 covers tracing tools).</li>
+</ul>
+<p><strong>Evaluating agents</strong> means more than checking the final answer:</p>
+<ul>
+<li><strong>Task success rate</strong> on a set of realistic tasks with checkable outcomes (the database ended up in the right state; the report contains the right numbers).</li>
+<li><strong>Trajectory quality</strong>: did it use sensible tools, avoid redundant calls, ask for confirmation where needed?</li>
+<li><strong>Cost and latency</strong> per task, and their spread: agents have long tails.</li>
+<li><strong>Safety cases</strong>: tasks that should be refused or escalated, and injected instructions that should be ignored.</li>
+</ul>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a research agent over your documents</p>
+<p>Combine lessons 13 and 14.</p>
+<ol>
+<li>Wrap your <code>MiniRAG.retrieve</code> as a tool <code>search_docs(query: str, k: int = 5)</code> returning chunk ids, titles and text.</li>
+<li>Add a tool <code>read_chunk(chunk_id: str)</code> that returns a chunk with its neighbours for more context, and the <code>calculate</code> tool.</li>
+<li>Give the agent a system prompt that requires citations by chunk id and allows "not found".</li>
+<li>Add limits: 12 steps, and a running token count that stops the agent above 60,000 input tokens.</li>
+<li>Write 8 questions that need <em>several</em> searches (comparisons, multi-step lookups) and compare the agent's answers, cost and latency with plain <code>MiniRAG.answer</code>.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution sketch and typical findings</summary>
+<p><div class="highlight"><pre><span></span><code><span class="n">rag</span> <span class="o">=</span> <span class="n">MiniRAG</span><span class="p">();</span> <span class="n">rag</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">documents</span><span class="p">)</span>
+<span class="n">by_id</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rag</span><span class="o">.</span><span class="n">chunks</span><span class="p">)}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">search_docs</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][:</span><span class="mi">1200</span><span class="p">]}</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">rag</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">k_final</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">8</span><span class="p">))]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_chunk</span><span class="p">(</span><span class="n">chunk_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">by_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chunk_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;unknown chunk id; use ids returned by search_docs&quot;</span><span class="p">}</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">rag</span><span class="o">.</span><span class="n">chunks</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">chunk_id</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">window</span><span class="p">)}</span>
+
+<span class="n">TOOL_FUNCS</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">search_docs</span><span class="o">=</span><span class="n">search_docs</span><span class="p">,</span> <span class="n">read_chunk</span><span class="o">=</span><span class="n">read_chunk</span><span class="p">)</span>
+<span class="n">TOOLS</span> <span class="o">+=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;search_docs&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Search the document collection. Returns the most relevant chunks with ids. &quot;</span>
+                    <span class="s2">&quot;Search several times with different wording for multi-part questions.&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;input_schema&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span> <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">}},</span>
+                      <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;query&quot;</span><span class="p">]}},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;read_chunk&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Read a chunk together with its neighbouring chunks, for more context.&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;input_schema&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;chunk_id&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">}},</span>
+                      <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;chunk_id&quot;</span><span class="p">]}},</span>
+<span class="p">]</span>
+<span class="c1"># In run_agent: accumulate resp.usage.input_tokens and stop when the total exceeds 60_000.</span>
+</code></pre></div>
+Typical findings: on simple lookups the agent matches plain RAG but costs several times more and takes longer. On comparison and multi-hop questions it often wins clearly, because it searches for each part separately and follows up on what it finds. Failures to look for: repeating near-identical searches, citing chunks it never read, and stopping too early. Each suggests a fix to the tool descriptions or system prompt. The cost and latency gap is why production systems often route: plain RAG first, the agent only for questions that need it.</p>
+</details>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" title="Link to this section">#</a></h2>
+<div class="quiz" data-quiz>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">1.</span> Who actually executes a tool when a model "calls" it?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">The model, inside the provider's servers</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Your application code, which then sends the result back to the model</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">The user</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">The tool description</button></li>
+</ol>
+<p class="quiz-expl" hidden>The model only proposes a structured call. Your code decides whether and how to run it.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">2.</span> In the Anthropic Messages API, how are tool results returned to the model?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">As a new system prompt</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">As tool_result blocks in a user message, each referencing its tool_use_id</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">As an assistant message</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">By calling the tool endpoint</button></li>
+</ol>
+<p class="quiz-expl" hidden>The assistant's tool_use blocks stay in history, followed by a user turn containing the matching results.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">3.</span> You can draw the full flowchart of a task in advance. What should you build?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="1">A workflow with fixed steps that call the model where needed</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">A multi-agent system</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">An autonomous agent with all tools available</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Nothing; models cannot handle fixed steps</button></li>
+</ol>
+<p class="quiz-expl" hidden>Workflows are cheaper, faster and easier to test. Save autonomy for genuinely open-ended tasks.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">4.</span> What is the main benefit of the Model Context Protocol?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">It makes models smarter</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Tools and data exposed once as an MCP server can be used by any MCP-capable client</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">It encrypts all model traffic</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">It replaces the need for tool descriptions</button></li>
+</ol>
+<p class="quiz-expl" hidden>It standardises the connection between AI applications and tools, like a common port.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">5.</span> Which is the strongest safeguard for an agent tool that can delete data?</p>
+<ol class="quiz-options" type="A">
+<li><button type="button" class="quiz-opt" data-correct="0">A longer system prompt asking the model to be careful</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">A higher temperature</button></li>
+<li><button type="button" class="quiz-opt" data-correct="1">Least-privilege credentials plus explicit human approval of the exact action, with logging</button></li>
+<li><button type="button" class="quiz-opt" data-correct="0">Running more agents to double-check</button></li>
+</ol>
+<p class="quiz-expl" hidden>Do not rely on the model's judgement alone for irreversible actions.</p>
+</div>
+<p class="quiz-score" aria-live="polite"></p></div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>An agent is a model using tools in a loop. The model proposes calls; your code executes them and returns results.</li>
+<li>Tool design decides agent quality: clear descriptions, few well-scoped tools, compact results, instructive errors, safe implementations.</li>
+<li>Prefer workflows (chaining, routing, parallelisation, orchestrator-workers, evaluator-optimiser) when steps are predictable; use autonomous agents when they are not.</li>
+<li>MCP standardises tools and data access across applications; treat servers and their outputs as untrusted.</li>
+<li>Guard agents with step and cost limits, least privilege, human approval for consequential actions and full tracing. Evaluate success, trajectory, cost and safety.</li>
+</ul>
+</div>
+<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" title="Link to this section">#</a></h3>
+<ul>
+<li>Anthropic, "Building effective agents" (engineering blog post, December 2024)</li>
+<li><a href="https://docs.claude.com/en/api/overview">Claude API documentation</a>, sections on tool use</li>
+<li><a href="https://modelcontextprotocol.io">Model Context Protocol</a> specification, SDKs and example servers</li>
+<li>Yao et al., "ReAct: Synergizing Reasoning and Acting in Language Models" (arXiv 2210.03629)</li>
+<li>Schick et al., "Toolformer: Language Models Can Teach Themselves to Use Tools" (arXiv 2302.04761)</li>
+</ul>
+</div>
+<footer class="lesson-foot">
+<button type="button" class="complete-btn" data-complete="agents" data-sessions="5">Mark all sessions done</button>
+<nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/13-rag.html"><span>Previous</span>13 Retrieval-augmented generation (RAG)</a><a class="next" href="../lessons/15-evaluation.html"><span>Next</span>15 Evaluating LLM systems</a></nav>
+</footer>
+</article>
+</main>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#what-makes-something-an-agent">What makes something an agent</a></li><li><a href="#tool-use-the-mechanism">Tool use: the mechanism</a><ul><li><a href="#define-tools">Define tools</a></li><li><a href="#the-loop">The loop</a></li></ul></li><li><a href="#designing-tools-models-use-well">Designing tools models use well</a></li><li><a href="#workflows-agents-and-when-to-use-which">Workflows, agents and when to use which</a><ul><li><a href="#planning-and-react">Planning and ReAct</a></li><li><a href="#memory">Memory</a></li><li><a href="#multi-agent-systems">Multi-agent systems</a></li></ul></li><li><a href="#the-model-context-protocol">The Model Context Protocol</a><ul><li><a href="#build-a-server">Build a server</a></li></ul></li><li><a href="#guardrails-budgets-and-evaluation">Guardrails, budgets and evaluation</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
+</div>
+<script src="../assets/course-data.js"></script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
