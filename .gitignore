@@ -1,0 +1,47 @@
+# Secrets: API keys live in .env, never in notebooks
+.env
+.env.*
+!.env.example
+
+# Python and Jupyter
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Build tooling (run `npm install` in tools/ to recreate)
+tools/node_modules/
+
+# Files the notebooks create when you run them
+notebooks/**/data/
+notebooks/**/runs/
+notebooks/**/outputs/
+notebooks/**/checkpoints/
+notebooks/**/*.pt
+notebooks/**/*.pth
+notebooks/**/*.safetensors
+notebooks/**/*.gguf
+notebooks/**/*.bin
+notebooks/**/*.csv
+notebooks/**/*.jsonl
+notebooks/**/*.png
+notebooks/**/*.jpg
+notebooks/**/*.npy
+notebooks/**/*.npz
+notebooks/**/*.pkl
+notebooks/**/*.joblib
+notebooks/**/*.db
+notebooks/**/*.sqlite
+notebooks/**/*.txt
+notebooks/**/*.py
+notebooks/**/*.json
+notebooks/**/memory/
+!notebooks/requirements.txt
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

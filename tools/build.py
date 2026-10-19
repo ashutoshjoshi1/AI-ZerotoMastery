@@ -353,13 +353,7 @@ def render_lesson_body(lesson, ctx, maths, search_mode=False):
     src = replace_blocks(src, '<div class="quiz">', "div", expand_quiz)
     src = replace_blocks(src, '<div class="tabs">', "div", expand_tabs)
 
-    def ref(m):
-        target = ctx["by_slug"].get(m.group(1))
-        if not target:
-            warn(f"{lesson.slug}: data-ref to unknown lesson {m.group(1)!r}")
-            return m.group(1)
-        return f'<a class="ref" href="{root}{target.href}" title="Lesson {target.num}: {esc(target.title)}">{target.num}</a>'
-    src = re.sub(r'<a data-ref="([^"]+)"></a>', ref, src)
+    src = resolve_refs(src, ctx, root, lesson.slug)
 
     # session dividers
     sessions = lesson.sessions
@@ -717,7 +711,7 @@ def home_page(ctx):
     root = ""
     v = ctx["vars"]
     intro = fill((CONTENT / "pages" / "home.html").read_text(encoding="utf-8"), ctx)
-    intro, toc = render_page_body(intro)
+    intro, toc = render_page_body(intro, ctx, "home")
     blocks = []
     for p in ctx["parts"]:
         items = []
@@ -753,7 +747,19 @@ def home_page(ctx):
                 description=ctx["course"]["description"])
 
 
-def render_page_body(src):
+def resolve_refs(src, ctx, root, where):
+    def ref(m):
+        target = ctx["by_slug"].get(m.group(1))
+        if not target:
+            warn(f"{where}: data-ref to unknown lesson {m.group(1)!r}")
+            return m.group(1)
+        return f'<a class="ref" href="{root}{target.href}" title="Lesson {target.num}: {esc(target.title)}">{target.num}</a>'
+    return re.sub(r'<a data-ref="([^"]+)"></a>', ref, src)
+
+
+def render_page_body(src, ctx=None, where="page"):
+    if ctx is not None:
+        src = resolve_refs(src, ctx, "", where)
     toc, seen = [], set()
 
     def heading(m):
@@ -771,7 +777,7 @@ def render_page_body(src):
 
 
 def plain_page(ctx, *, page_id, title, intro, body, description, toc=True):
-    rendered, t = render_page_body(body)
+    rendered, t = render_page_body(body, ctx, page_id)
     main = f'<div class="prose plain-page">\n<h1>{esc(title)}</h1>\n{intro}\n{rendered}\n</div>'
     return page(ctx, title=title, root="", body_class="is-page", page_id=page_id, main=main,
                 description=description, toc_html=toc_block(t) if toc else "")
@@ -1018,20 +1024,42 @@ def sync_notebooks(ctx, out_root, written):
             write(out_root / rel, text, written)
 
 
-def notebooks_readme(ctx, out_root, written):
-    path = ROOT / "notebooks" / "README.md"
+def update_marked(rel, marker, content, out_root, written):
+    """Replace the text between <!-- marker:start --> and <!-- marker:end --> in a Markdown file."""
+    path = ROOT / rel
+    if not path.exists():
+        warn(f"{rel} does not exist")
+        return
     text = path.read_text(encoding="utf-8")
-    start, end = "<!-- notebook-table:start -->", "<!-- notebook-table:end -->"
+    start, end = f"<!-- {marker}:start -->", f"<!-- {marker}:end -->"
+    if start not in text:
+        warn(f"{rel} has no {marker} markers; not updated")
+        return
+    block = start + "\n" + content.strip("\n") + "\n" + end
+    text = re.sub(re.escape(start) + r".*?" + re.escape(end), lambda m: block, text, flags=re.S)
+    write(out_root / rel, text, written)
+
+
+def markdown_tables(ctx, out_root, written):
     rows = ["| Notebook | Lesson | Runs on |", "|---|---|---|"]
     for l in ctx["lessons"]:
         name = l.notebook.split("/", 1)[1]
         rows.append(f"| [{name}]({name}) | {l.title} | {l.meta.get('runs_on', 'Any computer (CPU).')} |")
-    table = start + "\n" + "\n".join(rows) + "\n" + end
-    if start in text:
-        text = re.sub(re.escape(start) + r".*?" + re.escape(end), lambda m: table, text, flags=re.S)
-    else:
-        warn("notebooks/README.md has no notebook-table markers; table not updated")
-    write(out_root / "notebooks" / "README.md", text, written)
+    update_marked("notebooks/README.md", "notebook-table", "\n".join(rows), out_root, written)
+
+    site = ctx["course"]["site_url"].rstrip("/") + "/"
+    lines = []
+    for p in ctx["parts"]:
+        lines.append(f"\n**Part {p['roman']}: {p['name']}.** {p['desc']}\n")
+        lines.append("| # | Lesson | Sessions | Notebook |")
+        lines.append("|---|---|---|---|")
+        for l in p["lessons"]:
+            nb = l.notebook.split("/", 1)[1]
+            lines.append(f"| {l.num} | [{l.title}]({site}{l.href}) | {len(l.sessions)} | [{nb}]({l.notebook}) |")
+    v = ctx["vars"]
+    intro = (f"{v['lessons']} lessons in {v['sessions']} sessions of about an hour each: about {v['weeks5']} weeks at "
+             f"five sessions a week.\n")
+    update_marked("README.md", "lessons", intro + "\n".join(lines), out_root, written)
 
 
 # ----------------------------------------------------------------------------- links
@@ -1134,7 +1162,7 @@ def build(out_root, skip_missing=False):
     write(out_root / ".nojekyll", "", written)
 
     sync_notebooks(ctx, out_root, written)
-    notebooks_readme(ctx, out_root, written)
+    markdown_tables(ctx, out_root, written)
     check_links(out_root, written["files"])
     return ctx, written
 

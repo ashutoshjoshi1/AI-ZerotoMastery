@@ -1,0 +1,1127 @@
+<!--
+{
+  "title": "Search, planning and classical AI",
+  "short": "Classical AI and search",
+  "summary": "The half of AI that is not learned from data: search a maze and a road map, find routes with A*, schedule with a constraint solver, play games with minimax and Monte Carlo tree search, reason with rules and probabilities, and see where these ideas live inside AlphaZero and today's LLM agents.",
+  "sessions": [
+    "A short history of AI, and problems as search: BFS, DFS and uniform-cost search",
+    "Heuristics and A*, constraint satisfaction, and game playing with minimax and MCTS",
+    "Logic, Bayesian networks, Naive Bayes, planning, and classical AI inside LLM agents"
+  ],
+  "objectives": [
+    "Describe the main eras of AI research and the lesson each one taught",
+    "Formulate a problem as states, actions, a goal test and path costs, and solve it with BFS, DFS, uniform-cost search and A*",
+    "Solve a constraint satisfaction problem with backtracking, forward checking and the minimum-remaining-values heuristic",
+    "Implement minimax with alpha-beta pruning and Monte Carlo tree search, and explain how AlphaZero adds neural networks to the search",
+    "Do exact inference in a small Bayesian network and build a Naive Bayes text classifier that matches scikit-learn's",
+    "Plan with STRIPS-style actions and explain how LLM agents combine learned models with search, solvers and verifiers"
+  ],
+  "prerequisites": ["python-for-ai", "math-for-ai"],
+  "runs_on": "Any computer (CPU), offline. Uses only the Python standard library, NumPy and scikit-learn; every cell finishes in a few seconds.",
+  "glossary": [
+    {"term": "Symbolic AI", "def": "AI built from explicit symbols, rules and search procedures written by people, rather than from patterns learned from data."},
+    {"term": "Expert system", "def": "A program that stores a specialist's knowledge as if-then rules and applies them to the facts of a case to reach conclusions."},
+    {"term": "Uniform-cost search", "def": "Search that always expands the cheapest path found so far, which finds the lowest-cost route when step costs are non-negative; Dijkstra's algorithm stopped at the goal."},
+    {"term": "Heuristic (admissible)", "def": "An estimate of the remaining cost from a state to the goal; it is admissible if it never overestimates the true cost."},
+    {"term": "A*", "def": "Best-first search that expands the state with the lowest cost so far plus heuristic estimate, and returns an optimal path when the heuristic is admissible."},
+    {"term": "Constraint satisfaction problem", "def": "A problem defined by variables, the values each can take and constraints on which combinations are allowed, solved by finding an assignment that breaks no constraint."},
+    {"term": "Minimax", "def": "Choosing moves in a two-player game by assuming the opponent always replies with the move that is worst for you."},
+    {"term": "Alpha-beta pruning", "def": "A refinement of minimax that skips branches which cannot change the decision, giving the same answer with far less search."},
+    {"term": "Monte Carlo tree search", "def": "Game-tree search that grows a tree from many simulated games, balancing moves that have done well against moves that have been tried rarely."},
+    {"term": "Bayesian network", "def": "A directed graph of random variables in which each variable depends only on its parents, giving a compact model of a joint probability distribution."},
+    {"term": "Naive Bayes", "def": "A classifier that applies Bayes' rule while assuming the features are independent of each other once the class is known."},
+    {"term": "STRIPS", "def": "A planning representation in which a state is a set of true facts and each action has preconditions, facts it adds and facts it deletes."}
+  ]
+}
+-->
+<h2>The other half of AI</h2>
+<p>Everything in this course so far has been learned from data: a model sees examples, a loss measures its mistakes, and gradient descent nudges millions of numbers. The field did not start there. For its first thirty years, AI mostly meant programs that <em>search</em> through possibilities and <em>reason</em> with knowledge written down by people, with no training data at all.</p>
+<p>That half never went away. The route planner on your phone, the engine that beats every human at chess, the solver that builds an airline's crew rosters and the resolver that picks compatible versions of your Python packages are all classical AI. It also sits at the heart of the most impressive learned systems: AlphaZero is a neural network wrapped in a tree search, and a reliable LLM agent is a learned model wrapped in planning, search and verification. This lesson builds the core algorithms, each in a few dozen lines of Python, and shows where they still earn their keep.</p>
+
+<h2>A short history of AI</h2>
+<p>Each era of AI was driven by one big idea, promised too much, and left behind something that still works. Knowing the pattern helps you judge today's claims.</p>
+<table>
+<thead>
+<tr><th>When</th><th>What happened</th><th>The honest lesson</th></tr>
+</thead>
+<tbody>
+<tr><td>1956</td><td>The Dartmouth summer workshop gives the field its name. Its proposal expected "a significant advance" from a small group working together for one summer. Newell and Simon's Logic Theorist proves theorems from <em>Principia Mathematica</em>.</td><td>The things people find easy, such as seeing, talking and common sense, turned out to be the hardest.</td></tr>
+<tr><td>1956 to early 1970s</td><td><strong>Symbolic AI</strong>: search, theorem proving, the General Problem Solver, and the Shakey robot project at SRI, which produced A* (1968) and STRIPS planning (1971).</td><td>Search and logic work well in small, clean worlds. Real problems explode combinatorially.</td></tr>
+<tr><td>1970s</td><td>The first <strong>AI winter</strong>. Minsky and Papert's <em>Perceptrons</em> (1969) cools neural network research, and after the UK's Lighthill report (1973) funding is cut in Britain and the United States.</td><td>Overpromising costs a field its funding.</td></tr>
+<tr><td>1970s to 1980s</td><td><strong>Expert systems</strong>: MYCIN recommends antibiotics for blood infections; XCON configures DEC's VAX computers; rule-based systems become an industry. A second winter follows in the late 1980s.</td><td>Hand-written knowledge is costly to collect, brittle at the edges and hard to maintain.</td></tr>
+<tr><td>1990s to 2000s</td><td>The <strong>statistical turn</strong>: Bayesian networks, hidden Markov models for speech, statistical machine translation, support vector machines. Deep Blue beats Garry Kasparov (1997) with search and a hand-tuned evaluation.</td><td>Probability handles uncertainty, and learning from data beats writing rules by hand.</td></tr>
+<tr><td>2012 to 2017</td><td><strong>Deep learning</strong>: AlexNet wins the ImageNet competition (2012), AlphaGo beats Lee Sedol (2016), and AlphaZero learns chess, shogi and Go from self-play (2017).</td><td>General methods that scale with data and compute win, and the best game players still search.</td></tr>
+<tr><td>2017 onwards</td><td><strong>Transformers</strong> (2017) and large language models; ChatGPT (2022) puts them in everyone's hands; agents and reasoning models follow.</td><td>Learned models are broad but unreliable. Search, solvers and verifiers are back as their partners.</td></tr>
+</tbody>
+</table>
+<p>Richard Sutton summed up the pattern in his 2019 essay "The Bitter Lesson": building human knowledge into a system helps in the short run, but general methods that make use of more computation win in the end, and "the two methods that seem to scale arbitrarily in this way are search and learning." You have spent nineteen lessons on learning. This one is about search, and about how the two combine.</p>
+
+<h2>Problems as search</h2>
+<p>Mazes, delivery routes, puzzles and plans can all be written in the same five parts. Writing them down is the most important step, because once a problem has this shape any search algorithm can solve it.</p>
+<ul>
+<li>A <strong>state</strong>: a snapshot of everything that matters, such as a cell in a maze, a town on a map or a board position.</li>
+<li>The <strong>initial state</strong> you start from.</li>
+<li>The <strong>actions</strong> available in each state, and the state each one leads to (the <strong>transition model</strong>).</li>
+<li>A <strong>goal test</strong> that says whether a state is a solution.</li>
+<li>A <strong>path cost</strong>: the sum of the step costs, such as kilometres driven or moves made.</li>
+</ul>
+<p>In code, actions and transitions become one <strong>successor function</strong> that lists the next states and the cost of reaching each. Here is a maze in that form:</p>
+<pre><code class="language-python">MAZE = """\
+S.......#.
+.######.#.
+......#...
+.####.#.#.
+.#G...#.#.
+.######.#.
+..........
+"""
+
+def find(grid, ch):
+    return next((r, c) for r, row in enumerate(grid) for c, x in enumerate(row) if x == ch)
+
+def neighbours(state, grid):
+    """Successor function: yield (next_state, step_cost) for every legal move."""
+    r, c = state
+    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:      # up, down, left, right
+        nr, nc = r + dr, c + dc
+        if 0 &lt;= nr &lt; len(grid) and 0 &lt;= nc &lt; len(grid[0]) and grid[nr][nc] != "#":
+            yield (nr, nc), 1
+
+def show(grid, path):
+    rows = [list(row) for row in grid]
+    for r, c in path[1:-1]:
+        rows[r][c] = "*"
+    print("\n".join("".join(row) for row in rows))
+
+grid = MAZE.splitlines()
+start, goal = find(grid, "S"), find(grid, "G")
+print("start", start, "goal", goal)
+print("moves from start:", list(neighbours(start, grid)))</code></pre>
+<pre><code class="language-text">start (0, 0) goal (4, 2)
+moves from start: [((1, 0), 1), ((0, 1), 1)]</code></pre>
+<p>A search algorithm grows a tree of paths from the start. The <strong>frontier</strong> holds states that have been generated but not yet <strong>expanded</strong>, where expanding a state means generating its successors. Every algorithm in this lesson runs that same loop. They differ in one thing only: which frontier state to expand next.</p>
+
+<h3>Breadth-first and depth-first search</h3>
+<p><strong>Breadth-first search</strong> (BFS) keeps the frontier in a first-in, first-out queue. It expands every state one step from the start, then every state two steps away, and so on, so the first path it finds to the goal has the fewest steps. <strong>Depth-first search</strong> (DFS) uses a last-in, first-out stack: it dives down one path as far as it can and backs up only at a dead end. In code the difference is a single line.</p>
+<pre><code class="language-python">from collections import deque
+
+def reconstruct(parent, s):
+    path = []
+    while s is not None:
+        path.append(s)
+        s = parent[s]
+    return path[::-1]
+
+def uninformed_search(start, is_goal, successors, kind="bfs"):
+    frontier = deque([start])
+    parent = {start: None}                # also the set of states already reached
+    expanded = 0
+    while frontier:
+        s = frontier.popleft() if kind == "bfs" else frontier.pop()   # FIFO or LIFO
+        expanded += 1
+        if is_goal(s):
+            return reconstruct(parent, s), expanded
+        for s2, _ in successors(s):
+            if s2 not in parent:
+                parent[s2] = s
+                frontier.append(s2)
+    return None, expanded
+
+moves = lambda s: neighbours(s, grid)
+for kind in ["bfs", "dfs"]:
+    path, n = uninformed_search(start, lambda s: s == goal, moves, kind)
+    print(f"{kind}: {len(path) - 1} steps, {n} states expanded")
+    show(grid, path)</code></pre>
+<pre><code class="language-text">bfs: 12 steps, 36 states expanded
+S.......#.
+*######.#.
+******#...
+.####*#.#.
+.#G***#.#.
+.######.#.
+..........
+dfs: 38 steps, 39 states expanded
+S*******#.
+.######*#.
+******#***
+*####*#.#*
+*#G***#.#*
+*######.#*
+**********</code></pre>
+<p>Both reach the goal, but the DFS route is three times longer: it charged off along the top corridor and never looked back. The <code>parent</code> dictionary records every state already reached, so neither version expands a state twice or walks in circles.</p>
+<p>BFS pays for its guarantee in memory. With \(b\) choices per state and the goal \(d\) steps away, it can hold on the order of \(b^d\) states: with \(b = 10\) and \(d = 10\), ten billion. DFS without the reached set only needs the current path and its siblings, which is why <strong>iterative deepening</strong> (DFS with a depth limit of 0, then 1, then 2, and so on) is the standard way to get BFS's shortest paths with DFS's small memory.</p>
+
+<h3>Uniform-cost search (Dijkstra's algorithm)</h3>
+<p>BFS counts steps, but real steps have different costs: roads have lengths, actions take time. <strong>Uniform-cost search</strong> (UCS) always expands the frontier state with the lowest path cost so far, written \(g(n)\), using a priority queue. It is Dijkstra's 1959 shortest-path algorithm, stopped as soon as the goal comes off the queue. Here it is on a map of field sites that a technician drives between.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 560 320" role="img" aria-label="Road map of seven field sites with road lengths in kilometres. The shortest route from depot to observatory runs through mill and ridge for 34 km; a dashed 30 km mountain road joins depot directly to ridge.">
+<path class="wire" d="M50 290 L278 238"/>
+<path class="wire" d="M50 290 L316 108" stroke-dasharray="6 4"/>
+<path class="wire" d="M278 238 L468 186"/>
+<path class="wire" d="M278 238 L316 108"/>
+<path class="wire" d="M145 173 L202 56"/>
+<path class="wire" d="M468 186 L506 43"/>
+<path class="wire" d="M202 56 L506 43"/>
+<path class="accent-stroke" d="M50 290 L145 173 L316 108 L506 43"/>
+<circle class="accent" cx="50" cy="290" r="7"/>
+<circle class="box" cx="278" cy="238" r="7"/>
+<circle class="box" cx="145" cy="173" r="7"/>
+<circle class="box" cx="316" cy="108" r="7"/>
+<circle class="box" cx="468" cy="186" r="7"/>
+<circle class="box" cx="202" cy="56" r="7"/>
+<circle class="accent" cx="506" cy="43" r="7"/>
+<text x="50" y="312" text-anchor="middle">depot</text>
+<text x="278" y="260" text-anchor="middle">harbour</text>
+<text x="132" y="177" text-anchor="end">mill</text>
+<text x="330" y="122">ridge</text>
+<text x="468" y="208" text-anchor="middle">lake</text>
+<text x="202" y="40" text-anchor="middle">airfield</text>
+<text x="506" y="26" text-anchor="middle">observatory</text>
+<text x="167" y="282" text-anchor="middle" font-size="12" class="muted">14</text>
+<text x="86" y="226" text-anchor="middle" font-size="12" class="muted">11</text>
+<text x="192" y="215" text-anchor="middle" font-size="12" class="muted">30</text>
+<text x="377" y="229" text-anchor="middle" font-size="12" class="muted">12</text>
+<text x="312" y="181" text-anchor="middle" font-size="12" class="muted">11</text>
+<text x="225" y="130" text-anchor="middle" font-size="12" class="muted">11</text>
+<text x="160" y="112" text-anchor="middle" font-size="12" class="muted">10</text>
+<text x="416" y="93" text-anchor="middle" font-size="12" class="muted">12</text>
+<text x="503" y="122" text-anchor="middle" font-size="12" class="muted">12</text>
+<text x="354" y="40" text-anchor="middle" font-size="12" class="muted">17</text>
+<text x="380" y="282" font-size="12" class="muted">highlighted: shortest, 34 km</text>
+<text x="380" y="300" font-size="12" class="muted">dashed: mountain road</text>
+</svg>
+<figcaption>The map in the code below. The fewest roads (two, via the mountain road) is not the shortest drive.</figcaption>
+</figure>
+<pre><code class="language-python">import heapq, math
+
+# Field sites: (x, y) position in km, and the roads between them with their length in km
+SITES = {"depot": (0, 0), "harbour": (12, 4), "mill": (5, 9), "ridge": (14, 14),
+         "lake": (22, 8), "airfield": (8, 18), "observatory": (24, 19)}
+ROADS = [("depot", "harbour", 14), ("depot", "mill", 11), ("depot", "ridge", 30),
+         ("harbour", "lake", 12), ("harbour", "ridge", 11), ("mill", "ridge", 11),
+         ("mill", "airfield", 10), ("ridge", "observatory", 12),
+         ("lake", "observatory", 12), ("airfield", "observatory", 17)]
+graph = {s: [] for s in SITES}
+for a, b, km in ROADS:
+    graph[a].append((b, km))
+    graph[b].append((a, km))
+
+def uniform_cost_search(start, is_goal, successors):
+    frontier = [(0, start)]               # a priority queue ordered by path cost g
+    parent, g = {start: None}, {start: 0}
+    expanded = 0
+    while frontier:
+        cost, s = heapq.heappop(frontier)
+        if cost &gt; g[s]:
+            continue                      # stale entry: a cheaper route was found later
+        expanded += 1
+        if is_goal(s):                    # test when expanded, not when generated
+            return reconstruct(parent, s), cost, expanded
+        for s2, step in successors(s):
+            new = cost + step
+            if s2 not in g or new &lt; g[s2]:
+                g[s2], parent[s2] = new, s
+                heapq.heappush(frontier, (new, s2))
+    return None, math.inf, expanded
+
+roads = lambda s: graph[s]
+at_obs = lambda s: s == "observatory"
+path, _ = uninformed_search("depot", at_obs, roads, "bfs")
+km = sum(dict(graph[a])[b] for a, b in zip(path, path[1:]))
+print("BFS:", " -&gt; ".join(path), f"({km} km)")
+path, km, n = uniform_cost_search("depot", at_obs, roads)
+print("UCS:", " -&gt; ".join(path), f"({km} km, {n} expanded)")</code></pre>
+<pre><code class="language-text">BFS: depot -&gt; ridge -&gt; observatory (42 km)
+UCS: depot -&gt; mill -&gt; ridge -&gt; observatory (34 km, 7 expanded)</code></pre>
+<p>BFS finds the route with the fewest roads, but one of them is the 30 km mountain road. UCS finds the shortest drive. Python's <code>heapq</code> cannot lower the priority of an item already in the queue, so the code pushes a fresh entry whenever it finds a cheaper route and skips stale entries as they come out.</p>
+<div class="admonition warning">
+<p class="admonition-title">Test for the goal when you expand, not when you generate</p>
+<p>The first time UCS <em>sees</em> the goal, it may be at the end of an expensive route while a cheaper one is still waiting in the queue. Only when the goal is <em>popped</em> as the cheapest item on the frontier is its cost guaranteed to be the lowest. The same holds for A* below. Getting this wrong is the most common search bug, and it fails silently: you still get a path, just not the best one.</p>
+</div>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: when steps have different costs</p>
+<ol>
+<li>Write <code>weighted_neighbours(state, grid)</code>: like <code>neighbours</code>, but stepping onto a mud cell <code>~</code> costs 5.</li>
+<li>Run BFS and UCS on the map below. Print each path with <code>show</code> and its total cost.</li>
+<li>Stretch: implement iterative deepening and check that it finds a 12-step path through the first maze.</li>
+</ol>
+<pre><code class="language-text">S....~....
+.....~....
+.....~....
+.....~...G
+..........</code></pre>
+<p>You are done when BFS reports 12 steps costing 16 (straight through the mud) and UCS reports 14 steps costing 14 (round it).</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">MUD = """\
+S....~....
+.....~....
+.....~....
+.....~...G
+..........
+"""
+
+def weighted_neighbours(state, grid):
+    """Like neighbours(), but stepping into mud costs 5."""
+    for (r, c), _ in neighbours(state, grid):
+        yield (r, c), 5 if grid[r][c] == "~" else 1
+
+mud = MUD.splitlines()
+s, t = find(mud, "S"), find(mud, "G")
+moves = lambda p: weighted_neighbours(p, mud)
+cost_of = lambda path: sum(5 if mud[r][c] == "~" else 1 for r, c in path[1:])
+
+path, _ = uninformed_search(s, lambda p: p == t, moves, "bfs")
+print(f"BFS: {len(path) - 1} steps, cost {cost_of(path)}")
+show(mud, path)
+path, cost, _ = uniform_cost_search(s, lambda p: p == t, moves)
+print(f"UCS: {len(path) - 1} steps, cost {cost}")
+show(mud, path)
+
+# Stretch: iterative deepening, depth-first search with a growing depth limit
+def depth_limited(path, is_goal, successors, limit):
+    if is_goal(path[-1]):
+        return path
+    if limit == 0:
+        return None
+    for s2, _ in successors(path[-1]):
+        if s2 not in path:                       # never revisit a state on this path
+            found = depth_limited(path + [s2], is_goal, successors, limit - 1)
+            if found:
+                return found
+    return None
+
+def iterative_deepening(start, is_goal, successors, max_depth=100):
+    for limit in range(max_depth + 1):
+        found = depth_limited([start], is_goal, successors, limit)
+        if found:
+            return found
+
+path = iterative_deepening(start, lambda p: p == goal, lambda p: neighbours(p, grid))
+print("IDS on the first maze:", len(path) - 1, "steps")</code></pre>
+<pre><code class="language-text">BFS: 12 steps, cost 16
+S....~....
+*....~....
+*....~....
+*********G
+..........
+UCS: 14 steps, cost 14
+S****~....
+....*~....
+....*~....
+....*~***G
+....***...
+IDS on the first maze: 12 steps</code></pre>
+<p>BFS treats every step as equal, so it ploughs through the mud: every 12-step route has to cross column 5 above the bottom row. UCS sees the true costs and takes two extra steps to avoid it. Iterative deepening repeats the shallow levels many times, but each level is so much bigger than the ones before it that the repeated work adds little.</p>
+</details>
+
+<hr data-session="2">
+<h2>Informed search</h2>
+<p>UCS spreads out evenly in every direction, like a ripple in a pond, because it knows nothing about where the goal is. Usually you do know something: the goal is to the east, or 20 km away as the crow flies. A <strong>heuristic</strong> \(h(n)\) turns that knowledge into a number, an estimate of the cost from state \(n\) to the goal.</p>
+
+<h3>Admissible and consistent heuristics</h3>
+<p>A heuristic is <strong>admissible</strong> if it never overestimates: \(h(n) \le h^*(n)\), where \(h^*(n)\) is the true cheapest cost from \(n\) to the goal. It is <strong>consistent</strong> if it never drops by more than the cost of a step: \(h(n) \le c(n, n') + h(n')\) for every successor \(n'\). Every consistent heuristic is admissible, and most admissible heuristics you will design are consistent too.</p>
+<p>The reliable way to invent one is to <strong>relax</strong> the problem: solve an easier version exactly and use its cost. Delete the maze walls and the cost of the relaxed problem is the Manhattan distance \(|r_1 - r_2| + |c_1 - c_2|\). Ignore the road network and you get the straight-line distance. Removing rules can only make a problem easier, so a relaxed cost never overestimates the real one.</p>
+
+<h3>A*, greedy and weighted A*</h3>
+<p><strong>A*</strong> (Hart, Nilsson and Raphael, 1968) expands the frontier state with the lowest</p>
+\[ f(n) = g(n) + h(n), \]
+<p>the cost so far plus the estimated cost to go: its best guess at the total cost of a solution through \(n\). With an admissible heuristic, the path it returns is optimal. Two variants change the weights. <strong>Greedy best-first search</strong> uses \(f = h\) alone, rushing towards the goal and ignoring what it has spent. <strong>Weighted A*</strong> uses \(f = g + w\,h\) with \(w &gt; 1\), trading optimality for speed, with a guarantee that the path costs at most \(w\) times the optimum. One function covers all of them, and UCS too:</p>
+<pre><code class="language-python">def best_first(start, is_goal, successors, h=lambda s: 0, wg=1, wh=1):
+    """Expand the node with the lowest f = wg*g + wh*h.
+    wh=0 is uniform-cost search, wg=wh=1 is A*, wg=0 is greedy best-first."""
+    frontier = [(wh * h(start), 0, start)]
+    parent, g = {start: None}, {start: 0}
+    expanded = 0
+    while frontier:
+        _, cost, s = heapq.heappop(frontier)
+        if cost &gt; g[s]:
+            continue
+        expanded += 1
+        if is_goal(s):
+            return reconstruct(parent, s), cost, expanded
+        for s2, step in successors(s):
+            new = cost + step
+            if s2 not in g or new &lt; g[s2]:
+                g[s2], parent[s2] = new, s
+                heapq.heappush(frontier, (wg * new + wh * h(s2), new, s2))
+    return None, math.inf, expanded
+
+# A 20 x 40 open field with a cup-shaped wall between start and goal
+rows = [["."] * 40 for _ in range(20)]
+for r in range(4, 16):
+    rows[r][28] = "#"                      # the back of the cup
+for c in range(18, 29):
+    rows[4][c] = rows[15][c] = "#"         # its two arms
+rows[10][4], rows[10][36] = "S", "G"
+field = ["".join(row) for row in rows]
+s, t = find(field, "S"), find(field, "G")
+manhattan = lambda p: abs(p[0] - t[0]) + abs(p[1] - t[1])
+moves = lambda p: neighbours(p, field)
+done = lambda p: p == t
+
+path, n = uninformed_search(s, done, moves, "bfs")
+print(f"{'BFS':12} cost {len(path) - 1}  expanded {n:3}")
+for name, wg, wh in [("UCS", 1, 0), ("A*", 1, 1), ("weighted A*", 1, 2), ("greedy", 0, 1)]:
+    path, cost, n = best_first(s, done, moves, manhattan, wg, wh)
+    print(f"{name:12} cost {cost}  expanded {n:3}")</code></pre>
+<pre><code class="language-text">BFS          cost 44  expanded 748
+UCS          cost 44  expanded 747
+A*           cost 44  expanded 381
+weighted A*  cost 44  expanded 238
+greedy       cost 44  expanded 181</code></pre>
+<p>When every step costs 1, UCS is just BFS, and both flood almost the whole field. A* expands half as many states and still returns a shortest path. Weighted A* and greedy search expand fewer again and, on this field, happen to find a shortest path as well. They will not always be so lucky. Here is the road map, with straight-line distance as the heuristic:</p>
+<pre><code class="language-python">def straight_line(site):
+    return math.dist(SITES[site], SITES["observatory"])
+
+# Admissible and consistent: no road is shorter than the straight line it spans
+print(all(km &gt;= math.dist(SITES[a], SITES[b]) for a, b, km in ROADS))
+for name, wg, wh in [("UCS", 1, 0), ("A*", 1, 1), ("greedy", 0, 1)]:
+    path, km, n = best_first("depot", at_obs, roads, straight_line, wg, wh)
+    print(f"{name:7}{' -&gt; '.join(path)} ({km} km, {n} expanded)")</code></pre>
+<pre><code class="language-text">True
+UCS    depot -&gt; mill -&gt; ridge -&gt; observatory (34 km, 7 expanded)
+A*     depot -&gt; mill -&gt; ridge -&gt; observatory (34 km, 5 expanded)
+greedy depot -&gt; ridge -&gt; observatory (42 km, 3 expanded)</code></pre>
+<p>Greedy search sees that the ridge is closest to the observatory as the crow flies, takes the mountain road and never reconsiders. A* weighs the 30 km it costs to get there and finds the 34 km route while expanding fewer sites than UCS. The first line of output is a check worth copying into your own code: admissibility is a promise, so test it.</p>
+<div class="admonition tip">
+<p class="admonition-title">Common heuristic mistakes</p>
+<ul>
+<li>Using Manhattan distance when diagonal moves cost 1. A diagonal step reduces the Manhattan distance by 2, so it overestimates and A* can return a longer path. Use the larger of the two coordinate differences instead.</li>
+<li>Mixing units. If costs are travel times, divide the distance by the fastest possible speed, or the estimate can overestimate.</li>
+<li>A heuristic so expensive to compute that it costs more time than the expansions it saves.</li>
+</ul>
+</div>
+
+<h2>Constraint satisfaction</h2>
+<p>Some problems care about the final arrangement, not the path to it. In a timetable, a rota or a Sudoku, the order in which you fill things in does not matter, as long as the result breaks no rules. These are <strong>constraint satisfaction problems</strong> (CSPs): a set of <strong>variables</strong>, a <strong>domain</strong> of possible values for each, and <strong>constraints</strong> on which combinations are allowed.</p>
+<p>The basic algorithm is <strong>backtracking</strong>: assign one variable at a time, check the constraints straight away, and undo the most recent choice when something breaks. Two additions make it practical. <strong>Forward checking</strong>: after each assignment, delete the values that are now impossible from the domains of neighbouring variables, and back up as soon as any domain is empty, instead of finding the dead end several levels deeper. <strong>Minimum remaining values</strong> (MRV): always assign next the variable with the fewest values left, so the hardest decisions come first and failures come early.</p>
+<p>Here is a week of maintenance visits. Each technician does one job a day; calibration must come after the new belt and the firmware update before the optics clean; one site opens only on Wednesday; and the battery swap shares a van with the inspection, so they happen on the same day.</p>
+<pre><code class="language-python">def forward_check(var, a, assignment, domains, cons):
+    """Remove values that clash with var=a from unassigned neighbours' domains."""
+    pruned = dict(domains)
+    for y, ok in cons[var]:
+        if y not in assignment:
+            pruned[y] = [b for b in domains[y] if ok(a, b)]
+            if not pruned[y]:
+                return None               # a neighbour has no value left: dead end
+    return pruned
+
+def backtrack(domains, cons, assignment=None, fc=True, stats=None):
+    assignment = {} if assignment is None else assignment
+    if len(assignment) == len(domains):
+        return dict(assignment)
+    # Most constrained variable first: the one with the fewest values left (MRV)
+    var = min((v for v in domains if v not in assignment), key=lambda v: len(domains[v]))
+    for a in domains[var]:
+        if all(ok(a, assignment[y]) for y, ok in cons[var] if y in assignment):
+            stats["assignments"] += 1
+            assignment[var] = a
+            pruned = forward_check(var, a, assignment, domains, cons) if fc else domains
+            if pruned is not None:
+                result = backtrack(pruned, cons, assignment, fc, stats)
+                if result:
+                    return result
+            del assignment[var]           # undo, then try the next value
+    return None
+
+JOBS = {"belt P-117": "Ana", "calibrate P-117": "Ana", "inspect P-310": "Ana",
+        "firmware P-204": "Ben", "optics P-204": "Ben", "battery P-310": "Ben"}
+DAYS = ["Mon", "Tue", "Wed"]
+domains = {job: [0, 1, 2] for job in JOBS}
+domains["inspect P-310"] = [2]            # site P-310 only opens on Wednesday
+cons = {job: [] for job in JOBS}
+
+def constrain(x, y, ok):                  # ok(a, b) says whether x=a, y=b is allowed
+    cons[x].append((y, ok))
+    cons[y].append((x, lambda b, a: ok(a, b)))
+
+for x in JOBS:
+    for y in JOBS:
+        if x &lt; y and JOBS[x] == JOBS[y]:
+            constrain(x, y, lambda a, b: a != b)        # one job per technician per day
+constrain("belt P-117", "calibrate P-117", lambda a, b: a &lt; b)    # calibrate after the belt
+constrain("firmware P-204", "optics P-204", lambda a, b: a &lt; b)
+constrain("inspect P-310", "battery P-310", lambda a, b: a == b)  # they share the van
+
+stats = {"assignments": 0}
+schedule = backtrack(domains, cons, stats=stats)
+for d, day in enumerate(DAYS):
+    print(day, sorted(job for job, v in schedule.items() if v == d))
+print(stats)</code></pre>
+<pre><code class="language-text">Mon ['belt P-117', 'firmware P-204']
+Tue ['calibrate P-117', 'optics P-204']
+Wed ['battery P-310', 'inspect P-310']
+{'assignments': 6}</code></pre>
+<p>Six assignments for six variables: forward checking and MRV steered straight to the answer without a single backtrack. To see how much they matter, try the classic N-queens puzzle, placing \(n\) queens on an \(n \times n\) board so that no two share a row, column or diagonal:</p>
+<pre><code class="language-python">def queens(n):
+    domains = {c: list(range(n)) for c in range(n)}     # the row of the queen in column c
+    cons = {c: [(c2, lambda r1, r2, d=abs(c - c2): r1 != r2 and abs(r1 - r2) != d)
+                for c2 in range(n) if c2 != c] for c in range(n)}
+    return domains, cons
+
+for n in [8, 12, 16]:
+    for fc in [False, True]:
+        stats = {"assignments": 0}
+        backtrack(*queens(n), fc=fc, stats=stats)
+        print(f"n={n:3}  forward checking={fc!s:5}  assignments={stats['assignments']:6}")
+stats = {"assignments": 0}
+backtrack(*queens(100), stats=stats)
+print(f"n=100  forward checking=True   assignments={stats['assignments']:6}")</code></pre>
+<pre><code class="language-text">n=  8  forward checking=False  assignments=   113
+n=  8  forward checking=True   assignments=    75
+n= 12  forward checking=False  assignments=   261
+n= 12  forward checking=True   assignments=   153
+n= 16  forward checking=False  assignments= 10052
+n= 16  forward checking=True   assignments=    44
+n=100  forward checking=True   assignments=   185</code></pre>
+<p>Without forward checking no domain ever shrinks, so MRV has nothing to go on and the columns are filled in order; the work explodes as \(n\) grows. With it, a hundred queens take 185 assignments.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: solve a Sudoku as a constraint problem</p>
+<ol>
+<li>Make one variable per cell, keyed by <code>(row, col)</code>. Its domain is the given digit, or 1 to 9 if the cell is blank. Use this puzzle, read row by row with 0 for a blank: <code>530070000 600195000 098000060 800060003 400803001 700020006 060000280 000419005 000080079</code>.</li>
+<li>Add a not-equal constraint between every pair of <strong>peers</strong>: cells in the same row, column or 3 by 3 box. Each cell has 20 peers.</li>
+<li>Solve it with <code>backtrack</code>, print the grid, and compare the number of assignments with <code>fc=True</code> and <code>fc=False</code>.</li>
+<li>Stretch: try a much harder puzzle, <code>800000000 003600000 070090200 050007000 000045700 000100030 001000068 008500010 090000400</code>.</li>
+</ol>
+<p>You are done when the first puzzle is solved in exactly 81 assignments with forward checking (no backtracking at all) and a few thousand without it.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">PUZZLE = ("530070000" "600195000" "098000060"
+          "800060003" "400803001" "700020006"
+          "060000280" "000419005" "000080079")
+HARD = ("800000000" "003600000" "070090200"
+        "050007000" "000045700" "000100030"
+        "001000068" "008500010" "090000400")
+cells = [(r, c) for r in range(9) for c in range(9)]
+
+def peers(a, b):
+    same_box = (a[0] // 3, a[1] // 3) == (b[0] // 3, b[1] // 3)
+    return a != b and (a[0] == b[0] or a[1] == b[1] or same_box)
+
+different = lambda x, y: x != y
+sudoku_cons = {a: [(b, different) for b in cells if peers(a, b)] for a in cells}
+print("peers per cell:", len(sudoku_cons[(0, 0)]))
+
+def solve_sudoku(puzzle, fc=True):
+    doms = {(r, c): [int(puzzle[9 * r + c])] if puzzle[9 * r + c] != "0"
+            else list(range(1, 10)) for r, c in cells}
+    stats = {"assignments": 0}
+    return backtrack(doms, sudoku_cons, fc=fc, stats=stats), stats["assignments"]
+
+solution, n = solve_sudoku(PUZZLE)
+for r in range(9):
+    print(" ".join(str(solution[(r, c)]) for c in range(9)))
+print("forward checking:", n, "assignments")
+print("plain backtracking:", solve_sudoku(PUZZLE, fc=False)[1], "assignments")
+print("hard puzzle, forward checking:", solve_sudoku(HARD)[1], "assignments")</code></pre>
+<pre><code class="language-text">peers per cell: 20
+5 3 4 6 7 8 9 1 2
+6 7 2 1 9 5 3 4 8
+1 9 8 3 4 2 5 6 7
+8 5 9 7 6 1 4 2 3
+4 2 6 8 5 3 7 9 1
+7 1 3 9 2 4 8 5 6
+9 6 1 5 3 7 2 8 4
+2 8 7 4 1 9 6 3 5
+3 4 5 2 8 6 1 7 9
+forward checking: 81 assignments
+plain backtracking: 4238 assignments
+hard puzzle, forward checking: 10122 assignments</code></pre>
+<p>The givens have one value each, so MRV places them first, and forward checking then does what a person does with a pencil: "this cell can only be a 4". On the easy puzzle that alone is enough. The hard puzzle needs real search, about ten thousand assignments, still a fraction of a second. Stronger propagation, such as arc consistency (keep pruning until no domain changes), would cut that further.</p>
+</details>
+
+<h3>The industrial versions</h3>
+<p>Real scheduling, routing and configuration problems are handed to mature solvers, and the engineer's job is to <em>model</em> the problem well. <strong>SAT solvers</strong> decide whether a formula over true/false variables can be satisfied, and handle huge industrial instances in chip and software verification. <strong>SMT solvers</strong> such as Z3 add arithmetic and other theories. <strong>Constraint programming</strong> and <strong>integer programming</strong> solvers build rosters, timetables and delivery routes; Google's open-source <strong>OR-Tools</strong> packages a strong one, CP-SAT, along with routing libraries. You declare the variables and constraints, the solver does the search, and for optimisation problems it reports how far its answer could be from the best possible. This is also a good division of labour with an LLM: the model turns a messy request into a constraint model, and the solver returns an answer that is guaranteed to satisfy it.</p>
+
+<h2>Adversarial search: playing games</h2>
+<p>In a game an opponent picks every other move, and they are trying to beat you. A plan that ignores them is useless, so the search has to consider their replies too. The classic setting is a two-player, zero-sum game in which both players see everything: chess, Go, tic-tac-toe.</p>
+
+<h3>Minimax and alpha-beta pruning</h3>
+<p><strong>Minimax</strong> assumes the opponent always replies with the move that is worst for you, and chooses the move whose worst case is best. A finished game has a fixed value for the maximising player X (here +1 for a win, 0 for a draw, -1 for a loss), and every other position takes its value from its children:</p>
+\[ V(s) = \max_a V(\text{result}(s, a)) \ \text{if X is to move}, \qquad V(s) = \min_a V(\text{result}(s, a)) \ \text{if O is to move} \]
+<p><strong>Alpha-beta pruning</strong> gets the same answer with far less work. It tracks \(\alpha\), the score X can already guarantee, and \(\beta\), the score O can already hold X to. As soon as \(\alpha \ge \beta\) in some position, one player has a better option elsewhere and will never let the game reach this position, so its remaining moves are skipped.</p>
+<pre><code class="language-python">from functools import lru_cache
+
+LINES = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6),
+         (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
+
+def winner(b):
+    for i, j, k in LINES:
+        if b[i] != "." and b[i] == b[j] == b[k]:
+            return b[i]
+    return None
+
+def legal(b):      return [i for i, v in enumerate(b) if v == "."]
+def play(b, i, p): return b[:i] + p + b[i + 1:]
+def other(p):      return "O" if p == "X" else "X"
+
+def minimax(b, player, alpha=-2, beta=2, prune=True, stats=None):
+    """Value of board b for X (+1 win, 0 draw, -1 loss) with `player` to move."""
+    stats["nodes"] += 1
+    w = winner(b)
+    if w or "." not in b:
+        return {"X": 1, "O": -1, None: 0}[w]
+    values = []
+    for i in legal(b):
+        v = minimax(play(b, i, player), other(player), alpha, beta, prune, stats)
+        values.append(v)
+        if player == "X":
+            alpha = max(alpha, v)         # X can already guarantee at least alpha
+        else:
+            beta = min(beta, v)           # O can already hold X to at most beta
+        if prune and alpha &gt;= beta:
+            break                         # the other player would never allow this line
+    return max(values) if player == "X" else min(values)
+
+for prune in [False, True]:
+    stats = {"nodes": 0}
+    v = minimax("." * 9, "X", prune=prune, stats=stats)
+    print(f"alpha-beta={prune!s:5}  value={v}  nodes searched={stats['nodes']:,}")
+
+@lru_cache(maxsize=None)                  # a transposition table: each position solved once
+def value(b, player):
+    w = winner(b)
+    if w or "." not in b:
+        return {"X": 1, "O": -1, None: 0}[w]
+    vals = [value(play(b, i, player), other(player)) for i in legal(b)]
+    return max(vals) if player == "X" else min(vals)
+
+def perfect_move(b, player):
+    pick = max if player == "X" else min
+    return pick(legal(b), key=lambda i: value(play(b, i, player), other(player)))
+
+print("value", value("." * 9, "X"), "from", value.cache_info().currsize, "distinct positions")</code></pre>
+<pre><code class="language-text">alpha-beta=False  value=0  nodes searched=549,946
+alpha-beta=True   value=0  nodes searched=18,297
+value 0 from 5478 distinct positions</code></pre>
+<p>Tic-tac-toe is a draw with perfect play, as every child eventually discovers. Pruning cut the search 30-fold without changing the answer; with good move ordering, alpha-beta can search about twice as deep as plain minimax in the same time. The cached <code>value</code> function shows another trick every game engine uses. The full game tree has 549,946 nodes but only 5,478 distinct positions, because the same position arises from different move orders, so a <strong>transposition table</strong> solves each position once.</p>
+<p>Chess has around 35 legal moves per position and games last dozens of moves, so no engine searches to the end. It stops at a depth limit and scores the positions there with an <strong>evaluation function</strong>. Deep Blue used a hand-tuned evaluation on custom hardware. Stockfish, the strongest open-source engine, still runs alpha-beta search but scores positions with a small neural network.</p>
+
+<h3>Monte Carlo tree search</h3>
+<p>Go resisted this recipe for decades: there are around 250 moves per position and nobody could write a good evaluation function. <strong>Monte Carlo tree search</strong> (MCTS) needs neither a full search nor an evaluation function. It estimates how good a move is by playing many fast, random games from it, and it spends those games unevenly: more on moves that look promising, while still trying the others now and then.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 560 300" role="img" aria-label="The four steps of one Monte Carlo tree search iteration, select, expand, simulate and backpropagate, repeated in a loop, beside a small tree showing the selected path, the newly added node and a random playout below it.">
+<rect class="box" x="40" y="15" width="300" height="50" rx="6"/>
+<text x="56" y="36">1. Select</text>
+<text x="56" y="54" font-size="12" class="muted">follow the best UCT score down the tree</text>
+<rect class="box" x="40" y="85" width="300" height="50" rx="6"/>
+<text x="56" y="106">2. Expand</text>
+<text x="56" y="124" font-size="12" class="muted">add a child for one untried move</text>
+<rect class="box" x="40" y="155" width="300" height="50" rx="6"/>
+<text x="56" y="176">3. Simulate</text>
+<text x="56" y="194" font-size="12" class="muted">play random moves to the end of the game</text>
+<rect class="box" x="40" y="225" width="300" height="50" rx="6"/>
+<text x="56" y="246">4. Backpropagate</text>
+<text x="56" y="264" font-size="12" class="muted">add the result to every node on the path</text>
+<path class="wire" d="M190 65 V85 M185 79 L190 85 L195 79"/>
+<path class="wire" d="M190 135 V155 M185 149 L190 155 L195 149"/>
+<path class="wire" d="M190 205 V225 M185 219 L190 225 L195 219"/>
+<path class="wire" d="M40 250 H24 V40 H40 M34 35 L40 40 L34 45"/>
+<text x="14" y="145" font-size="12" class="muted" text-anchor="middle" transform="rotate(-90 14 145)">repeat</text>
+<path class="wire" d="M460 30 L400 95 M460 30 L520 95 M460 95 L435 160"/>
+<path class="accent-stroke" d="M460 30 L460 95 L485 160 L485 220"/>
+<path class="wire" d="M485 230 l-8 10 l16 10 l-16 10 l16 10 l-8 10" stroke-dasharray="3 3"/>
+<circle class="box" cx="460" cy="30" r="10"/>
+<circle class="box" cx="400" cy="95" r="10"/>
+<circle class="box" cx="460" cy="95" r="10"/>
+<circle class="box" cx="520" cy="95" r="10"/>
+<circle class="box" cx="435" cy="160" r="10"/>
+<circle class="box" cx="485" cy="160" r="10"/>
+<circle class="accent" cx="485" cy="220" r="10"/>
+<text x="440" y="34" text-anchor="end" font-size="12" class="muted">root</text>
+<text x="503" y="224" font-size="12" class="muted">new</text>
+<text x="503" y="262" font-size="12" class="muted">playout</text>
+<text x="485" y="294" text-anchor="middle" font-size="12" class="muted">win, draw or loss</text>
+</svg>
+<figcaption>One MCTS iteration. Repeat it hundreds of times, then play the most visited move.</figcaption>
+</figure>
+<p>Choosing which child to descend into is a <strong>multi-armed bandit</strong> problem: each move is a slot machine with an unknown payout. UCT (upper confidence bounds applied to trees, Kocsis and Szepesvári, 2006) picks the child with the highest</p>
+\[ \frac{W_i}{N_i} + c\sqrt{\frac{\ln N}{N_i}}, \]
+<p>where \(W_i / N_i\) is the child's average result so far (exploitation), \(N\) is the parent's visit count, and the second term grows for children that have rarely been tried (exploration). You will meet this trade-off again in lesson <a data-ref="reinforcement-learning"></a>.</p>
+<pre><code class="language-python">import random
+
+class Node:
+    def __init__(self, board, player, parent=None, move=None):
+        self.board, self.player, self.parent, self.move = board, player, parent, move
+        self.children = []
+        self.untried = [] if winner(board) else legal(board)
+        self.visits, self.score = 0, 0.0  # score for the player who moved INTO this node
+
+def uct(child, parent_visits, c):
+    return (child.score / child.visits
+            + c * math.sqrt(math.log(parent_visits) / child.visits))
+
+def mcts(board, player, iterations=500, c=1.4, rng=random):
+    root = Node(board, player)
+    for _ in range(iterations):
+        node = root
+        # 1. Selection: descend through fully expanded nodes by the UCT score
+        while not node.untried and node.children:
+            node = max(node.children, key=lambda ch: uct(ch, node.visits, c))
+        # 2. Expansion: add one untried move as a new child
+        if node.untried:
+            i = node.untried.pop(rng.randrange(len(node.untried)))
+            child = Node(play(node.board, i, node.player), other(node.player), node, i)
+            node.children.append(child)
+            node = child
+        # 3. Simulation: play random moves to the end of the game
+        b, p = node.board, node.player
+        while not winner(b) and "." in b:
+            b, p = play(b, rng.choice(legal(b)), p), other(p)
+        w = winner(b)
+        # 4. Backpropagation: update every node on the path back to the root
+        while node:
+            node.visits += 1
+            mover = other(node.player)
+            node.score += 1.0 if w == mover else 0.5 if w is None else 0.0
+            node = node.parent
+    return max(root.children, key=lambda ch: ch.visits).move   # the most visited move
+
+def match(x_player, o_player, games, seed=0):
+    rng, tally = random.Random(seed), {"X": 0, "O": 0, None: 0}
+    for _ in range(games):
+        b, p = "." * 9, "X"
+        while not winner(b) and "." in b:
+            move = (x_player if p == "X" else o_player)(b, p, rng)
+            b, p = play(b, move, p), other(p)
+        tally[winner(b)] += 1
+    return {"X wins": tally["X"], "O wins": tally["O"], "draws": tally[None]}
+
+randomly = lambda b, p, rng: rng.choice(legal(b))
+perfectly = lambda b, p, rng: perfect_move(b, p)
+for n in [20, 200, 1000]:
+    player = lambda b, p, rng, n=n: mcts(b, p, n, rng=rng)
+    print(f"perfect X vs MCTS({n:4}) as O:", match(perfectly, player, 20))
+player = lambda b, p, rng: mcts(b, p, 200, rng=rng)
+print("MCTS( 200) as X vs random O: ", match(player, randomly, 20))</code></pre>
+<pre><code class="language-text">perfect X vs MCTS(  20) as O: {'X wins': 19, 'O wins': 0, 'draws': 1}
+perfect X vs MCTS( 200) as O: {'X wins': 8, 'O wins': 0, 'draws': 12}
+perfect X vs MCTS(1000) as O: {'X wins': 0, 'O wins': 0, 'draws': 20}
+MCTS( 200) as X vs random O:  {'X wins': 19, 'O wins': 0, 'draws': 1}</code></pre>
+<p>With 20 simulations per move, MCTS loses almost every game against perfect play; with 1,000 it never loses. Nobody told it anything about tic-tac-toe strategy. It is also an <strong>anytime</strong> algorithm: stop it whenever you like and take the most visited move.</p>
+<div class="admonition warning">
+<p class="admonition-title">Whose point of view?</p>
+<p>The classic MCTS bug is scoring results from the wrong player's perspective, so the tree carefully finds the opponent's best moves and plays them. In the code above, each node's score is from the point of view of the player who made the move into it, which is exactly what its parent needs when choosing between children.</p>
+</div>
+
+<h3>AlphaGo and AlphaZero: search plus learned intuition</h3>
+<p>DeepMind's AlphaGo, which beat Lee Sedol in 2016, combined MCTS with two neural networks: a <strong>policy network</strong> that suggests promising moves, first trained on human expert games, and a <strong>value network</strong> that estimates who is winning a position. AlphaGo Zero and then AlphaZero (Silver et al., 2017) dropped the human games: a single network with a policy head and a value head learns entirely from games against itself, and the same algorithm mastered Go, chess and shogi.</p>
+<p>The networks change two steps of the loop you just wrote. Selection uses the policy's prior \(P(s, a)\) to focus on plausible moves:</p>
+\[ a^* = \arg\max_a \left[ Q(s, a) + c\,P(s, a)\,\frac{\sqrt{N(s)}}{1 + N(s, a)} \right] \]
+<p>and the random playout disappears: a new leaf is scored by the value network instead. Training closes the loop. The move probabilities that come out of a search, proportional to the visit counts, are better than the network's raw policy, so the network is trained to imitate them and to predict the final result of each self-play game. Search improves the network, and the better network makes the next search stronger. MuZero (2019) went one step further and learned its own model of the game, so it could plan without being given the rules. That pairing of fast learned intuition with slow, deliberate search is one of the most important ideas in modern AI, and it comes back at the end of this lesson.</p>
+
+<hr data-session="3">
+<h2>Knowledge and logic</h2>
+<p>Search needs a description of the problem; logic is a way of writing down what you know so that a program can draw conclusions from it. In <strong>propositional logic</strong>, facts are symbols that are true or false (<code>battery_low</code>, <code>no_data</code>) and rules combine them: if <code>no_data</code> and <code>battery_low</code>, then <code>power_fault</code>. <strong>Forward chaining</strong> starts from the known facts and fires every rule whose premises all hold, adding its conclusion, until nothing new appears. That loop was the inference engine of the <strong>expert systems</strong> of the 1980s.</p>
+<pre><code class="language-python">RULES = [
+    ({"no_data", "battery_low"}, "power_fault"),
+    ({"no_data", "battery_ok"}, "comms_fault"),
+    ({"comms_fault", "modem_light_off"}, "replace_modem"),
+    ({"power_fault", "panel_dirty"}, "clean_panel"),
+    ({"power_fault"}, "send_spare_battery"),
+]
+
+def forward_chain(facts, rules):
+    facts = set(facts)
+    changed = True
+    while changed:                        # keep firing rules until nothing new appears
+        changed = False
+        for premises, conclusion in rules:
+            if premises &lt;= facts and conclusion not in facts:
+                facts.add(conclusion)
+                changed = True
+                print("  ", " and ".join(sorted(premises)), "=&gt;", conclusion)
+    return facts
+
+cases = [{"no_data", "battery_ok", "modem_light_off"},
+         {"no_data", "battery_low", "panel_dirty"},
+         {"no_data", "modem_light_flashing"}]
+for facts in cases:
+    print(sorted(facts))
+    derived = forward_chain(facts, RULES) - facts
+    print("   conclusions:", sorted(derived) or "none")</code></pre>
+<pre><code class="language-text">['battery_ok', 'modem_light_off', 'no_data']
+   battery_ok and no_data =&gt; comms_fault
+   comms_fault and modem_light_off =&gt; replace_modem
+   conclusions: ['comms_fault', 'replace_modem']
+['battery_low', 'no_data', 'panel_dirty']
+   battery_low and no_data =&gt; power_fault
+   panel_dirty and power_fault =&gt; clean_panel
+   power_fault =&gt; send_spare_battery
+   conclusions: ['clean_panel', 'power_fault', 'send_spare_battery']
+['modem_light_flashing', 'no_data']
+   conclusions: none</code></pre>
+<p>The first two cases work well, and every conclusion comes with a reason you can print and audit. The third shows the weakness. Nobody anticipated a flashing modem light, so the system says nothing at all. Real knowledge is also uncertain (a low battery <em>usually</em> means a power fault), and plain rules cannot say "usually"; MYCIN bolted "certainty factors" onto its rules for exactly this reason. Add a thousand rules from different experts and you get contradictions and a maintenance burden nobody can carry. Rules remain the right tool where the logic is genuinely crisp and must be auditable: tax and benefit calculations, eligibility checks, compliance policies, and deterministic guardrails around a model (lesson <a data-ref="safety-security"></a>).</p>
+
+<h2>Reasoning under uncertainty</h2>
+<p>Probability is the fix for "usually". Bayes' rule from lesson <a data-ref="math-for-ai"></a> updates a belief in the light of evidence:</p>
+\[ P(\text{cause} \mid \text{evidence}) = \frac{P(\text{evidence} \mid \text{cause})\,P(\text{cause})}{P(\text{evidence})} \]
+<p>The difficulty is scale. A full joint distribution over \(n\) true/false variables needs \(2^n - 1\) numbers, which is hopeless beyond a few dozen variables.</p>
+
+<h3>Bayesian networks</h3>
+<p>A <strong>Bayesian network</strong> is a directed graph in which each variable depends directly only on its parents, an idea Judea Pearl did much to develop in the 1980s. The joint distribution then splits into small local tables:</p>
+\[ P(x_1, \ldots, x_n) = \prod_{i=1}^{n} P\big(x_i \mid \text{parents}(x_i)\big) \]
+<p>Here is a station that has gone silent. A storm or a hardware fault can cause an outage, and a storm also tends to knock out the neighbouring station. Eight numbers describe the network, where the full joint would need fifteen. <strong>Inference by enumeration</strong> answers any question by adding up the joint probability of every world consistent with the evidence:</p>
+<pre><code class="language-python">from itertools import product
+
+# node: (parents, P(node is True | each combination of parent values))
+NET = {
+    "storm":     ((), {(): 0.10}),
+    "fault":     ((), {(): 0.02}),
+    "outage":    (("storm", "fault"), {(True, True): 0.95, (True, False): 0.30,
+                                       (False, True): 0.90, (False, False): 0.01}),
+    "neighbour": (("storm",), {(True,): 0.70, (False,): 0.05}),
+}
+
+def joint(world):
+    """P(world) as the product of each node's probability given its parents."""
+    p = 1.0
+    for var, (parents, cpt) in NET.items():
+        p_true = cpt[tuple(world[q] for q in parents)]
+        p *= p_true if world[var] else 1 - p_true
+    return p
+
+def query(var, evidence):
+    """P(var is True | evidence), by summing the joint over every possible world."""
+    totals = {True: 0.0, False: 0.0}
+    for values in product([True, False], repeat=len(NET)):
+        world = dict(zip(NET, values))
+        if all(world[k] == v for k, v in evidence.items()):
+            totals[world[var]] += joint(world)
+    return totals[True] / (totals[True] + totals[False])
+
+print(f"P(fault)                             = {query('fault', {}):.3f}")
+print(f"P(fault | outage)                    = {query('fault', {'outage': True}):.3f}")
+print(f"P(fault | outage, neighbour offline) = "
+      f"{query('fault', {'outage': True, 'neighbour': True}):.3f}")
+print(f"P(fault | outage, neighbour online)  = "
+      f"{query('fault', {'outage': True, 'neighbour': False}):.3f}")</code></pre>
+<pre><code class="language-text">P(fault)                             = 0.020
+P(fault | outage)                    = 0.321
+P(fault | outage, neighbour offline) = 0.092
+P(fault | outage, neighbour online)  = 0.481</code></pre>
+<p>The outage raises the chance of a hardware fault from 2% to 32%. Then the neighbour changes the picture. If it is offline too, a storm explains the outage and the fault probability falls to 9%; if it is fine, a storm is unlikely and the fault probability rises to 48%. This is <strong>explaining away</strong>, and it is exactly the reasoning that if-then rules cannot do. Enumeration takes time exponential in the number of hidden variables, so real systems use smarter exact methods (variable elimination) or sampling, and probabilistic programming languages such as Stan and PyMC let you write such models as code and run the inference automatically.</p>
+
+<h3>Naive Bayes</h3>
+<p>A <strong>Naive Bayes</strong> classifier is the simplest useful Bayesian network: the class is the only parent, and every word is a child that depends only on the class. "Naive" refers to that assumption, that words are independent once you know the class. It is plainly false and works surprisingly well anyway. To classify a document, pick the class \(c\) with the highest score</p>
+\[ \log P(c) + \sum_{i} \log P(w_i \mid c), \qquad P(w \mid c) = \frac{\text{count}(w, c) + \alpha}{\sum_{w'} \text{count}(w', c) + \alpha\,|V|} \]
+<p>where \(|V|\) is the vocabulary size and \(\alpha\), usually 1, is <strong>Laplace smoothing</strong>. Here it is from scratch on 24 hand-written maintenance tickets:</p>
+<pre><code class="language-python">import re
+from collections import Counter
+import numpy as np
+
+TRAIN = [
+    ("battery voltage dropped overnight and the unit shut down", "power"),
+    ("solar panel covered in dust, battery not charging", "power"),
+    ("power supply fuse blown after the storm", "power"),
+    ("unit reboots when the heater switches on, voltage sags", "power"),
+    ("battery swollen, replaced and charging again", "power"),
+    ("mains adapter failed, running on battery only", "power"),
+    ("no charge current from the solar regulator", "power"),
+    ("low voltage alarm every night since the cold spell", "power"),
+    ("modem not connecting to the network since Tuesday", "comms"),
+    ("no data uploaded, cellular signal very weak at the site", "comms"),
+    ("SIM card expired so the station stopped reporting", "comms"),
+    ("data arrives hours late, upload retries keep failing", "comms"),
+    ("router firmware update broke the network connection", "comms"),
+    ("antenna cable damaged, signal lost intermittently", "comms"),
+    ("server rejects uploads with an authentication error", "comms"),
+    ("station offline on the dashboard but power is fine", "comms"),
+    ("temperature readings stuck at the same value", "sensor"),
+    ("humidity sensor reads above 100 percent", "sensor"),
+    ("ozone readings drift upward until recalibration", "sensor"),
+    ("filter wheel position error during the morning scan", "sensor"),
+    ("pressure sensor noisy, spikes in the readings", "sensor"),
+    ("calibration check failed, readings off by ten percent", "sensor"),
+    ("spectrometer dark counts much higher than last month", "sensor"),
+    ("wind speed sensor bearing worn, readings too low", "sensor"),
+]
+TEST = [
+    ("battery flat again after two cloudy days", "power"),
+    ("voltage sags whenever the pump starts", "power"),
+    ("fuse replaced but the unit still has no power", "power"),
+    ("readings missing whenever the voltage drops", "power"),
+    ("no network connection after the modem reboot", "comms"),
+    ("uploads failing, signal strength poor", "comms"),
+    ("station stopped reporting data to the server", "comms"),
+    ("no data since the storm although the battery is fine", "comms"),
+    ("readings drift after the filter change", "sensor"),
+    ("humidity readings stuck, sensor needs calibration", "sensor"),
+    ("temperature sensor spikes every hour", "sensor"),
+]
+
+def tokens(text):
+    return re.findall(r"\b\w\w+\b", text.lower())   # the same rule scikit-learn uses
+
+class NaiveBayes:
+    def fit(self, texts, labels, alpha=1.0):
+        self.classes = sorted(set(labels))
+        self.vocab = {w for t in texts for w in tokens(t)}
+        self.log_prior, self.log_lik = {}, {}
+        for c in self.classes:
+            docs = [t for t, y in zip(texts, labels) if y == c]
+            counts = Counter(w for t in docs for w in tokens(t))
+            self.log_prior[c] = np.log(len(docs) / len(texts))
+            # Laplace smoothing: pretend every word was seen alpha extra times
+            denom = sum(counts.values()) + alpha * len(self.vocab)
+            self.log_lik[c] = {w: np.log((counts[w] + alpha) / denom) for w in self.vocab}
+        return self
+
+    def scores(self, text):
+        """log P(class) + sum of log P(word | class), skipping words never seen."""
+        words = [w for w in tokens(text) if w in self.vocab]
+        return {c: self.log_prior[c] + sum(self.log_lik[c][w] for w in words)
+                for c in self.classes}
+
+    def predict(self, text):
+        s = self.scores(text)
+        return max(s, key=s.get)
+
+texts, labels = zip(*TRAIN)
+nb = NaiveBayes().fit(texts, labels)
+preds = [nb.predict(t) for t, _ in TEST]
+print("from scratch accuracy:", round(np.mean([p == y for p, (_, y) in zip(preds, TEST)]), 2))
+for (text, y), p in zip(TEST, preds):
+    if p != y:
+        print(f"  wrong: {text!r} -&gt; {p} (should be {y})")
+for c in nb.classes:          # words much more likely in this class than in any other
+    lift = {w: nb.log_lik[c][w] - max(nb.log_lik[o][w] for o in nb.classes if o != c)
+            for w in sorted(nb.vocab)}
+    print(f"  {c:7}", sorted(lift, key=lift.get, reverse=True)[:4])</code></pre>
+<pre><code class="language-text">from scratch accuracy: 0.91
+  wrong: 'readings missing whenever the voltage drops' -&gt; sensor (should be power)
+  comms   ['data', 'network', 'signal', 'station']
+  power   ['battery', 'voltage', 'and', 'charging']
+  sensor  ['readings', 'sensor', 'percent', '100']</code></pre>
+<p>Two lessons hide in that output. The one mistake happens because "readings", a strong sensor word, outweighs "voltage": a bag of words cannot tell that the voltage drop is the cause. And "and" shows up as evidence for power purely because of how 24 tickets happen to be worded, which is how small data creates spurious features. Scikit-learn's version agrees exactly, down to the scores:</p>
+<pre><code class="language-python">from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+vec = CountVectorizer()
+X_train = vec.fit_transform(texts)
+X_test = vec.transform([t for t, _ in TEST])
+clf = MultinomialNB(alpha=1.0).fit(X_train, labels)
+sk_preds = clf.predict(X_test)
+print("scikit-learn accuracy:", round(np.mean(sk_preds == [y for _, y in TEST]), 2))
+print("same predictions as ours:", list(sk_preds) == preds)
+
+# The scores match too: log P(class) + sum of log P(word | class) for each test ticket
+ours = np.array([[nb.scores(t)[c] for c in nb.classes] for t, _ in TEST])
+print("same scores as ours:", np.allclose(ours, clf.predict_joint_log_proba(X_test)))</code></pre>
+<pre><code class="language-text">scikit-learn accuracy: 0.91
+same predictions as ours: True
+same scores as ours: True</code></pre>
+<div class="admonition tip">
+<p class="admonition-title">Two details that break hand-written Naive Bayes</p>
+<p>Add log probabilities instead of multiplying probabilities: the product of a few hundred small numbers underflows to zero. And smooth the counts: without \(\alpha\), a single word never seen with a class in training gives that class probability zero, whatever the rest of the document says.</p>
+</div>
+<p>Naive Bayes trains in one pass over the data and makes a good first baseline for text classification; early spam filters were built on it. Compare it with embeddings plus logistic regression (lesson <a data-ref="embeddings-vector-search"></a>) or a zero-shot prompt (lesson <a data-ref="prompt-engineering"></a>) before reaching for anything bigger.</p>
+
+<h2>Planning</h2>
+<p>Planning is search where each state is a description of the world. The <strong>STRIPS</strong> representation (Fikes and Nilsson, 1971, built for the Shakey robot) describes a state as the set of facts that are true, and each action by three sets: <strong>preconditions</strong> that must hold, an <strong>add list</strong> of facts it makes true and a <strong>delete list</strong> of facts it makes false. Everything else stays as it was. Here is a technician's repair visit, and the planner is the BFS from session 1, unchanged:</p>
+<pre><code class="language-python">from typing import NamedTuple
+
+class Action(NamedTuple):
+    name: str
+    pre: frozenset                        # facts that must be true beforehand
+    add: frozenset                        # facts the action makes true
+    delete: frozenset                     # facts the action makes false
+
+def act(name, pre, add, delete=()):
+    return Action(name, frozenset(pre), frozenset(add), frozenset(delete))
+
+ACTIONS = [
+    act("load spare part", {"at_depot"}, {"have_part"}),
+    act("drive to site", {"at_depot"}, {"at_site"}, {"at_depot"}),
+    act("drive to depot", {"at_site"}, {"at_depot"}, {"at_site"}),
+    act("power down", {"at_site", "powered"}, {"unpowered"}, {"powered"}),
+    act("power up", {"at_site", "unpowered"}, {"powered"}, {"unpowered"}),
+    act("fit part", {"at_site", "have_part", "unpowered"}, {"part_fitted"}, {"have_part"}),
+    act("calibrate", {"at_site", "powered", "part_fitted"}, {"calibrated"}),
+]
+
+def applicable(state):
+    for a in ACTIONS:
+        if a.pre &lt;= state:
+            yield (state - a.delete) | a.add, a.name
+
+def plan(initial, goal):
+    """Breadth-first search over sets of facts, with the search code from session 1."""
+    succ = lambda s: [(s2, 1) for s2, _ in applicable(s)]
+    path, expanded = uninformed_search(frozenset(initial), lambda s: goal &lt;= s, succ)
+    names = [next(n for s2, n in applicable(s) if s2 == t) for s, t in zip(path, path[1:])]
+    return names, expanded
+
+steps, n = plan({"at_depot", "powered"}, {"part_fitted", "calibrated", "at_depot"})
+for i, step in enumerate(steps, 1):
+    print(i, step)
+print(n, "states expanded")</code></pre>
+<pre><code class="language-text">1 load spare part
+2 drive to site
+3 power down
+4 fit part
+5 power up
+6 calibrate
+7 drive to depot
+17 states expanded</code></pre>
+<p>Nobody wrote that sequence down; the planner derived it, including the easily forgotten steps of powering down before fitting the part and powering up again before calibrating. With \(k\) facts there are up to \(2^k\) states, so real planners need heuristics, and the clever part is that they compute them automatically from the action descriptions. A common one solves a relaxed problem that ignores delete lists, the same relaxation idea that gave you Manhattan distance. The standard language today is <strong>PDDL</strong>, read by planners such as Fast Downward, and planning software has run logistics, factories and even a spacecraft: NASA's Remote Agent experiment flew on Deep Space 1 in 1999.</p>
+
+<h2>Classical AI inside LLM agents</h2>
+<p>An LLM agent (lesson <a data-ref="agents"></a>) has exactly the strengths classical AI lacked: it understands messy language, has broad common sense and needs no hand-written model of the domain. It also has the opposite weaknesses: it guesses, it is not exhaustive and it offers no guarantees. The strongest systems pair the two. Four patterns keep recurring.</p>
+<ul>
+<li><strong>The LLM models, a solver solves.</strong> The model turns a request into a constraint model, a PDDL problem, a SQL query or a call to a route planner, and a classical tool produces an answer that is correct by construction. The LLM+P paper (2023) did this for PDDL planning; with tool use you can do it with OR-Tools today.</li>
+<li><strong>Search over the model's outputs.</strong> Tree of Thoughts (Yao et al., 2023) runs breadth-first or depth-first search over partial solutions, with the LLM proposing next steps and rating how promising each one is. The model plays the part of the successor function and the heuristic. Best-of-\(n\) sampling with a scorer is the simplest version of the same idea.</li>
+<li><strong>Generate, then verify.</strong> A checker tests what the model proposes: unit tests for generated code, a schema for structured output, a proof checker for mathematics, a validator for plans. AlphaGeometry (2024) paired a language model that suggests geometric constructions with a symbolic engine that does the deduction; FunSearch (2023) had an LLM propose programs and an automatic evaluator score them inside an evolutionary search.</li>
+<li><strong>Plan, act, check, replan.</strong> The ReAct loop decides one step at a time. For long tasks, have the agent write a plan, check each step's preconditions before acting, and replan when an observation contradicts the plan. That is classical planning and execution monitoring with a learned model inside.</li>
+</ul>
+<p>The common thread is the AlphaZero idea: a fast learned model proposes, and search plus verification make the result reliable. A verifier is only as good as what it checks, so that is where the engineering effort belongs.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: check a plan before you run it</p>
+<ol>
+<li>Write <code>validate(initial, goal, steps)</code>. It applies a list of action names from <code>ACTIONS</code> one at a time and returns <code>(True, "goal reached")</code>, or <code>False</code> with a message naming the first step whose preconditions fail and the missing facts, or the goal facts still false at the end.</li>
+<li>Check the planner's plan, then this one, as if an LLM had proposed it: <code>["load spare part", "drive to site", "fit part", "calibrate", "drive to depot"]</code>.</li>
+<li>Add an action <code>log visit</code> that needs <code>at_depot</code> and <code>calibrated</code> and adds <code>logged</code>. Add <code>logged</code> to the goal, replan, and validate the new plan.</li>
+</ol>
+<p>You are done when the proposed plan is rejected at step 3 because <code>unpowered</code> is missing, and the new plan has eight steps ending with <code>log visit</code>.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">def validate(initial, goal, steps):
+    """Simulate a plan one step at a time. Return (ok, message)."""
+    by_name = {a.name: a for a in ACTIONS}
+    state = frozenset(initial)
+    for i, name in enumerate(steps, 1):
+        if name not in by_name:
+            return False, f"step {i}: unknown action {name!r}"
+        a = by_name[name]
+        missing = a.pre - state
+        if missing:
+            return False, f"step {i} ({name}): preconditions not met: {sorted(missing)}"
+        state = (state - a.delete) | a.add
+    missing = goal - state
+    return not missing, "goal reached" if not missing else f"goal not met: {sorted(missing)}"
+
+init, goal = {"at_depot", "powered"}, {"part_fitted", "calibrated", "at_depot"}
+print("planner's plan:", validate(init, goal, steps))
+proposed = ["load spare part", "drive to site", "fit part", "calibrate", "drive to depot"]
+print("proposed plan: ", validate(init, goal, proposed))
+
+if "log visit" not in [a.name for a in ACTIONS]:       # safe to re-run this cell
+    ACTIONS.append(act("log visit", {"at_depot", "calibrated"}, {"logged"}))
+new_steps, _ = plan(init, goal | {"logged"})
+print("new plan:")
+for i, step in enumerate(new_steps, 1):
+    print(" ", i, step)
+print("new plan check:", validate(init, goal | {"logged"}, new_steps))</code></pre>
+<pre><code class="language-text">planner's plan: (True, 'goal reached')
+proposed plan:  (False, "step 3 (fit part): preconditions not met: ['unpowered']")
+new plan:
+  1 load spare part
+  2 drive to site
+  3 power down
+  4 fit part
+  5 power up
+  6 calibrate
+  7 drive to depot
+  8 log visit
+new plan check: (True, 'goal reached')</code></pre>
+<p>This is the pattern agents need. The model can propose a plan in any wording, but before anything touches real equipment a dozen lines of deterministic code check it against a model of the world. The error message is also exactly what you would send back to the model so that it can repair its plan, which turns a one-shot guess into a search with a verifier.</p>
+</details>
+
+<h2>Where classical AI lives today</h2>
+<table>
+<thead>
+<tr><th>Technique</th><th>Where it runs today</th></tr>
+</thead>
+<tbody>
+<tr><td>Dijkstra, A* and their variants</td><td>Route planning in maps and navigation, pathfinding in video games, robot motion planning</td></tr>
+<tr><td>Backtracking, constraint propagation, SAT and SMT</td><td>Rostering and timetabling, package dependency resolution, chip and software verification</td></tr>
+<tr><td>Constraint and integer programming</td><td>Vehicle routing, supply chains and crew scheduling, with solvers such as OR-Tools, Gurobi and HiGHS</td></tr>
+<tr><td>Alpha-beta search</td><td>Chess engines such as Stockfish, now with a neural evaluation function</td></tr>
+<tr><td>MCTS with neural networks</td><td>AlphaZero-style players such as Leela Chess Zero and KataGo, and research on planning with learned models</td></tr>
+<tr><td>Rules and logic</td><td>Business rules engines, tax and eligibility calculations, static code analysis, guardrails around LLMs</td></tr>
+<tr><td>Bayesian networks and probabilistic models</td><td>Diagnosis and risk models, probabilistic programming with Stan and PyMC</td></tr>
+<tr><td>Naive Bayes</td><td>Fast baselines for text classification and spam filtering</td></tr>
+<tr><td>Classical planning (PDDL)</td><td>Logistics, manufacturing and space missions, and as a back end for LLM agents</td></tr>
+<tr><td>Search with verifiers</td><td>LLM reasoning and agents: search over steps, best-of-n with tests, proof search</td></tr>
+</tbody>
+</table>
+
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>You need the shortest drive across a road map whose roads have different lengths. Why is breadth-first search the wrong tool?</p>
+<ul>
+<li>It cannot handle maps with loops in them</li>
+<li class="correct">It finds the route with the fewest roads, which need not be the shortest in kilometres</li>
+<li>It always runs out of memory on road maps</li>
+<li>It only works on grids</li>
+</ul>
+<p class="why">BFS is optimal only when every step costs the same. Uniform-cost search and A* order the frontier by path cost instead.</p>
+</div>
+<div class="q">
+<p>What does an admissible heuristic guarantee when you use it with A*?</p>
+<ul>
+<li>A* will expand fewer states than greedy best-first search</li>
+<li>The heuristic equals the true remaining cost</li>
+<li class="correct">The path A* returns is optimal, because the heuristic never overestimates the remaining cost</li>
+<li>A* no longer needs a priority queue</li>
+</ul>
+<p class="why">Because \(h\) never overestimates, the \(f\) value of a state on the best path never exceeds the optimal cost, so A* cannot pop the goal by a worse route first.</p>
+</div>
+<div class="q">
+<p>Compared with plain minimax, what does alpha-beta pruning change?</p>
+<ul>
+<li class="correct">It returns the same value while skipping branches that cannot affect the decision</li>
+<li>It returns an approximate value that is usually close enough</li>
+<li>It only works for games that involve dice</li>
+<li>It needs an evaluation function learned from data</li>
+</ul>
+<p class="why">Pruning is exact. On tic-tac-toe it searched 18,297 nodes instead of 549,946 and still found the draw.</p>
+</div>
+<div class="q">
+<p>In AlphaZero, what takes the place of the random playouts of classic MCTS?</p>
+<ul>
+<li>Many more random playouts</li>
+<li>Alpha-beta search to the end of the game</li>
+<li>A database of human expert games</li>
+<li class="correct">A value network that scores the new leaf, with a policy network guiding which moves to explore</li>
+</ul>
+<p class="why">The value head evaluates leaves and the policy head supplies the priors in the selection rule. Self-play then trains both on the results of the search.</p>
+</div>
+<div class="q">
+<p>A hand-written Naive Bayes classifier gives the class "power" a probability of exactly zero for a ticket that is mostly about batteries, because it also contains one word never seen in a power ticket during training. What fixes it?</p>
+<ul>
+<li>Removing the class prior</li>
+<li class="correct">Laplace smoothing: add a small count \(\alpha\) for every word in every class</li>
+<li>Multiplying probabilities instead of adding their logs</li>
+<li>Training on fewer examples</li>
+</ul>
+<p class="why">Without smoothing, one unseen word has \(P(w \mid c) = 0\), which wipes out the whole product whatever the other words say.</p>
+</div>
+</div>
+
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Many problems become routine once written as states, actions, a goal test and path costs. BFS, DFS, uniform-cost search and A* differ only in which frontier state they expand next.</li>
+<li>Uniform-cost search (Dijkstra) is optimal for non-negative costs. A* adds an admissible heuristic, \(f = g + h\), to stay optimal while expanding far fewer states. Test for the goal when a state is expanded.</li>
+<li>Constraint problems yield to backtracking with forward checking and MRV. In production, model the problem and hand it to a SAT, constraint or integer programming solver such as OR-Tools.</li>
+<li>Alpha-beta is exact and far cheaper than plain minimax. MCTS replaces the evaluation function with simulation, and AlphaZero replaces simulation with learned policy and value networks.</li>
+<li>Rules are auditable but brittle. Bayesian networks handle uncertainty and explaining away, and Naive Bayes is a fast text baseline (smooth the counts, add the logs).</li>
+<li>Strong LLM systems use the AlphaZero split: a learned model proposes, while search, solvers and verifiers make the result reliable.</li>
+</ul>
+</div>
+
+<h3>Go deeper</h3>
+<ul>
+<li>Stuart Russell and Peter Norvig, <em>Artificial Intelligence: A Modern Approach</em>, 4th edition: the standard textbook for everything in this lesson. Python versions of its algorithms are in the <code>aima-python</code> repository on GitHub.</li>
+<li>Richard Sutton, "The Bitter Lesson" (2019): a one-page essay worth rereading every few years.</li>
+<li>David Silver et al., "Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm" (2017), the AlphaZero paper, and "Mastering the game of Go without human knowledge" (<em>Nature</em>, 2017) for AlphaGo Zero.</li>
+<li>Google OR-Tools documentation, especially the CP-SAT solver and the vehicle routing guides.</li>
+<li>Amit Patel, "Introduction to the A* Algorithm" on Red Blob Games: interactive diagrams of BFS, Dijkstra, greedy search and A*.</li>
+<li>Cameron Browne et al., "A Survey of Monte Carlo Tree Search Methods" (2012).</li>
+</ul>

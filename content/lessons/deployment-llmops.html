@@ -149,7 +149,7 @@ CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "
 pip install vllm
 vllm serve Qwen/Qwen2.5-7B-Instruct --max-model-len 16384 --gpu-memory-utilization 0.9
 
-# serve a base model plus your LoRA adapter from lesson 16
+# serve a base model plus your LoRA adapter from lesson 18
 vllm serve Qwen/Qwen2.5-0.5B-Instruct --enable-lora --lora-modules notes=./notes-to-json-lora</code></pre>
 <p>Your lesson <a data-ref="llm-apis"></a> code then works by pointing the OpenAI client at <code>http://localhost:8000/v1</code>, using <code>model="notes"</code> to select the adapter.</p>
 <h3>Why serving is hard: memory and batching</h3>

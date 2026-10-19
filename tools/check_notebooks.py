@@ -9,6 +9,8 @@ because they need something a plain laptop may not have:
     # Uses your own files                       (always skipped)
 
 `%pip install` lines are skipped with --no-install, for an environment that already has the packages.
+Each notebook runs in a fresh temporary folder (a .env file next to it is copied in), so nothing it
+writes ends up in the repository; pass --in-place to run it in its own folder instead.
 
 Usage:
     python tools/check_notebooks.py notebooks/03-ml-fundamentals.ipynb
@@ -21,7 +23,9 @@ import asyncio
 import copy
 import glob
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import nbformat
@@ -60,7 +64,17 @@ def check(path, args):
                 "pass  # skipped install" if line.lstrip().startswith(("%pip", "!pip")) else line
                 for line in cell.source.split("\n")
             )
-    workdir = args.cwd or os.path.dirname(path) or "."
+    # Run in a scratch folder so the files notebooks write (datasets, checkpoints, CSVs) never land in the repo.
+    scratch = None
+    if args.in_place:
+        workdir = os.path.dirname(path) or "."
+    else:
+        scratch = tempfile.mkdtemp(prefix="nbcheck-")
+        workdir = scratch
+        for env in (os.path.join(os.path.dirname(path), ".env"), ".env"):
+            if os.path.exists(env):
+                shutil.copy(env, os.path.join(scratch, ".env"))
+                break
     client = NotebookClient(run, timeout=args.timeout, kernel_name="python3", allow_errors=True,
                             resources={"metadata": {"path": workdir}})
     start = time.time()
@@ -68,6 +82,9 @@ def check(path, args):
         client.execute()
     except (CellExecutionError, CellTimeoutError) as e:
         print(f"  ! {path}: {type(e).__name__}: {str(e)[:300]}")
+    finally:
+        if scratch:
+            shutil.rmtree(scratch, ignore_errors=True)
     failures = []
     for i, cell in enumerate(run.cells):
         if cell.cell_type != "code":
@@ -96,7 +113,8 @@ def main():
     p.add_argument("--run-downloads", action="store_true")
     p.add_argument("--no-install", action="store_true")
     p.add_argument("--timeout", type=int, default=600, help="seconds allowed per cell")
-    p.add_argument("--cwd", help="working directory for the kernel (default: the notebook's folder)")
+    p.add_argument("--in-place", action="store_true",
+                   help="run in the notebook's own folder instead of a temporary one (files it writes stay there)")
     args = p.parse_args()
     paths = sorted({f for pattern in args.paths for f in glob.glob(pattern)})
     ok = all([check(path.replace("\\", "/"), args) for path in paths])
