@@ -1,0 +1,40 @@
+name: Check the course site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install build tools
+        run: |
+          pip install pygments
+          npm ci --prefix tools
+      - name: Site is built from the latest sources, with no broken links
+        run: python tools/build.py --check
+      - name: Notebooks are valid JSON with cleared outputs
+        run: |
+          python - <<'PY'
+          import json, glob, sys
+          bad = []
+          for path in glob.glob("notebooks/**/*.ipynb", recursive=True):
+              nb = json.load(open(path, encoding="utf-8"))
+              for cell in nb["cells"]:
+                  if cell["cell_type"] == "code" and (cell.get("outputs") or cell.get("execution_count")):
+                      bad.append(path)
+                      break
+          if bad:
+              print("Clear the outputs of:", *bad, sep="\n  ")
+              sys.exit(1)
+          print("All notebooks clean.")
+          PY

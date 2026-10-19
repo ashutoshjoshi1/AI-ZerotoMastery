@@ -475,10 +475,10 @@ def page(ctx, *, title, root, body_class, page_id, main, description, toc_html="
 <meta property="og:type" content="website">
 <link rel="icon" href="{root}assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{root}assets/icons/apple-touch-icon.png">
-<link rel="manifest" href="{root}manifest.webmanifest">
 <link rel="stylesheet" href="{root}assets/fonts/fonts.css">
 {css_math}<link rel="stylesheet" href="{root}assets/style.css?v={v}">
 {BOOT}
+<script>if(/^https?:$/.test(location.protocol)){{var m=document.createElement("link");m.rel="manifest";m.href="{root}manifest.webmanifest";document.head.appendChild(m);}}</script>
 </head>
 <body class="{body_class}" data-root="{root}" data-page="{esc(page_id)}">
 <a class="skip" href="#main">Skip to content</a>
@@ -1164,6 +1164,14 @@ def build(out_root, skip_missing=False):
     sync_notebooks(ctx, out_root, written)
     markdown_tables(ctx, out_root, written)
     check_links(out_root, written["files"])
+    # Lesson pages from an older numbering are no longer generated; remove them.
+    current = set(written["files"])
+    written["removed"] = []
+    for old in sorted((out_root / "lessons").glob("*.html")):
+        rel = old.relative_to(out_root).as_posix()
+        if rel not in current:
+            old.unlink()
+            written["removed"].append(rel)
     return ctx, written
 
 
@@ -1180,6 +1188,9 @@ def main():
             _, written = build(tmp, args.skip_missing)
             stale = [f for f in written["files"] if not (ROOT / f).exists() or
                      (ROOT / f).read_text(encoding="utf-8") != (tmp / f).read_text(encoding="utf-8")]
+            expected = set(written["files"])
+            stale += [p.relative_to(ROOT).as_posix() + " (no longer generated; delete it)"
+                      for p in sorted((ROOT / "lessons").glob("*.html")) if p.relative_to(ROOT).as_posix() not in expected]
         for w in WARNINGS:
             print("warning:", w)
         if stale:
@@ -1194,7 +1205,8 @@ def main():
     for w in WARNINGS:
         print("warning:", w)
     print(f"Built {len(ctx['lessons'])} lessons, {ctx['vars']['sessions']} sessions; "
-          f"{len(written['changed'])} of {len(written['files'])} files changed.")
+          f"{len(written['changed'])} of {len(written['files'])} files changed"
+          + (f", {len(written['removed'])} old lesson pages removed." if written["removed"] else "."))
 
 
 if __name__ == "__main__":
