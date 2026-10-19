@@ -62,9 +62,9 @@
 -->
 <h2>Thinking is computation</h2>
 <p>In lesson <a data-ref="prompt-engineering"></a> you asked a model to work through a problem before answering, and it got more right. The reason is mechanical. A transformer does a fixed amount of computation per token (lesson <a data-ref="transformers"></a>), so a model that answers "1368" straight away has had one forward pass per output token to work it out. A model that first writes "6 hours is 21,600 seconds, divided by 15 is 1,440 readings, 5% fail, so 1,368" has given itself hundreds of extra passes, each able to read the intermediate results of the last. The reasoning text is scratch memory.</p>
-<p>Prompted chain-of-thought has two weaknesses. The model was never trained to reason well in that scratch space, so its chains are often linear, confident and wrong: it rarely checks its own steps or backtracks. And you, the prompt writer, decide in advance how much thinking to ask for. A <strong>reasoning model</strong> fixes both. It is trained so that the thinking itself is useful (it tries approaches, notices errors and backs up), and it decides how long to think per question, within a budget you set.</p>
+<p>Prompted chain-of-thought has two weaknesses. The model was never trained to use that scratch space well, so its chains are often linear, confident and wrong: it rarely checks a step or backtracks. And you decide in advance how much thinking to ask for. A <strong>reasoning model</strong> fixes both: it is trained so that the thinking is useful (it tries approaches, notices errors and backs up), and it decides how long to think per question, within a budget you set.</p>
 <h2>Test-time compute: the second scaling axis</h2>
-<p>The scaling laws in lesson <a data-ref="how-llms-are-built"></a> relate accuracy to parameters and training data: spend more at training time and the model gets better at everything, permanently, for a price paid once. <strong>Test-time compute</strong> is spending more at inference time, per question: longer thinking, several attempts, a verifier. It is paid on every query, but you choose where to spend it. A hard question can get a thousand times more computation than an easy one, and an easy one can get almost none.</p>
+<p>The scaling laws in lesson <a data-ref="how-llms-are-built"></a> relate accuracy to parameters and training data: spend more at training time and the model gets better at everything, for a price paid once. <strong>Test-time compute</strong> is spending more at inference time, per question: longer thinking, several attempts, a verifier. It is paid on every query, but you choose where to spend it: a hard question can get a thousand times more computation than an easy one.</p>
 <figure>
 <svg class="diagram" viewBox="0 0 560 250" role="img" aria-label="Accuracy rises with test-time compute per question for both a small and a large model; the curves flatten, and a small model with more thinking can reach the accuracy of a large model answering straight away">
 <path class="wire" d="M60 200 H530"/>
@@ -85,17 +85,17 @@
 </svg>
 <figcaption>Two ways to buy accuracy: a bigger model (paid once, at training time) or more compute per question (paid on every query, but only where you choose to spend it).</figcaption>
 </figure>
-<p>Snell et al. (2024) studied how to allocate a fixed test-time budget and found that the best strategy depends on the question: easier questions gain most from letting the model revise its answer, harder ones from sampling many attempts in parallel and searching among them. "More thinking" is not one knob but a family of techniques, which session 2 builds from scratch.</p>
+<p>Snell et al. (2024) studied how to allocate a fixed test-time budget and found that the best strategy depends on the question: easier questions gain most from letting the model revise its answer, harder ones from sampling many attempts and searching among them. "More thinking" is a family of techniques, not one knob; session 2 builds them from scratch.</p>
 <h3>How reasoning models are trained</h3>
 <p>The recipe has three ingredients. Lessons <a data-ref="advanced-fine-tuning"></a> and <a data-ref="reinforcement-learning"></a> cover the mechanics; here is the shape.</p>
 <ol>
-<li><strong>Reinforcement learning with verifiable rewards.</strong> Take problems whose answers a program can check: maths with a known final answer, code with unit tests, puzzles with a solver. Let the model write a long chain of thought and a final answer, score the answer 1 or 0, and update the model to make the chains that led to correct answers more likely. Nobody writes example reasoning; the model discovers what helps. The DeepSeek-R1 report (2025) showed that this stage alone, applied to a base model, produces long chains with self-checking and backtracking, and that the chains grow longer as training proceeds because longer thinking earns more reward.</li>
-<li><strong>Supervised polishing.</strong> Pure RL produces chains that work but read badly (mixed languages, no structure). A round of supervised fine-tuning on curated reasoning traces, then the usual preference tuning, makes the output usable.</li>
-<li><strong>Distillation.</strong> Collect a large set of (problem, chain of thought, answer) examples from the big reasoning model and fine-tune smaller models on them. The small models pick up the reasoning style and much of the accuracy at a fraction of the inference cost, which is why reasoning-capable models exist at every size.</li>
+<li><strong>Reinforcement learning with verifiable rewards.</strong> Take problems a program can check: maths with a known answer, code with unit tests. Let the model write a chain of thought and an answer, score the answer 1 or 0, and update the model to make the chains that led to correct answers more likely. Nobody writes example reasoning; the model discovers what helps. The DeepSeek-R1 report (2025) showed that this stage alone, applied to a base model, produces long chains with self-checking and backtracking, and that chains grow longer during training because longer thinking earns more reward.</li>
+<li><strong>Supervised polishing.</strong> Pure RL produces chains that work but read badly. Supervised fine-tuning on curated reasoning traces, then the usual preference tuning, makes the output usable.</li>
+<li><strong>Distillation.</strong> Generate (problem, chain of thought, answer) examples with the big model and fine-tune smaller models on them. They pick up the reasoning style and much of the accuracy at a fraction of the cost, which is why reasoning models exist at every size.</li>
 </ol>
-<p>Two consequences matter for engineers. The reward is only about the final answer being marked correct, so the model learns whatever gets it marked correct, including, sometimes, exploiting flaws in the checker (session 3 returns to this). And because the training problems are maths, code and puzzles, that is where the gains are largest; on tasks without a checkable answer the improvement is real but smaller.</p>
+<p>Two consequences for engineers. The reward is only about the answer being marked correct, so the model learns whatever gets it marked correct, sometimes including flaws in the checker (session 3 returns to this). And because the training problems are maths, code and puzzles, that is where the gains are largest.</p>
 <h2>Thinking in an API</h2>
-<p>Providers expose thinking as extra content in the response. With the Anthropic API, current models think by default and the amount is controlled by an <strong>effort</strong> level; the previous generation used an explicit <strong>thinking budget</strong> of tokens, and other providers still do. Either way the response contains <strong>thinking blocks</strong> before the usual text blocks. As in lesson <a data-ref="llm-apis"></a>, <code>client</code> is an <code>anthropic.Anthropic()</code> and <code>MODEL</code> a constant; the notebook's setup cell defines them, plus <code>MODEL_FAST</code> for a cheap model.</p>
+<p>Providers expose thinking as extra content in the response. With the Anthropic API, current models think by default and an <strong>effort</strong> level controls how much; the previous generation used an explicit <strong>thinking budget</strong> of tokens, as other providers still do. Either way the response holds <strong>thinking blocks</strong> before the text blocks. As in lesson <a data-ref="llm-apis"></a>, <code>client</code> and <code>MODEL</code> come from the notebook's setup cell, along with <code>MODEL_FAST</code> for a cheap model.</p>
 <pre><code class="language-python">question = ("A sensor logs one reading every 15 seconds and 5% of readings fail a "
             "quality check. How many good readings does it keep in 6 hours?")
 
@@ -113,10 +113,10 @@ for block in resp.content:                                   # read blocks by ty
         print("ANSWER:", block.text)
 print(resp.stop_reason, "| input", resp.usage.input_tokens,
       "| output incl. thinking", resp.usage.output_tokens)</code></pre>
-<p>Three things to notice. The thinking comes back as a <em>summary</em> if you ask for one, and as an empty block if you do not, but you are billed for all of it either way. The answer is no longer <code>resp.content[0]</code>: read blocks by type, never by position, or your code breaks the day thinking is switched on. And <code>max_tokens</code> covers thinking plus answer, so a cap sized for a one-word reply can be used up before the model says anything; the response then ends with <code>stop_reason == "max_tokens"</code> and no text at all.</p>
+<p>Three things to notice. The thinking comes back as a <em>summary</em> if you ask for one and as an empty block if you do not, and you are billed for all of it either way. The answer is no longer <code>resp.content[0]</code>: read blocks by type, never by position. And <code>max_tokens</code> covers thinking plus answer, so a cap sized for a one-word reply can be used up before the model says anything; the response then ends with <code>stop_reason == "max_tokens"</code> and no text.</p>
 <div class="admonition note">
 <p class="admonition-title">Thinking controls change with every model generation</p>
-<p>At the time of writing, current Claude models take <code>thinking={"type": "adaptive"}</code> and <code>output_config={"effort": ...}</code>, and reject the older <code>budget_tokens</code> setting and non-default sampling temperatures. Older models took <code>thinking={"type": "enabled", "budget_tokens": N}</code>; other providers have a reasoning-effort setting of their own. Keep the model name and its thinking settings together in one place, read the provider's current documentation when you change models, and expect this part of your code to be the first thing that breaks on an upgrade.</p>
+<p>At the time of writing, current Claude models take <code>thinking={"type": "adaptive"}</code> and <code>output_config={"effort": ...}</code>, and reject the older <code>budget_tokens</code> setting and non-default temperatures; other providers have settings of their own. Keep the model name and its thinking settings together in one place and read the current documentation when you change models: this is the part of your code most likely to break on an upgrade.</p>
 </div>
 <h3>Watching it think</h3>
 <p>Thinking adds seconds before the first visible token. Stream, and show progress instead of a blank screen:</p>
@@ -136,9 +136,9 @@ print(resp.stop_reason, "| input", resp.usage.input_tokens,
                 print(event.delta.text, end="", flush=True)
     final = stream.get_final_message()
 print("\n", final.usage.output_tokens, "output tokens")</code></pre>
-<p>Thinking also interleaves with tool use: a model with tools can think, call a tool, read the result and think again within one turn. When you send tool results back, include the thinking blocks from the assistant turn exactly as you received them, so the model continues the same line of reasoning. Session 3 has the example.</p>
+<p>Thinking also interleaves with tool use: a model with tools can think, call a tool, read the result and think again within one turn. When you send tool results back, include the thinking blocks exactly as you received them so the model continues the same line of reasoning. Session 3 has the example.</p>
 <h3>Effort, cost and latency</h3>
-<p>Thinking tokens are output tokens, the expensive kind, and every one of them is generated before the answer starts. Effort is the dial. Wrap the call in a helper that records usage and time, then sweep it on the same question:</p>
+<p>Thinking tokens are output tokens, the expensive kind, all generated before the answer starts. Effort is the dial. Wrap the call in a helper that records usage and time, then sweep it:</p>
 <pre><code class="language-python">import time
 
 PRICE_IN, PRICE_OUT = 2.0, 10.0     # USD per million tokens at the time of writing: check the current price list
@@ -165,7 +165,7 @@ for effort in ["low", "medium", "high"]:
     last_line = text.strip().splitlines()[-1][:60] if text.strip() else "(no text)"
     print(f"{effort:&gt;6}: {usage.output_tokens:&gt;5} output tokens, {secs:4.1f}s, "
           f"${cost(usage):.4f}  -&gt;  {last_line}")</code></pre>
-<p>Output tokens and latency climb with effort, often by a large factor between the lowest and highest levels, and on an easy question the final line will be the same at every level. That is the economics of reasoning models in one line: you pay for thinking whether or not the question needed it, so decide the effort per request, not once for the whole application.</p>
+<p>Output tokens and latency climb with effort, and on an easy question the final line is the same at every level. That is the economics of reasoning models in one line: you pay for thinking whether or not the question needed it, so choose the effort per request, not once for the whole application.</p>
 <h2>When reasoning helps, and when it does not</h2>
 <table>
 <thead>
@@ -179,17 +179,17 @@ for effort in ["low", "medium", "high"]:
 <tr>
 <td>Multi-step arithmetic, unit conversions, dates</td>
 <td>Yes, a lot</td>
-<td>Every intermediate value has to be written down to be used</td>
+<td>Intermediate values must be written down to be used</td>
 </tr>
 <tr>
 <td>Writing and debugging code</td>
 <td>Yes</td>
-<td>The model can trace execution and test hypotheses before committing</td>
+<td>It can trace execution and test hypotheses first</td>
 </tr>
 <tr>
 <td>Planning under many constraints</td>
 <td>Yes</td>
-<td>Constraints interact; a first guess is rarely consistent with all of them</td>
+<td>Constraints interact; a first guess rarely satisfies all of them</td>
 </tr>
 <tr>
 <td>Analysis of a long document against several criteria</td>
@@ -209,7 +209,7 @@ for effort in ["low", "medium", "high"]:
 <tr>
 <td>Latency-critical paths (autocomplete, voice)</td>
 <td>No</td>
-<td>Seconds of silence break the experience; use a fast model and route the hard cases elsewhere</td>
+<td>Seconds of silence break the experience; route hard cases to a slower path</td>
 </tr>
 </tbody>
 </table>
@@ -219,7 +219,7 @@ for effort in ["low", "medium", "high"]:
 <li>Write six questions with checkable answers: three one-step lookups and three multi-step word problems. Ask for the answer in a fixed format so a small <code>grade()</code> function can mark it.</li>
 <li>Run each question at effort <code>low</code> and <code>high</code> with <code>ask()</code>, recording whether it was right, output tokens and seconds.</li>
 <li>For each (class, effort) pair compute cost per correct answer.</li>
-<li>You are done when you can state, with numbers, which class should run at which effort. Expect the lookups to be just as accurate at low effort for a fraction of the cost, and the word problems to be where high effort earns its price.</li>
+<li>You are done when you can state, with numbers, which class should run at which effort.</li>
 </ol>
 </div>
 <details class="solution">
@@ -251,7 +251,7 @@ for label, qs in [("easy", easy), ("hard", hard)]:
         per_correct = dollars / right if right else float("inf")
         print(f"{label} / {effort:&gt;4}: {right}/{len(qs)} correct, {tokens:&gt;5} output tokens, "
               f"{secs:4.1f}s, ${dollars:.4f} total, ${per_correct:.4f} per correct answer")</code></pre>
-<p>What to observe: on the lookups, both effort levels are usually 3/3 and the low-effort rows use far fewer output tokens and seconds, so the cost per correct answer is several times lower. On the word problems the picture can go either way with a current model (the questions are not very hard), but the token and time columns always grow with effort. If every row is 3/3, make the hard questions harder until a difference appears; that boundary is the information you want.</p>
+<p>What to observe: on the lookups both effort levels are usually 3/3 and the low-effort rows use far fewer tokens and seconds, so cost per correct answer is several times lower. On the word problems the result can go either way with a current model, but tokens and time always grow with effort. If every row is 3/3, make the hard questions harder until a difference appears; that boundary is the information you want.</p>
 </details>
 <hr data-session="2">
 <h2>Test-time compute you can build yourself</h2>
@@ -282,9 +282,9 @@ for label, qs in [("easy", easy), ("hard", hard)]:
 <li><strong>Sequential revision</strong>: ask the model to critique and improve its own answer, repeatedly.</li>
 <li><strong>Search over steps</strong>: build the solution step by step, scoring partial solutions and keeping the best few (beam search) or exploring a tree of alternatives (lesson <a data-ref="classical-ai"></a>).</li>
 </ul>
-<p>Before paying for API calls, simulate. A simulation shows the regimes in a minute, and the regimes are what matter.</p>
+<p>Before paying for API calls, simulate: a simulation shows the regimes in a minute, and the regimes are what matter.</p>
 <h3>Self-consistency: sample many, vote</h3>
-<p>Wang et al. (2022) observed that a model's correct answers agree with each other, while its mistakes are spread over many different wrong answers. Vote, and the agreement wins. The condition is exact. Let \(p\) be the probability that one sample is correct and \(q\) the probability of the single most common wrong answer. As \(N\) grows, majority voting drives accuracy towards 1 if \(p > q\) and towards 0 if \(p &lt; q\). Note that \(p\) does not need to exceed one half; it only has to beat each wrong answer individually. Simulate it:</p>
+<p>Wang et al. (2022) observed that a model's correct answers agree with each other, while its mistakes are spread over many different wrong answers. Vote, and the agreement wins. The condition is exact: let \(p\) be the probability that one sample is correct and \(q\) the probability of the single most common wrong answer. As \(N\) grows, majority voting drives accuracy towards 1 if \(p > q\) and towards 0 if \(p &lt; q\). \(p\) need not exceed one half; it only has to beat each wrong answer individually.</p>
 <pre><code class="language-python">import numpy as np
 
 rng = np.random.default_rng(0)
@@ -311,10 +311,10 @@ N= 9   spread 0.939   close 0.463   lumped 0.309
 N=15   spread 0.986   close 0.510   lumped 0.263
 N=25   spread 0.999   close 0.566   lumped 0.206
 N=51   spread 1.000   close 0.652   lumped 0.119</code></pre>
-<p>Three regimes. With the errors spread (\(p = 0.6\), no distractor above 0.1) voting is almost free accuracy: five samples take the solver from 60% to 84%. In a close race (\(p = 0.35\) against a distractor at 0.3) voting still helps, but slowly, and the first few samples barely move it. With a lumped error (a systematic mistake the model makes half the time) voting <em>hurts</em>, and the more you sample the more reliably you get the wrong answer. Self-consistency amplifies whatever the model's majority tendency is: it cancels random errors and cements systematic ones.</p>
-<p>A common mistake is to apply it to open-ended outputs. Voting needs answers that can be compared for equality: a number, a label, a short canonical string. For prose there is nothing to vote on, and you need a verifier instead.</p>
+<p>Three regimes. With the errors spread (\(p = 0.6\), no distractor above 0.1) voting is almost free accuracy: five samples take the solver from 60% to 84%. In a close race (\(p = 0.35\) against a distractor at 0.3) voting helps slowly, and the first few samples barely move it. With a lumped error (a systematic mistake made half the time) voting <em>hurts</em>, and the more you sample the more reliably you get the wrong answer. Self-consistency cancels random errors and cements systematic ones.</p>
+<p>A common mistake is to apply it to open-ended outputs. Voting needs answers that can be compared for equality: a number, a label, a canonical string. For prose there is nothing to vote on; you need a verifier.</p>
 <h3>Best-of-N with a verifier</h3>
-<p>If you can score answers, they do not need to agree: generate N and keep the best score. The verifier can be a program (unit tests, a type checker, a constraint check), a second model prompted as a judge, or a trained <strong>reward model</strong>. Its quality decides everything. Model it as a scorer that separates correct from wrong answers by a margin \(d\), plus a small fraction of wrong answers that fool it completely:</p>
+<p>If you can score answers, they need not agree: generate N and keep the best score. The verifier can be a program (unit tests, a type checker, a constraint check), a second model prompted as a judge, or a trained <strong>reward model</strong>, and its quality decides everything. Model it as a scorer that separates correct from wrong answers by a margin \(d\), with a small fraction of wrong answers that fool it completely:</p>
 <pre><code class="language-python">def best_of_n_accuracy(p, n, d, blind=0.0, trials=20000):
     """Sample n answers, let a verifier score each one and keep the top score.
     Correct answers score N(d, 1) and wrong ones N(0, 1), so d is how well the
@@ -337,10 +337,10 @@ N= 8   weak verifier 0.615   strong 0.921   strong with blind spots 0.784
 N=16   weak verifier 0.705   strong 0.988   strong with blind spots 0.720
 N=32   weak verifier 0.764   strong 0.998   strong with blind spots 0.543
 N=64   weak verifier 0.819   strong 1.000   strong with blind spots 0.325</code></pre>
-<p>A strong verifier turns a 30% solver into a near-perfect one by \(N = 16\); a weak one still helps, slowly. The third column is the one to remember. With blind spots (here 3% of wrong answers score above every correct one) accuracy rises until about \(N = 8\) and then <em>falls</em>: the more candidates you generate, the more likely one lands in a blind spot, and the selection step then prefers it. Sampling harder against an imperfect judge finds the judge's mistakes. This is Goodhart's law in miniature, and the same mechanism as reward hacking in training: the thing being optimised stops measuring what you wanted.</p>
-<p>So before you build best-of-N, measure the verifier. Its precision on a labelled set bounds the accuracy you can reach, and its false-positive rate sets the \(N\) beyond which more sampling makes things worse.</p>
+<p>A strong verifier turns a 30% solver into a near-perfect one by \(N = 16\); a weak one helps slowly. The third column is the one to remember. With blind spots (here 3% of wrong answers score above every correct one) accuracy rises until about \(N = 8\) and then <em>falls</em>: the more candidates you generate, the more likely one lands in a blind spot, and the selection step then prefers it. Sampling harder against an imperfect judge finds the judge's mistakes. This is Goodhart's law in miniature, and the same mechanism as reward hacking in training.</p>
+<p>So measure the verifier before you build best-of-N: its precision bounds the accuracy you can reach, and its false-positive rate sets the \(N\) beyond which more sampling makes things worse.</p>
 <h3>Outcome versus process: verify the steps</h3>
-<p>A verifier that sees only the final answer is an <strong>outcome reward model</strong> (ORM). A <strong>process reward model</strong> (PRM) scores every step. Lightman et al. (2023) trained a PRM on step-level human labels for maths solutions and found it selected correct solutions more reliably than an ORM trained on the same problems. The reason is combinatorial. Suppose a solution has \(s\) steps and the solver gets each one right with probability \(q\). Sampling whole solutions and checking the outcome succeeds with probability \(1 - (1 - q^s)^N\). Checking after every step and resampling only that step (a perfect PRM, \(k\) candidates per step) succeeds with \((1 - (1 - q)^k)^s\):</p>
+<p>A verifier that sees only the final answer is an <strong>outcome reward model</strong> (ORM); a <strong>process reward model</strong> (PRM) scores every step. Lightman et al. (2023) trained a PRM on step-level human labels for maths solutions and found it selected correct solutions more reliably than an ORM. The reason is combinatorial. If a solution has \(s\) steps and the solver gets each right with probability \(q\), sampling whole solutions and checking the outcome succeeds with probability \(1 - (1 - q^s)^N\), while checking every step and resampling only that step (a perfect PRM, \(k\) candidates per step) succeeds with \((1 - (1 - q)^k)^s\):</p>
 <pre><code class="language-python">def outcome_search(q, steps, n):
     """Sample n complete solutions; a perfect outcome verifier keeps a correct one if any exists."""
     return 1 - (1 - q ** steps) ** n
@@ -356,10 +356,10 @@ for budget in [1, 2, 4, 8]:
 2 candidate(s) per step:  outcome search 0.456   process search 0.783
 4 candidate(s) per step:  outcome search 0.704   process search 0.990
 8 candidate(s) per step:  outcome search 0.912   process search 1.000</code></pre>
-<p>With six steps at 80% each, a whole solution is right only 26% of the time. Eight whole samples get you to 91%; eight candidates <em>per step</em> get you to effectively 100% for the same number of generated steps. Step-level feedback is dense feedback. The price is the verifier: step labels are expensive to collect, a learned PRM is noisy, and the search code is more complex. Beam search generalises the idea (keep the best \(b\) partial solutions at each step); tree search adds backtracking.</p>
-<p><strong>Sequential revision</strong> ("here is your answer; find and fix any mistakes") is the cheapest technique to implement and the least reliable without a real check. Models are poor at spotting their own errors from the text alone, and often "fix" a correct answer into a wrong one. Give the critic something concrete: a test result, a constraint violation, a tool output. With that, revision loops are the backbone of coding agents (lesson <a data-ref="agents"></a>).</p>
+<p>With six steps at 80% each, a whole solution is right only 26% of the time. Eight whole samples get you to 91%; eight candidates <em>per step</em> get you to effectively 100% for the same number of generated steps. Step-level feedback is dense feedback. The price is the verifier: step labels are expensive, a learned PRM is noisy, and the search code is more complex. Beam search generalises the idea (keep the best \(b\) partial solutions at each step), and Monte Carlo tree search adds backtracking: lesson <a data-ref="classical-ai"></a> implements MCTS from scratch and shows how AlphaZero combines search with learned policy and value networks, the same search-plus-verifier idea applied to games.</p>
+<p><strong>Sequential revision</strong> ("find and fix any mistakes in your answer") is the cheapest technique to implement and the least reliable without a real check: models are poor at spotting their own errors from the text alone and often "fix" a correct answer into a wrong one. Give the critic something concrete, such as a test result or a constraint violation. With that, revision loops are the backbone of coding agents (lesson <a data-ref="agents"></a>).</p>
 <h3>The same experiment with a real model</h3>
-<p>Now with real calls. The problem set is ten arithmetic word problems with integer answers, written by hand so there is no doubt about the gold answers, plus a parser that pulls the final number out of a reply:</p>
+<p>Now with real calls. The problem set is ten hand-written arithmetic word problems with integer answers, plus a parser that pulls the final number out of a reply:</p>
 <pre><code class="language-python">import re
 
 PROBLEMS = [
@@ -389,7 +389,7 @@ print(len(PROBLEMS), "problems")
 print(extract_number("Total is 2,100 - 280 = 1,820 kg.\nAnswer: 1,820"), extract_number("about 34.0"), extract_number("no digits here"))</code></pre>
 <pre><code class="language-text">10 problems
 1820 34 None</code></pre>
-<p>Three conditions: a plain fast answer (low effort), self-consistency with five low-effort samples, and one high-effort answer. The original self-consistency paper sampled at a moderate temperature; current Claude models reject non-default temperatures, which is fine, because the default sampling is already random and repeated calls give different chains.</p>
+<p>Three conditions: a plain answer at low effort, self-consistency with five low-effort samples, and one high-effort answer. The self-consistency paper sampled at a moderate temperature; current Claude models reject non-default temperatures, which is fine, because default sampling is already random and repeated calls give different chains.</p>
 <pre><code class="language-python">from collections import Counter
 
 def plain(q):                                  # the fast path: low effort, answer only
@@ -420,7 +420,7 @@ def evaluate(method, **kw):
 evaluate(plain)
 evaluate(self_consistency, n=5)
 evaluate(with_thinking)</code></pre>
-<p>Do not expect drama. These problems are easy for a current model, so the plain path may already get most of them, and both expensive conditions will cost several times more for a point or two. You will see something like "plain 8/10, voting 9/10 at five times the tokens, thinking 10/10 at two or three times the tokens", but your numbers will differ, and with ten problems a difference of one is noise. The method is what carries over. Make the problems harder (more steps, trickier units, a trap or two) and the gap opens. Keep your numbers; session 3 reuses them.</p>
+<p>Do not expect drama. These problems are easy for a current model, so the plain path may already get most of them, and the expensive conditions will cost several times more for a point or two. You will see something like "plain 8/10, voting 9/10 at five times the tokens, thinking 10/10 at two or three times the tokens", but your numbers will differ, and with ten problems a difference of one is noise. Make the problems harder and the gap opens. Keep your numbers; session 3 reuses them.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: map where voting helps</p>
 <ol>
@@ -464,7 +464,7 @@ for i in range(len(ps)):
         ax.text(j, i, f"{gain[i, j]:+.2f}", ha="center", va="center", fontsize=8)
 fig.colorbar(im, label="accuracy gain, N = 15"); ax.set_title("Where majority voting helps")
 plt.tight_layout(); plt.show()</code></pre>
-<p>The top-left corner is negative because at \(p = 0.2\) even an evenly spread error (share 0.3 of the remaining 0.8, so \(q = 0.24\)) beats the correct answer. Along the diagonal where \(p \approx q\) the gain is near zero and noisy, which is the regime where voting wastes money. The large positive region is where self-consistency belongs: a solver that is usually right and wrong in varied ways.</p>
+<p>The top-left corner is negative: at \(p = 0.2\) even an evenly spread error (share 0.3 of the remaining 0.8, so \(q = 0.24\)) beats the correct answer. Along the diagonal \(p \approx q\) the gain is near zero and noisy: voting wastes money there. The large positive region, a solver usually right and wrong in varied ways, is where self-consistency belongs.</p>
 </details>
 <hr data-session="3">
 <h2>Prompting a model that thinks</h2>
@@ -488,9 +488,9 @@ If the data are inconsistent (a future calibration date), say so instead of gues
 &lt;instruments&gt;
 ...
 &lt;/instruments&gt;</code></pre>
-<p>Other differences: skip "think step by step" (the model already does, and some providers decline requests that ask it to reproduce its hidden reasoning verbatim); put all the inputs in, since the model reasons about what you gave it and cannot ask for more; and specify the final format so your code can skip the explanation. Few-shot examples still help with format, less with reasoning.</p>
+<p>Also: skip "think step by step" (the model already does, and some providers decline requests to reproduce hidden reasoning verbatim); put all the inputs in, since the model reasons about what you gave it and cannot ask for more; and specify the final format so your code can skip the explanation. Few-shot examples still help with format, less with reasoning.</p>
 <h3>Give it a way to check its work</h3>
-<p>Thinking is reasoning about the model's own beliefs. A tool turns a belief into a fact. The most effective thing you can do for a reasoning model on a checkable task is to hand it the checker: a calculator, a test runner, a schema validator, a query against the real database. Here the model gets a safe arithmetic tool; with thinking on, it thinks, calls the tool, reads the result and continues (the full tool loop is lesson <a data-ref="agents"></a>):</p>
+<p>Thinking is reasoning about the model's own beliefs; a tool turns a belief into a fact. The most effective thing you can do for a reasoning model on a checkable task is to hand it the checker: a calculator, a test runner, a schema validator, the real database. Here the model gets a safe arithmetic tool and, with thinking on, thinks, calls it, reads the result and continues (the full tool loop is lesson <a data-ref="agents"></a>):</p>
 <pre><code class="language-python">import ast, operator
 
 OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
@@ -552,11 +552,11 @@ v = resp.parsed_output                           # a validated Verdict
 print(v.answer, v.confidence, v.assumptions)
 print("gold:", PROBLEMS[4][1], "| output tokens:", resp.usage.output_tokens)</code></pre>
 <h3>The visible reasoning is not the cause</h3>
-<p>It is tempting to read the thinking as an explanation. Be careful. The chain of thought is text the model generated, conditioned on the question; the answer is text generated after it. Nothing forces the second to be caused by the first. Turpin et al. (2023) showed that a model's stated reasoning can leave out the factor that actually changed its answer, such as a bias planted in the prompt, and later work on reasoning models found the same with hints: the model uses the hint and does not mention it. Add that providers return summaries, and that RL training rewards answers rather than honest narration, and the conclusion is that <strong>reasoning faithfulness</strong> is not guaranteed.</p>
-<p>Practically: use the visible reasoning for debugging and for intuition, never as the sole basis for a safety or compliance decision ("the model said it checked the policy, so it did"). Check outputs with independent tools and evaluations (lesson <a data-ref="evaluation"></a>), treat reasoning monitoring as one signal among several (lesson <a data-ref="safety-security"></a>), and see lesson <a data-ref="interpretability"></a> for what it takes to find out what a model actually computed.</p>
+<p>It is tempting to read the thinking as an explanation. Be careful. The chain of thought is text the model generated, conditioned on the question; the answer is text generated after it, and nothing forces the second to be caused by the first. Turpin et al. (2023) showed that a model's stated reasoning can leave out the factor that actually changed its answer, such as a bias planted in the prompt, and later work on reasoning models found the same with hints: the model uses the hint and does not mention it. Providers also return summaries, and RL rewards answers rather than honest narration. <strong>Reasoning faithfulness</strong> is not guaranteed.</p>
+<p>So use the visible reasoning for debugging and intuition, never as the sole basis for a safety or compliance decision ("the model said it checked the policy, so it did"). Verify outputs with independent tools and evaluations (lesson <a data-ref="evaluation"></a>), treat reasoning monitoring as one signal among several (lesson <a data-ref="safety-security"></a>), and see lesson <a data-ref="interpretability"></a> for what it takes to learn what a model actually computed.</p>
 <h2>Evaluating reasoning systems</h2>
 <h3>pass@k and pass^k</h3>
-<p>Because reasoning systems sample, a single accuracy number hides what you need. Two metrics. <strong>pass@k</strong> is the probability that at least one of \(k\) attempts is correct: the right metric when you have a reliable verifier and can afford \(k\) attempts, as with code and tests. <strong>pass^k</strong> is the probability that all \(k\) attempts are correct: what a user who runs your agent on the same task every day experiences, and the one that measures reliability. From \(n\) samples per problem of which \(c\) are correct, the unbiased estimator of Chen et al. (2021) and the plug-in estimate are</p>
+<p>Because reasoning systems sample, one accuracy number hides what you need. <strong>pass@k</strong> is the probability that at least one of \(k\) attempts is correct: the right metric when a reliable verifier can pick the good attempt, as with code and tests. <strong>pass^k</strong> is the probability that all \(k\) attempts are correct: what a user who runs your agent on the same task every day experiences, and the one that measures reliability. From \(n\) samples per problem of which \(c\) are correct, the unbiased estimator of Chen et al. (2021) and the plug-in estimate are</p>
 \[ \text{pass@}k = 1 - \frac{\binom{n-c}{k}}{\binom{n}{k}}, \qquad \text{pass}^k \approx \left(\frac{c}{n}\right)^k . \]
 <pre><code class="language-python">from math import comb
 
@@ -581,7 +581,7 @@ k= 5   pass@k 0.921   pass^k 0.147
 k=10   pass@k 0.965   pass^k 0.066</code></pre>
 <p>Same system, same samples: pass@10 is 97% and pass^10 is 7%. A report that quotes pass@k without saying so describes a best case with a free oracle. For a product, ask which of the two you are selling.</p>
 <h3>Accuracy per dollar and per second</h3>
-<p>Every technique in this lesson trades money and time for accuracy, so compare them on the same axes: accuracy against cost per question, and accuracy against latency. Plot each configuration as a point and keep the Pareto frontier, the points that no cheaper point matches. With the simulation, measuring cost in units of one plain sample and charging the verifier 20% per sample:</p>
+<p>Every technique here trades money and time for accuracy, so compare them on the same axes: accuracy against cost per question, and against latency. Plot each configuration as a point and keep the Pareto frontier, the points no cheaper point matches. In the simulation, with cost in units of one plain sample and the verifier charged 20% per sample:</p>
 <pre><code class="language-python">def pareto(points):
     """Keep the (name, cost, accuracy) points that no cheaper point matches or beats."""
     kept, best = [], -1.0
@@ -605,7 +605,7 @@ for name, c, a in pareto(points):
      vote N=9: cost   9.0   accuracy 0.941   accuracy per unit cost 0.105
   best-of N=9: cost  10.8   accuracy 0.952   accuracy per unit cost 0.088
     vote N=15: cost  15.0   accuracy 0.988   accuracy per unit cost 0.066</code></pre>
-<p>Do the same with the real numbers from session 2, with cost from <code>usage</code> and your prices, and run a <strong>budget sweep</strong> over effort levels and \(N\). The frontier usually has a knee beyond which each extra point of accuracy costs more than the last. Report the knee, not just the maximum. Lesson <a data-ref="evaluation"></a> has the statistics; with ten problems, treat a difference of one as noise.</p>
+<p>Do the same with the real numbers from session 2, with cost from <code>usage</code> and your prices, and run a <strong>budget sweep</strong> over effort levels and \(N\). The frontier usually has a knee beyond which each extra point of accuracy costs more than the last; report the knee, not just the maximum. Lesson <a data-ref="evaluation"></a> has the statistics.</p>
 <h3>Routing</h3>
 <p>Most traffic does not need reasoning. A <strong>router</strong> sends each request to the cheapest model likely to handle it and escalates the rest. The simplest router is a rule:</p>
 <pre><code class="language-python">HARD_SIGNS = [
@@ -631,7 +631,7 @@ for q in questions:
      fast: Translate 'good morning' into French.
 reasoning: A technician drives to site A, 42 km away, then 18 km further to site B,
 reasoning: Plan a 3-day calibration schedule for 5 sites subject to the constraints</code></pre>
-<p>Better routers use a signal rather than a rule: a cheap model asked to rate the difficulty, the fast model's own confidence from the structured output above (escalate below a threshold), or <em>disagreement</em>: take two cheap samples, return the answer if they agree, escalate if they do not. The disagreement router reuses the self-consistency insight in reverse: agreement among cheap samples is evidence that the question was easy. Whichever you choose, evaluate the router as a system, accuracy and cost per question against always-fast and always-reasoning baselines, on your own traffic.</p>
+<p>Better routers use a signal rather than a rule: a cheap model asked to rate the difficulty, the fast model's own confidence from the structured output above (escalate below a threshold), or <em>disagreement</em>: take two cheap samples, return the answer if they agree, escalate if they do not. Agreement among cheap samples is evidence that the question was easy. Whichever you choose, evaluate the router as a system: accuracy and cost per question against always-fast and always-reasoning baselines, on your own traffic.</p>
 <h3>Failure modes</h3>
 <table>
 <thead>
@@ -716,7 +716,7 @@ for policy in ["fast", "reasoning", "disagreement"]:
 <pre><code class="language-text">        fast: accuracy 0.671   cost per question  1.00   escalated 0%
    reasoning: accuracy 0.898   cost per question 15.00   escalated 0%
 disagreement: accuracy 0.888   cost per question  9.27   escalated 48%</code></pre>
-<p>The router recovers nearly all of the reasoning model's accuracy at well under two thirds of its cost, and it escalates about half the questions, because two samples disagree often when the fast model is only moderately sure. With three samples and a vote the escalation rate drops and the cost with it, at a small loss of accuracy. Fewer distractors hurt the router, since wrong answers then agree with each other more often, which is exactly the lumped regime from session 2. The optional real version is a few lines on top of <code>ask()</code>:</p>
+<p>The router recovers nearly all of the reasoning model's accuracy at well under two thirds of its cost, escalating about half the questions. Three samples with a vote escalate less and cost less, at a small loss of accuracy. Fewer distractors hurt the router, because wrong answers then agree with each other more often: the lumped regime from session 2. The real version is a few lines on top of <code>ask()</code>:</p>
 <pre><code class="language-python">def disagreement_router(q):
     """Two cheap samples; return their answer if they agree, else escalate to the reasoning model."""
     a_text, a_use, s1 = ask(q + SUFFIX, effort="low", max_tokens=2000, model=MODEL_FAST)
@@ -785,10 +785,10 @@ evaluate(disagreement_router)      # compare with the three rows from session 2<
 <div class="admonition takeaways">
 <p class="admonition-title">Key takeaways</p>
 <ul>
-<li>Reasoning is computation: more generated tokens means more passes through the network. Reasoning models are trained with RL on checkable problems to use that scratch space well, and test-time compute is a second scaling axis you control per request.</li>
-<li>In the API, thinking arrives as blocks you read by type, costs output tokens and latency, and is controlled by an effort level or budget that changes between model generations. Keep it in one place.</li>
+<li>Reasoning is computation: more generated tokens means more passes through the network. Reasoning models are trained with RL on checkable problems to use that scratch space well; test-time compute is a second scaling axis you control per request.</li>
+<li>In the API, thinking arrives as blocks you read by type, costs output tokens and latency, and is controlled by an effort level or budget that changes between model generations.</li>
 <li>Self-consistency helps when the correct answer beats every individual wrong answer and hurts otherwise; best-of-N is bounded by the verifier and can get worse with more samples; step-level verification is far more sample-efficient than outcome checking.</li>
-<li>Prompt reasoning models with goals, constraints and success criteria rather than step-by-step instructions, and give them tools to check their work. Do not treat the visible reasoning as the true cause of the answer.</li>
+<li>Prompt with goals, constraints and success criteria, give the model tools to check its work, and never treat the visible reasoning as the true cause of the answer.</li>
 <li>Evaluate with pass@k and pass^k, accuracy per dollar and per second, and budget sweeps; route easy traffic to a fast model and escalate the rest.</li>
 </ul>
 </div>

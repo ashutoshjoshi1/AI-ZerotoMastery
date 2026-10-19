@@ -2,19 +2,30 @@
 {
   "title": "Evaluating LLM systems",
   "short": "Evaluation",
-  "summary": "The discipline that separates demos from products, covering golden datasets, code-based graders and LLM judges done properly, statistics that tell you whether a change really helped, an evaluation harness, regression tests, and the limits of public benchmarks.",
+  "summary": "The discipline that separates demos from products, covering golden datasets, code-based graders and LLM judges done properly, grading agents and conversations, statistics that tell you whether a change really helped, an evaluation harness, regression tests, and the limits of public benchmarks.",
   "sessions": [
     "Why evaluation is the core skill, the kinds of evals, and building a golden dataset",
-    "Graders: code checks, reference metrics, and LLM-as-judge done well",
-    "An eval harness with statistics, regression tests in CI, benchmarks and online evaluation"
+    "Graders: code checks, reference metrics, LLM-as-judge done well, and grading agents",
+    "An eval harness with statistics, regression tests in CI, benchmarks, contamination and online evaluation"
   ],
-  "objectives": [],
-  "prerequisites": [],
-  "runs_on": "Any computer (CPU). Only the LLM-judge cells need an API key.",
+  "objectives": [
+    "Build a golden dataset from real usage, expert cases, reviewed synthetic cases and production failures, tagged by slice",
+    "Write code-based graders and a calibrated LLM judge that returns structured verdicts",
+    "Design graders for agents and multi-turn systems that check trajectories and final state, not just text",
+    "Run an evaluation harness and use bootstrap intervals and paired comparisons to decide whether a change really helped",
+    "Wire evals into CI with per-slice thresholds, and explain why public benchmarks and contaminated evals mislead",
+    "Close the loop with online signals so that production failures become regression tests"
+  ],
+  "prerequisites": ["ml-fundamentals", "llm-apis", "rag"],
+  "runs_on": "Any computer (CPU). Only the LLM-judge cells need an API key; the final exercise also uses your RAG system from the RAG lesson.",
   "glossary": [
     {"term": "Bootstrap", "def": "Resampling your data with replacement many times to estimate the uncertainty of a metric."},
     {"term": "Evaluation set (golden dataset)", "def": "A curated set of inputs with expected outcomes or grading criteria used to measure a system."},
-    {"term": "LLM-as-judge", "def": "Using a model to grade outputs against a rubric; must be calibrated against human judgement."}
+    {"term": "Grader", "def": "A function that turns a system output into a score: a code rule, a reference metric or an LLM judge."},
+    {"term": "LLM-as-judge", "def": "Using a model to grade outputs against a rubric; must be calibrated against human judgement."},
+    {"term": "Cohen's kappa", "def": "Agreement between two graders corrected for chance agreement; used to calibrate an LLM judge against human labels."},
+    {"term": "Paired comparison", "def": "Comparing two systems case by case on the same inputs, which is far more sensitive than comparing two averages."},
+    {"term": "Contamination", "def": "Test cases leaking into training data, prompts or few-shot examples, so that a score no longer measures generalisation."}
   ]
 }
 -->
@@ -45,6 +56,11 @@
 <td>Component evals</td>
 <td>Is each stage working (retrieval recall, classifier accuracy, tool-call correctness)?</td>
 <td>When diagnosing</td>
+</tr>
+<tr>
+<td>Trajectory evals</td>
+<td>Did an agent take sensible steps and leave the world in the right state?</td>
+<td>Agents and multi-turn systems</td>
 </tr>
 <tr>
 <td>Human review</td>
@@ -84,6 +100,87 @@
 {"id": "t-002", "input": "Please reschedule the March calibration visit", "expected": {"category": "other"}, "tags": ["easy"]}
 {"id": "q-014", "input": "How often should the desiccant be replaced at coastal sites?", "reference": "Every six months in humid climates.", "gold_chunk": "manual-x#12", "tags": ["rag", "lookup"]}
 {"id": "q-031", "input": "What is the warranty period for model Z?", "reference": "NOT_IN_DOCS", "tags": ["rag", "unanswerable"]}</code></pre>
+<p>Keep the file under version control next to the code, and give every case a stable id: results are only comparable over time if the cases are.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: start a golden dataset with slices</p>
+<p>Build the day-one eval set for a support-ticket classifier with the categories <code>hardware</code>, <code>software</code>, <code>data</code> and <code>other</code>. The harness section uses the same task later.</p>
+<ol>
+<li>Write at least 30 cases as JSON lines, each with an <code>id</code>, an <code>input</code>, an <code>expected</code> category and <code>tags</code>. Include at least six deliberately ambiguous messages and at least five that mention more than one problem (tag them <code>ambiguous</code> and <code>multi</code>).</li>
+<li>Define a Pydantic <code>EvalCase</code> model and validate every line: ids unique, inputs non-empty, categories from the allowed set, at least one tag.</li>
+<li>Print the number of cases per category and per tag.</li>
+</ol>
+<p>You are done when validation passes and no category or tag has fewer than five cases.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">import json
+from collections import Counter
+from typing import Literal
+from pydantic import BaseModel, Field, ValidationError
+
+Category = Literal["hardware", "software", "data", "other"]
+
+class EvalCase(BaseModel):
+    id: str = Field(min_length=1)
+    input: str = Field(min_length=1)
+    expected: dict[Literal["category"], Category]
+    tags: list[str] = Field(min_length=1)
+
+RAW = [  # (category, tags, message); a real set would come from logged tickets
+    ("hardware", ["clear"], "The fan in P-101 is grinding loudly"),
+    ("hardware", ["clear"], "Enclosure door on P-140 will not close"),
+    ("hardware", ["clear"], "Cable to the tracker on P-133 is cracked"),
+    ("hardware", ["clear"], "P-150 heater never switches on"),
+    ("hardware", ["ambiguous"], "P-162 power LED off after the storm"),
+    ("hardware", ["ambiguous", "multi"], "Fan rattles and P-170 drops offline every night"),
+    ("software", ["clear"], "After updating P-210 to 2.4 the GUI crashes"),
+    ("software", ["clear"], "Driver error on startup for P-215"),
+    ("software", ["clear"], "Acquisition app freezes when exporting P-220 data"),
+    ("software", ["clear"], "P-233 control software asks for a licence key again"),
+    ("software", ["ambiguous"], "P-241 firmware update failed halfway"),
+    ("software", ["ambiguous", "multi"], "GUI crashes and now P-250 reports no GPS fix"),
+    ("data", ["clear"], "Yesterday's values from P-301 are all zero"),
+    ("data", ["clear"], "NO2 from P-305 jumps to 400 ppb at night"),
+    ("data", ["clear"], "P-310 spectra look noisier than last week"),
+    ("data", ["clear"], "Timestamps from P-322 are two hours off"),
+    ("data", ["ambiguous"], "P-330 shows ok but no data since 06:00"),
+    ("data", ["ambiguous", "multi"], "Data gaps on P-340 since the modem was swapped"),
+    ("other", ["clear"], "Can we move the P-401 calibration visit to March?"),
+    ("other", ["clear"], "Please resend the invoice for P-405"),
+    ("other", ["clear"], "Who is the site access contact for P-410?"),
+    ("other", ["clear"], "Request a quote for a spare unit like P-420"),
+    ("other", ["ambiguous"], "Is P-430 still under warranty after the lightning damage?"),
+    ("other", ["ambiguous", "multi"], "Training request, and P-440 needs a new desiccant too"),
+    ("hardware", ["clear"], "Water inside the P-180 enclosure after heavy rain"),
+    ("software", ["clear"], "Scheduled task on P-260 stopped running after the OS update"),
+    ("data", ["clear"], "Negative ozone values from P-350 all morning"),
+    ("other", ["clear"], "Please add a second user account for the P-450 site"),
+    ("hardware", ["ambiguous", "multi"], "Pump noise on P-190 and the readings drift upward"),
+    ("data", ["ambiguous"], "P-360 uploaded only half of yesterday's files"),
+    ("software", ["clear"], "Export to CSV on P-270 writes an empty file"),
+    ("other", ["clear"], "What is the lead time for a replacement filter wheel for P-460?"),
+]
+with open("ticket_cases.jsonl", "w") as f:
+    for i, (cat, tags, msg) in enumerate(RAW, 1):
+        f.write(json.dumps({"id": f"tk-{i:03d}", "input": msg,
+                            "expected": {"category": cat}, "tags": tags}) + "\n")
+
+cases, ids = [], set()
+for line in open("ticket_cases.jsonl"):
+    try:
+        c = EvalCase.model_validate_json(line)
+    except ValidationError as e:
+        raise SystemExit(f"bad case: {line.strip()}\n{e}")
+    assert c.id not in ids, f"duplicate id {c.id}"
+    ids.add(c.id); cases.append(c)
+
+by_cat = Counter(c.expected["category"] for c in cases)
+by_tag = Counter(t for c in cases for t in c.tags)
+print(len(cases), "cases"); print("per category:", dict(by_cat)); print("per tag:", dict(by_tag))
+assert min(by_cat.values()) &gt;= 5 and min(by_tag.values()) &gt;= 5</code></pre>
+<p>Thirty-two cases, eight per category, six ambiguous and five multi-problem ones. The validator catches the mistakes that creep into hand-written files (a typo in a category name, a missing tag), and the counts show which slices are thin. Keep the file: the harness section runs two classifiers over it.</p>
+</details>
+<hr data-session="2">
 <h2>Graders</h2>
 <p>A <strong>grader</strong> turns an output into a score. Use the cheapest grader that measures what matters.</p>
 <h3>Code-based graders</h3>
@@ -124,8 +221,15 @@ def cites_only_given_sources(output: str, n_sources: int) -&gt; float:
 <li><strong>Calibrate against humans</strong>: have people grade 50 to 100 cases, measure agreement with the judge, and refine the rubric until agreement is high. An uncalibrated judge is a random number generator with good manners.</li>
 </ul>
 <pre><code class="language-python">import anthropic
+from typing import Literal
+from pydantic import BaseModel
+
 client = anthropic.Anthropic()
 JUDGE_MODEL = "claude-sonnet-5-5"
+
+class FaithfulnessVerdict(BaseModel):
+    unsupported_claims: list[str]          # the evidence comes first, then the verdict
+    verdict: Literal["PASS", "FAIL"]
 
 FAITHFULNESS_RUBRIC = """You are grading whether an answer is fully supported by source documents.
 
@@ -139,19 +243,78 @@ FAITHFULNESS_RUBRIC = """You are grading whether an answer is fully supported by
 
 Go through the answer claim by claim. A claim is SUPPORTED if the sources state it or it follows
 directly from them. Ignore style and completeness; judge only support.
-
-Return JSON only:
-{{"unsupported_claims": ["..."], "verdict": "PASS" or "FAIL"}}
-PASS means there are no unsupported factual claims."""
+List every unsupported claim, then give the verdict. PASS means there are no unsupported factual claims."""
 
 def judge_faithfulness(answer: str, sources: str) -&gt; dict:
-    r = client.messages.create(
-        model=JUDGE_MODEL, max_tokens=600, temperature=0,
-        messages=[{"role": "user", "content": FAITHFULNESS_RUBRIC.format(sources=sources, answer=answer)},
-                  {"role": "assistant", "content": "{"}],                # prefill: start the JSON
+    r = client.messages.parse(
+        model=JUDGE_MODEL, max_tokens=1000,
+        messages=[{"role": "user", "content": FAITHFULNESS_RUBRIC.format(sources=sources, answer=answer)}],
+        output_format=FaithfulnessVerdict,       # structured output: the reply is validated JSON
     )
-    return json.loads("{" + r.content[0].text)</code></pre>
-<p>The prefill trick (starting the assistant turn with <code>{</code>) keeps the judge's output parseable; a structured-output tool call (lesson <a data-ref="llm-apis"></a>) is even more robust.</p>
+    return r.parsed_output.model_dump()</code></pre>
+<p>Structured output (lesson <a data-ref="llm-apis"></a>) guarantees that the reply matches the schema, so there is nothing to parse by hand and no half-finished JSON to debug. Putting <code>unsupported_claims</code> before <code>verdict</code> in the schema makes the judge list its evidence before it decides. Judges are not deterministic: the model this course uses does not accept a temperature setting, and even at temperature 0 providers do not promise identical outputs. For borderline cases, run the judge two or three times and treat disagreement as a signal to read the case yourself.</p>
+<h3>Grading agents and multi-turn systems</h3>
+<p>An agent (lesson <a data-ref="agents"></a>) produces a <strong>trajectory</strong>, not just a string: a sequence of tool calls, their results and a final state of the world. Grading only the final message misses most of what can go wrong. Three kinds of check:</p>
+<ul>
+<li><strong>Final-state checks</strong>: did the ticket get created, the file change, the right record update? Inspect the environment after the run, not the model's claim about it.</li>
+<li><strong>Trajectory checks</strong>: were the right tools called with sensible arguments, in a reasonable number of steps, without forbidden actions? Code graders over the logged tool calls handle most of this.</li>
+<li><strong>Rubric judgements</strong> for what code cannot check: did it ask for confirmation before the consequential action, did it explain what it did?</li>
+</ul>
+<p>Multi-turn conversations need the whole dialogue in the eval case. Two practical patterns: replay a logged conversation up to turn \(k\) and grade only the next reply, or let a second model play a scripted user with a goal and grade the outcome and the number of turns it took. Simulated users are cheap but tidier than real ones, so keep some real transcripts in the set.</p>
+<p>Agents are stochastic and run many steps, so run each case several times. Report both <strong>pass@k</strong> (did any of \(k\) runs succeed; lesson <a data-ref="reasoning-models"></a>) and the stricter rate at which all \(k\) runs succeed. The second is what a user who runs the agent once will experience, and it falls fast: a step that works 80% of the time gives a 33% success rate over five mandatory steps.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: calibrate a grader against human labels</p>
+<p>The notebook has 18 short answers to questions about an instrument manual, each with the source text it should be grounded in and a human PASS or FAIL label for faithfulness.</p>
+<ol>
+<li>Write a cheap heuristic grader: an answer FAILS if it contains a number that does not appear in the sources, or a sentence that shares no content word with the sources.</li>
+<li>Measure agreement with the human labels: raw accuracy and Cohen's kappa, which corrects for the agreement you would get by chance.</li>
+<li>Print the disagreements and classify each one: a grader miss, a grader false alarm, or a human label you now disagree with.</li>
+<li>If you have an API key, run <code>judge_faithfulness</code> on the same 18 cases and compute its kappa too.</li>
+</ol>
+<p>You are done when you have a kappa for the heuristic grader and a list of disagreements with a reason for each. Expect the heuristic to reach moderate agreement at best; its misses show what only a judge, or a human, can see.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">import re
+
+STOP = {"the", "and", "that", "with", "from", "this", "after", "every", "must", "have",
+        "should", "which", "when", "then", "than", "into", "over", "only", "also"}
+
+def content_words(text):
+    return {w for w in re.findall(r"[a-z]+", text.lower()) if len(w) &gt;= 4 and w not in STOP}
+
+def heuristic_judge(answer, sources):
+    src_nums = set(re.findall(r"\d[\d,.]*", sources))
+    if any(n not in src_nums for n in re.findall(r"\d[\d,.]*", answer)):
+        return "FAIL"                                      # a number the sources never mention
+    src_words = content_words(sources)
+    for sentence in re.split(r"(?&lt;=[.!?])\s+", answer):
+        if sentence.strip() and not content_words(sentence) &amp; src_words:
+            return "FAIL"                                  # a sentence about something else
+    return "PASS"
+
+def cohens_kappa(a, b):
+    n, labels = len(a), sorted(set(a) | set(b))
+    po = sum(x == y for x, y in zip(a, b)) / n
+    pe = sum((a.count(l) / n) * (b.count(l) / n) for l in labels)
+    return (po - pe) / (1 - pe) if pe &lt; 1 else 1.0
+
+human = [label for _, _, label in CALIBRATION_SET]
+heur = [heuristic_judge(ans, src) for src, ans, _ in CALIBRATION_SET]
+print(f"accuracy {sum(h == g for h, g in zip(human, heur)) / len(human):.2f}  kappa {cohens_kappa(human, heur):.2f}")
+for (src, ans, label), g in zip(CALIBRATION_SET, heur):
+    if g != label:
+        kind = "miss" if label == "FAIL" else "false alarm"
+        print(f"{kind:&lt;11} human={label} grader={g}: {ans}")</code></pre>
+<p>The heuristic reaches a kappa of about 0.6: three misses and one false alarm out of 18. The misses are answers made entirely of words that do appear in the sources but combined into a claim the sources do not make ("all firmware versions", "clean with acetone", "day and night"); no overlap statistic can catch those. The false alarm is a correct paraphrase ("1-minute intervals" for "every 60 seconds"). Those four cases are exactly what you want in the calibration set when you move to an LLM judge: if it gets them right you have gained something real, and if it does not, the rubric needs an explicit line about paraphrase and about claims that generalise beyond the source.</p>
+<pre><code class="language-python"># Needs an API key (see the setup cell)
+llm = [judge_faithfulness(ans, src)["verdict"] for src, ans, _ in CALIBRATION_SET]
+print(f"LLM judge: accuracy {sum(h == g for h, g in zip(human, llm)) / len(human):.2f}  kappa {cohens_kappa(human, llm):.2f}")
+for (src, ans, label), g in zip(CALIBRATION_SET, llm):
+    if g != label:
+        print(f"human={label} judge={g}: {ans}")</code></pre>
+</details>
+<hr data-session="3">
 <h2>An evaluation harness</h2>
 <p>Put it together: run every case through a system variant, grade it, save everything, and summarise by slice.</p>
 <pre><code class="language-python">import json, time
@@ -239,7 +402,36 @@ def bootstrap_ci(scores, n_boot=10_000, alpha=0.05, seed=0):
     diffs = d[rng.integers(0, len(d), size=(n_boot, len(d)))].mean(axis=1)
     return d.mean(), (diffs &lt;= 0).mean()</code></pre>
 <p>In a simulation with 100 cases where the new version fixes 5 cases and breaks none, accuracy goes from 75% to 80%. The two separate confidence intervals overlap heavily, yet the paired test gives a "not better" fraction of about 0.005: strong evidence the change helped. If instead the new version fixed 9 cases and broke 4, the same 5-point gain would be far less certain. <strong>Always look at fixes and breaks, not just the averages.</strong></p>
-<p>Also remember that model outputs vary between runs. For important decisions, run each variant two or three times, or use temperature 0, and check the result is stable.</p>
+<p>Also remember that model outputs vary between runs. For important decisions, run each variant two or three times and check the result is stable.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: how many cases do you need?</p>
+<ol>
+<li>Simulate a baseline that is right on 75% of cases and a candidate that fixes 5% of all cases and breaks none. For \(n\) of 50, 100, 200, 400 and 800 cases, draw 100 random eval sets and run <code>paired_bootstrap</code> on each (2,000 resamples is enough here).</li>
+<li>Count how often the "not better" fraction falls below 0.05. That is the chance your eval set detects a real 5-point improvement.</li>
+<li>Repeat for a candidate that fixes 9% and breaks 4%, the same net gain, and print both tables.</li>
+</ol>
+<p>You are done when the two tables print. Notice how many cases the noisier 5-point gain needs before you can trust it.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">def detection_rate(n, p_base=0.75, fix=0.05, brk=0.0, sims=100):
+    rng = np.random.default_rng(n)
+    detected = 0
+    for s in range(sims):
+        base = rng.random(n) &lt; p_base                                    # which cases the baseline gets right
+        cand = base.copy()
+        cand[~base] = rng.random((~base).sum()) &lt; fix / (1 - p_base)    # some wrong cases get fixed
+        cand[base] = rng.random(base.sum()) &gt;= brk / p_base              # some right cases get broken
+        _, not_better = paired_bootstrap(base.astype(float), cand.astype(float), n_boot=2000, seed=s)
+        detected += not_better &lt; 0.05
+    return detected / sims
+
+for fix, brk in [(0.05, 0.0), (0.09, 0.04)]:
+    print(f"candidate fixes {fix:.0%} of cases and breaks {brk:.0%}")
+    for n in [50, 100, 200, 400, 800]:
+        print(f"   n = {n:&lt;4} detected in {detection_rate(n, fix=fix, brk=brk):.0%} of eval sets")</code></pre>
+<p>With fixes only, 100 cases already detect the gain most of the time, because every changed case points the same way. With 9 fixed and 4 broken the detection rate at 100 cases drops sharply and you need several hundred cases for the same confidence, even though the average moved by the same 5 points. The paired test is only as strong as the consistency of the changes, which is why reading the fixed and broken cases matters more than the headline number.</p>
+</details>
 <h2>Regression testing and CI</h2>
 <p>Treat the eval suite like a test suite:</p>
 <ul>
@@ -259,6 +451,9 @@ def bootstrap_ci(scores, n_boot=10_000, alpha=0.05, seed=0):
 <li><strong>Optimisation pressure</strong>: anything that becomes a target gets gamed, deliberately or not.</li>
 </ul>
 <p>The model that wins a leaderboard is often not the best one for your specific workload at your price and latency. Your eval set decides.</p>
+<h3>Contamination in your own evals</h3>
+<p>Contamination is not only a benchmark problem. Your own eval cases leak in three common ways: an eval question gets pasted into the few-shot examples of the prompt; eval cases are used as fine-tuning data, or generated by the same script and seed that produced the training data (lesson <a data-ref="fine-tuning"></a>); or a retrieval index is tuned on the eval questions until every one of them hits. In each case the score stops measuring generalisation.</p>
+<p>Keep eval cases out of prompts and training sets by construction: store them separately, never let a training script read the eval file, and before every fine-tune check for near-duplicates between the two sets (shared word sequences of 8 to 13 words are the usual test). Lesson <a data-ref="advanced-fine-tuning"></a> covers decontamination in depth.</p>
 <h2>Online evaluation</h2>
 <p>Offline sets go stale as users and the world change. In production, also measure:</p>
 <ul>
@@ -266,9 +461,10 @@ def bootstrap_ci(scores, n_boot=10_000, alpha=0.05, seed=0):
 <li><strong>Implicit signals</strong>: did the user retry, rephrase, copy the answer, escalate to a human, complete the task?</li>
 <li><strong>Sampled review</strong>: experts grade a random sample of live traffic weekly, with LLM judges extending coverage.</li>
 <li><strong>A/B tests</strong> for significant changes, measuring the outcome the product exists for.</li>
-<li><strong>Drift monitoring</strong>: shifts in input topics, lengths, languages or refusal rates.</li>
+<li><strong>Drift monitoring</strong>: shifts in input topics, lengths, languages or refusal rates (lesson <a data-ref="deployment-llmops"></a>).</li>
 </ul>
 <p>Then feed what you learn back into the offline eval set. That loop, production to dataset to improvement to production, is how AI products get better rather than just older.</p>
+<p>Output-level evals tell you what the model did, not why. Lesson <a data-ref="interpretability"></a> shows attribution and probing techniques that can explain a verdict or flag a problem inside the model before it reaches the output; treat them as a complement to evals, not a replacement.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: an eval suite for your RAG system</p>
 <p>Using your system from lesson <a data-ref="rag"></a>:</p>
@@ -281,7 +477,7 @@ def bootstrap_ci(scores, n_boot=10_000, alpha=0.05, seed=0):
 </div>
 <details class="solution">
 <summary>Show a solution sketch</summary>
-<p><pre><code class="language-python">cases = [json.loads(l) for l in open("eval_cases.jsonl")]
+<pre><code class="language-python">cases = [json.loads(l) for l in open("eval_cases.jsonl")]
 
 def rag_system(question):                      # return a JSON string so graders can see sources too
     hits = rag.retrieve(question)
@@ -314,7 +510,7 @@ print(paired_bootstrap(sb, sa))
 fixed = [x["id"] for x, y in zip(a, b) if x["scores"]["retrieval_hit"] &gt; y["scores"]["retrieval_hit"]]
 broken = [x["id"] for x, y in zip(a, b) if x["scores"]["retrieval_hit"] &lt; y["scores"]["retrieval_hit"]]
 print("fixed:", fixed, "broken:", broken)</code></pre>
-The keyword-based abstention grader is crude and will miss some phrasings; that is fine for a start, and the misses you find when reading outputs tell you how to improve it (or to replace it with a judge). Judge calibration usually needs two or three rubric revisions; the typical early problem is the judge treating reasonable paraphrases as unsupported, or letting general-knowledge claims through.</p>
+<p>The keyword-based abstention grader is crude and will miss some phrasings; that is fine for a start, and the misses you find when reading outputs tell you how to improve it (or to replace it with a judge). Judge calibration usually needs two or three rubric revisions; the typical early problem is the judge treating reasonable paraphrases as unsupported, or letting general-knowledge claims through.</p>
 </details>
 <h2>Check yourself</h2>
 <div class="quiz">
@@ -349,14 +545,14 @@ The keyword-based abstention grader is crude and will miss some phrasings; that 
 <p class="why">On 100 cases the margin of error is around ±8 points. Paired analysis of fixes and breaks is far more informative.</p>
 </div>
 <div class="q">
-<p>Why are public benchmark scores an incomplete guide for choosing a model?</p>
+<p>An agent must complete five tool calls in a row, and each one succeeds 80% of the time. What should your eval report?</p>
 <ul>
-<li>They are always fabricated</li>
-<li class="correct">Contamination, saturation and mismatch with your task mean your own eval set should decide</li>
-<li>They only test small models</li>
-<li>Benchmarks measure latency, not quality</li>
+<li>Only the quality of the final message</li>
+<li class="correct">Final-state and trajectory checks over several runs, including the rate at which every run succeeds, which is about 33% here</li>
+<li>The average length of the conversation</li>
+<li>A single run, since agents are deterministic</li>
 </ul>
-<p class="why">Use them to shortlist; use your data to decide.</p>
+<p class="why">Multiply the per-step success rates: 0.8 to the power 5 is about 0.33. One run tells you little, and the final message may claim success that never happened.</p>
 </div>
 <div class="q">
 <p>A production failure is reported. What should happen to it?</p>
@@ -375,14 +571,16 @@ The keyword-based abstention grader is crude and will miss some phrasings; that 
 <li>Evaluation is the core discipline of AI engineering: it turns opinions into evidence and makes model upgrades safe.</li>
 <li>Build a golden dataset early from real usage, expert cases, reviewed synthetic cases and every failure; include hard, ambiguous and negative cases, tagged by slice.</li>
 <li>Use code graders wherever possible; use LLM judges with specific rubrics, structured output, order-swapping and human calibration.</li>
+<li>Grade agents on final state and trajectory over several runs, and grade conversations with replayed or simulated turns.</li>
 <li>Small sets are noisy. Use bootstrap intervals and paired comparisons, and always read the fixed and broken cases.</li>
-<li>Run evals in CI with per-slice thresholds and pinned versions; treat public benchmarks as a shortlist; close the loop with online evaluation.</li>
+<li>Run evals in CI with per-slice thresholds and pinned versions; keep eval cases out of prompts and training data; treat public benchmarks as a shortlist; close the loop with online evaluation.</li>
 </ul>
 </div>
 <h3>Go deeper</h3>
 <ul>
 <li>Hamel Husain, "Your AI Product Needs Evals" and related posts (hamel.dev)</li>
 <li>Zheng et al., "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena" (arXiv 2306.05685)</li>
+<li>Kapoor et al., "AI Agents That Matter" (arXiv 2407.01502), on evaluating agents honestly</li>
 <li>Anthropic documentation on creating strong empirical evaluations</li>
 <li>Shreya Shankar et al., "Who Validates the Validators?" (EvalGen, arXiv 2404.12272)</li>
 <li>The promptfoo and Inspect documentation for ready-made harnesses</li>

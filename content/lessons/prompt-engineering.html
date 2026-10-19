@@ -2,18 +2,26 @@
 {
   "title": "Prompt engineering",
   "short": "Prompt engineering",
-  "summary": "Write prompts that work reliably, not just once, through clear instructions, context, examples and structure, along with reasoning and chaining techniques, and treat prompts as tested, versioned code.",
+  "summary": "Write prompts that work reliably, not just once, through clear instructions, context, examples and structure, along with reasoning, chaining and voting techniques, and treat prompts as tested, versioned code.",
   "sessions": [
     "Principles: clarity, context, examples and structure",
-    "Techniques: few-shot, reasoning, output control and prompt chaining",
-    "Prompts as code: templates, versions, tests and failure modes"
+    "Techniques: few-shot, reasoning, output control, prompt chaining and self-consistency",
+    "Prompts as code: templates, versions, tests, failure modes and prompt optimisation"
   ],
-  "objectives": [],
-  "prerequisites": [],
-  "runs_on": "Any computer, plus an API key.",
+  "objectives": [
+    "Turn a vague request into a specification that states the task, audience, format, length and what to do with missing information",
+    "Apply few-shot examples, structure, reasoning instructions, output control and prompt chaining, and say when each pays off",
+    "Prompt a reasoning model differently from a plain model, and use self-consistency where a checkable answer justifies the cost",
+    "Keep prompts as versioned templates with a labelled test set, and read the misses to improve them",
+    "Recognise the common failure modes and fix each at its cause"
+  ],
+  "prerequisites": ["llm-apis"],
+  "runs_on": "Any computer. The prompt linter, chaining and voting exercises run offline against a scripted model; cells that call a real model are marked and need an API key.",
   "glossary": [
     {"term": "Chain-of-thought", "def": "Prompting or training a model to produce intermediate reasoning before its final answer."},
-    {"term": "Few-shot prompting", "def": "Including worked examples of the task in the prompt."}
+    {"term": "Few-shot prompting", "def": "Including worked examples of the task in the prompt."},
+    {"term": "Prompt chaining", "def": "Splitting a job into several focused model calls that pass their outputs forward."},
+    {"term": "Prompt optimisation", "def": "Searching automatically over instructions and examples, scored on a labelled set, instead of editing a prompt by hand."}
   ]
 }
 -->
@@ -60,9 +68,57 @@ other: anything else, including billing and scheduling
 Answer in the form:
 &lt;category&gt;...&lt;/category&gt;
 &lt;reason&gt;one sentence&lt;/reason&gt;</code></pre>
-<p>Put long reference documents <strong>before</strong> the question; models tend to handle "documents first, question last" better, and it suits prompt caching (lesson <a data-ref="llm-apis"></a>).</p>
+<p>Put long reference documents <strong>before</strong> the question; models tend to handle "documents first, question last" better, and it suits prompt caching (lesson <a data-ref="llm-apis"></a>). Lesson <a data-ref="context-engineering"></a> measures how position in a long prompt affects what the model recalls.</p>
 <h3>5. Say what to do, not only what to avoid</h3>
 <p>"Don't be verbose" leaves the target vague. "Answer in at most three sentences" is actionable. Negative instructions also tend to put the unwanted thing in the model's mind. Prefer positive, concrete instructions, and keep "never do X" for genuine hard limits.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a prompt linter</p>
+<p>Turn the five principles into a checklist your code can run. It will not catch everything, and that is fine: its job is to catch the omissions you make when in a hurry.</p>
+<ol>
+<li>Write <code>lint_prompt(text: str) -&gt; list[str]</code> that returns one short message per problem found: no audience stated; no output format stated; no length limit; no rule for missing information; an instruction phrased only as a prohibition ("don't", "never") with no positive alternative nearby; an XML-style tag opened but not closed; and a <code>{placeholder}</code> for user input that is not wrapped in tags. Simple keyword and regular-expression checks are enough.</li>
+<li>Run it on the vague and the specific incident-report prompts above, and on the classification prompt with the <code>&lt;email&gt;</code> tags.</li>
+<li>Write three prompts for tasks you actually do, lint them, and rewrite until clean.</li>
+<li>You are done when the vague prompt produces at least four findings, the specific one produces none, and you can explain one thing the linter missed in your own prompts that a reader would have caught.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">import re
+
+def lint_prompt(text: str) -&gt; list[str]:
+    low = text.lower()
+    problems = []
+    if not re.search(r"\bfor (the|a|an|our|your)\b|\breader|\baudience|\bwho will\b", low):
+        problems.append("no audience stated")
+    if not re.search(r"bullet|json|table|in the form|format|sentence|line|paragraph|markdown|csv", low):
+        problems.append("no output format stated")
+    if not re.search(r"\b(at most|no more than|maximum|up to|exactly|one|two|three|\d+)\b.{0,20}\b(words|sentences|bullet|lines|points|items)", low):
+        problems.append("no length limit")
+    if not re.search(r"not stated|unknown|if .* (does not|doesn't|is missing)|say so|cannot be determined", low):
+        problems.append("no rule for missing information")
+    for line in low.splitlines():
+        if re.match(r"\s*(don'?t|do not|never)\b", line) and not re.search(r"instead|rather|prefer|use ", line):
+            problems.append(f"prohibition without a positive alternative: {line.strip()[:50]!r}")
+    for tag in set(re.findall(r"&lt;([a-z_]+)&gt;", low)):
+        if low.count(f"&lt;{tag}&gt;") != low.count(f"&lt;/{tag}&gt;"):
+            problems.append(f"tag &lt;{tag}&gt; is not closed")
+    for ph in re.findall(r"\{(\w+)\}", text):
+        if not re.search(r"&lt;(\w+)&gt;\s*\{" + ph + r"\}\s*&lt;/\1&gt;", text):
+            problems.append(f"placeholder {{{ph}}} is not delimited by tags")
+    return problems
+
+vague = "Summarise this incident report."
+specific = """Summarise the incident report below for the on-call engineering manager, who will
+decide within five minutes whether to wake up the hardware team.
+Write at most 5 bullet points: what failed, where, and since when; current impact;
+what has already been tried; the single most likely cause; the decision needed.
+If the report does not say something, write "not stated" rather than guessing."""
+print(lint_prompt(vague))
+print(lint_prompt(specific))
+print(lint_prompt("Classify the email.\n&lt;email&gt;\n{email_text}\n&lt;/email&gt;\nDon't be verbose."))</code></pre>
+The vague prompt gets four findings; the specific one none; the last one is flagged for the bare prohibition and for having no audience, format or missing-information rule. The linter is deliberately crude: a prompt can pass it and still be unclear, which is why the real test is the labelled set in the last session.</p>
+</details>
+<hr data-session="2">
 <h2>Techniques</h2>
 <h3>Few-shot prompting</h3>
 <p>Include worked input-output pairs. In a chat API you can write them as earlier conversation turns, which models treat as strong evidence of the desired behaviour.</p>
@@ -77,17 +133,22 @@ Answer in the form:
 <p>For multi-step problems, asking the model to work through the problem before giving the final answer improves accuracy, because each generated token is extra computation the model can build on. This is <strong>chain-of-thought</strong> prompting. Ask for the reasoning in a separate section so your code can discard it and keep only the answer:</p>
 <pre><code class="language-text">Work out the answer step by step inside &lt;thinking&gt; tags.
 Then give only the final number inside &lt;answer&gt; tags.</code></pre>
-<p>Reasoning models (lesson <a data-ref="how-llms-are-built"></a>) do this internally, controlled by a thinking budget setting; with them, explicit "think step by step" instructions matter less, and over-prescribing the steps can even hurt. Either way, reasoning costs tokens and latency, so use it where accuracy on harder problems justifies it, not for simple lookups.</p>
+<p><strong>Reasoning models</strong> (lesson <a data-ref="reasoning-models"></a>) do this internally, before the visible reply, and the amount is controlled by an effort setting rather than by your prompt. With them, "think step by step" is redundant, and prescribing the steps in detail can even hurt: the model follows your recipe instead of its own, usually better, one. Prompt a reasoning model with the goal, the constraints and what a correct answer looks like, and let it choose the route. Either way, reasoning costs tokens and latency, so use it where accuracy on harder problems justifies it, not for simple lookups.</p>
 <h3>Control the output</h3>
 <ul>
 <li><strong>Specify the format exactly</strong>, with an example of it.</li>
-<li><strong>Use structured output features</strong> for machine-read results (lesson <a data-ref="llm-apis"></a>).</li>
-<li><strong>Prefill</strong> (where supported): with the Anthropic API you can end the message list with a partial assistant turn, for instance <code>{"role": "assistant", "content": "&lt;category&gt;"}</code>, and the model continues from there. This pins the format and skips preamble.</li>
+<li><strong>Use structured output features</strong> for machine-read results (lesson <a data-ref="llm-apis"></a>). This is the reliable way to get JSON; prompting alone is not.</li>
+<li><strong>Put the format instruction last</strong>, after the data, and open the answer section for the model ("Answer in the form: &lt;category&gt;...&lt;/category&gt;"). An older trick, <em>prefilling</em> the start of the assistant turn, is no longer accepted by current Claude models; the explicit format instruction and structured output replace it.</li>
 <li><strong>Stop sequences</strong> end generation at a delimiter such as <code>&lt;/answer&gt;</code>.</li>
 </ul>
 <h3>Prompt chaining</h3>
-<p>One giant prompt that researches, drafts, critiques and formats is hard to debug. Break the job into steps, each a separate call with a focused prompt, passing outputs forward:</p>
-<pre><code class="language-python">def answer_with_review(question: str, document: str) -&gt; str:
+<p>One giant prompt that researches, drafts, critiques and formats is hard to debug. Break the job into steps, each a separate call with a focused prompt, passing outputs forward. A one-line helper keeps the chain readable:</p>
+<pre><code class="language-python">def llm(prompt: str, max_tokens: int = 2000) -&gt; str:
+    """One prompt in, the reply text out."""
+    r = client.messages.create(model=MODEL, max_tokens=max_tokens,
+                               messages=[{"role": "user", "content": prompt}])
+    return "".join(b.text for b in r.content if b.type == "text")</code></pre>
+<pre><code class="language-python">def answer_with_review(question: str, document: str, llm=llm) -&gt; str:
     quotes = llm(f"&lt;doc&gt;{document}&lt;/doc&gt;\nList verbatim quotes relevant to: {question}")
     draft = llm(f"&lt;quotes&gt;{quotes}&lt;/quotes&gt;\nAnswer '{question}' using only these quotes, citing them.")
     review = llm(f"&lt;quotes&gt;{quotes}&lt;/quotes&gt;\n&lt;answer&gt;{draft}&lt;/answer&gt;\n"
@@ -95,11 +156,55 @@ Then give only the final number inside &lt;answer&gt; tags.</code></pre>
     if review.strip() != "NONE":
         draft = llm(f"Rewrite the answer removing unsupported claims.\n&lt;problems&gt;{review}&lt;/problems&gt;\n&lt;answer&gt;{draft}&lt;/answer&gt;")
     return draft</code></pre>
-<p>Each step can be tested, logged, cached and given a different (cheaper or stronger) model. The extract-then-answer pattern above is also a strong defence against hallucination over long documents.</p>
+<p>Each step can be tested, logged, cached and given a different (cheaper or stronger) model. The extract-then-answer pattern above is also a strong defence against hallucination over long documents. Passing <code>llm</code> in as a parameter is what makes the chain testable: hand it a scripted function and you can check the branching without a network.</p>
 <h3>Self-consistency and verification</h3>
-<p>For questions with a checkable answer, sample several responses at a moderate temperature and take the majority answer. Or have the model (or a second model) check the first answer against explicit criteria. Both trade cost for reliability.</p>
+<p>For questions with a checkable answer, sample several responses and take the majority answer. Model outputs vary from call to call (and where the API lets you raise the temperature, you can make them vary more), so disagreements are informative: when four of five samples agree, the answer is probably right; when they split, the question is hard or ambiguous. Or have the model (or a second model) check the first answer against explicit criteria. Both trade cost for reliability, and both are forms of spending more computation at answer time, which lesson <a data-ref="reasoning-models"></a> treats systematically, including when voting helps and when it only multiplies the bill.</p>
 <h3>Roles and personas</h3>
 <p>A system prompt that sets a role ("You are an experienced field technician writing for colleagues") shifts vocabulary, assumptions and tone. It works best alongside concrete instructions, not as a substitute for them.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: self-consistency with a vote</p>
+<p>Build the sampling-and-voting loop, with the parsing that makes it robust, and test it on a scripted model first.</p>
+<ol>
+<li>Write <code>extract_answer(text) -&gt; str | None</code> that returns the content of the last <code>&lt;answer&gt;</code> tag, stripped, or <code>None</code> if there is none.</li>
+<li>Write <code>vote(question, llm, n=5) -&gt; tuple[str | None, float]</code> that asks <code>n</code> times with the chain-of-thought instruction above, extracts the answers, drops the <code>None</code>s, and returns the most common answer and its share of the valid votes.</li>
+<li>Write <code>scripted(replies)</code> that returns an <code>llm</code> handing out the replies in turn, and script five: three that end in <code>&lt;answer&gt;32&lt;/answer&gt;</code>, one with <code>&lt;answer&gt;30&lt;/answer&gt;</code>, and one with no tag at all.</li>
+<li>You are done when the scripted vote returns <code>("32", 0.75)</code>, and, with a key, running the real model five times on "A sensor logs a reading every 15 seconds; 5% fail the quality check. How many good readings in 6 hours?" gives a vote you can explain (the answer is 1368).</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><pre><code class="language-python">import re
+from collections import Counter
+
+COT = ("Work out the answer step by step inside &lt;thinking&gt; tags.\n"
+       "Then give only the final number inside &lt;answer&gt; tags.\n\n")
+
+def extract_answer(text: str) -&gt; str | None:
+    found = re.findall(r"&lt;answer&gt;(.*?)&lt;/answer&gt;", text, flags=re.S)
+    return found[-1].strip() if found else None
+
+def vote(question: str, llm, n: int = 5):
+    answers = [extract_answer(llm(COT + question)) for _ in range(n)]
+    valid = [a for a in answers if a is not None]
+    if not valid:
+        return None, 0.0
+    best, count = Counter(valid).most_common(1)[0]
+    return best, count / len(valid)
+
+def scripted(replies):
+    replies = iter(list(replies))
+    return lambda prompt: next(replies)
+
+fake = scripted(["&lt;thinking&gt;...&lt;/thinking&gt;&lt;answer&gt;32&lt;/answer&gt;", "&lt;answer&gt;32&lt;/answer&gt;",
+                 "&lt;thinking&gt;...&lt;/thinking&gt;&lt;answer&gt;30&lt;/answer&gt;", "I think it is 32.",
+                 "&lt;answer&gt; 32 &lt;/answer&gt;"])
+print(vote("how many hours?", fake))          # ('32', 0.75)
+
+# print(vote("A sensor logs a reading every 15 seconds; 5% fail the quality check. "
+#            "How many good readings in 6 hours?", llm))      # Needs an API key</code></pre>
+The missing-tag reply is dropped rather than counted, which matters: a parser that treated it as the answer "I think it is 32." would never match the other votes. On the real question, a capable model usually agrees with itself five times out of five (6 hours is 1,440 readings, 95% of which is 1,368), so the vote buys nothing there; it pays on questions the model gets right only most of the time.</p>
+</details>
+<hr data-session="3">
 <h2>Prompts as code</h2>
 <p>In a product, prompts are code: they need version control, review and tests.</p>
 <h3>Templates</h3>
@@ -116,9 +221,10 @@ Reply with only the category name, in lower case.""")
 
 def classify(email: str) -&gt; str:
     prompt = CLASSIFY_V3.substitute(email=email.replace("&lt;/email&gt;", ""))
-    r = client.messages.create(model=MODEL, max_tokens=5, temperature=0,
+    r = client.messages.create(model=MODEL, max_tokens=256,          # room for a little thinking
+                               output_config={"effort": "low"},       # a one-word answer needs no deep thought
                                messages=[{"role": "user", "content": prompt}])
-    return r.content[0].text.strip().lower()</code></pre>
+    return "".join(b.text for b in r.content if b.type == "text").strip().lower()</code></pre>
 <h3>Test prompts against examples, not vibes</h3>
 <p>A prompt that looks great on three examples you tried can fail on the fourth. Build a small labelled set (even 20 to 50 cases, including tricky ones), run every prompt version against it, and track the score. This is the seed of the evaluation discipline in lesson <a data-ref="evaluation"></a>, and the single habit that most separates professionals from tinkerers.</p>
 <pre><code class="language-python">cases = [
@@ -150,7 +256,7 @@ def score(classify_fn):
 <tr>
 <td>Inconsistent formats</td>
 <td>Format described, not shown</td>
-<td>Add an exact example; use structured output or prefill</td>
+<td>Add an exact example; use structured output or a stop sequence</td>
 </tr>
 <tr>
 <td>Ignores an instruction in a long prompt</td>
@@ -182,10 +288,18 @@ def score(classify_fn):
 <td>Data and instructions not separated</td>
 <td>Delimit input; treat retrieved text as untrusted (lesson <a data-ref="safety-security"></a>)</td>
 </tr>
+<tr>
+<td>Worse answers after switching to a reasoning model</td>
+<td>Prompt dictates every step</td>
+<td>State the goal and constraints; drop the step-by-step recipe (lesson <a data-ref="reasoning-models"></a>)</td>
+</tr>
 </tbody>
 </table>
 <h3>Let the model help</h3>
 <p>Models are good at improving prompts. Paste your prompt and a few failing cases and ask: "Here is a prompt and examples where it produced the wrong output. Explain what in the prompt caused each failure and propose a revised prompt." Then test the revision on your full set; never accept it on the model's say-so.</p>
+<h3>Automatic prompt optimisation</h3>
+<p>Once you have a labelled set and a scoring function, the loop above can be automated. <strong>Prompt optimisation</strong> tools treat the instructions and the choice of few-shot examples as parameters: an optimiser proposes variants (often by asking a model to rewrite the instruction, or by picking which labelled examples to include), scores each on your set, and keeps the best. DSPy popularised this way of working, with the prompt generated from a declared task signature and tuned against a metric rather than written by hand.</p>
+<p>Two cautions. The optimiser can only be as good as your metric and your labelled set, and it will happily overfit to both, so hold out cases it never sees and check them at the end. And an optimised prompt is often harder for a human to read than a hand-written one, which matters when the next engineer has to change it. Automatic search is a good last step after the principles in this lesson, not a substitute for them.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: iterate a classifier prompt to 90%+</p>
 <ol>
@@ -194,6 +308,7 @@ def score(classify_fn):
 <li>Iterate: add category definitions, add tie-break rules for the ambiguous cases ("classify by root cause if stated, otherwise by symptom"), add two or three examples. Score each version and keep a table in your log.</li>
 <li>Try a smaller, cheaper model with your best prompt. Is the accuracy loss acceptable for the cost saving?</li>
 </ol>
+<p>No key? Run the same harness against a keyword-rule classifier you write yourself and iterate <em>its</em> rules on the misses. The habit of scoring every version on the same set is the point; the model is interchangeable.</p>
 </div>
 <details class="solution">
 <summary>Show what usually happens</summary>
@@ -269,14 +384,14 @@ def score(classify_fn):
 <p class="why">Prompts need tests just like code. Read the failures to learn what the prompt leaves unspecified.</p>
 </div>
 <div class="q">
-<p>When is asking the model to reason step by step most worthwhile?</p>
+<p>You switch a working pipeline to a reasoning model and accuracy drops. What is the most likely prompt-side cause?</p>
 <ul>
-<li>Always; it never hurts</li>
-<li>For simple factual lookups</li>
-<li class="correct">For multi-step problems where accuracy matters enough to justify extra tokens and latency</li>
-<li>Only when temperature is above 1</li>
+<li>The prompt is too short</li>
+<li class="correct">The prompt dictates the reasoning steps in detail, so the model follows a worse recipe than its own</li>
+<li>Reasoning models cannot follow instructions</li>
+<li>The examples are too diverse</li>
 </ul>
-<p class="why">Reasoning costs tokens and time. Use it where it buys accuracy.</p>
+<p class="why">Give a reasoning model the goal and constraints; let it choose the route.</p>
 </div>
 <div class="q">
 <p>What is the main advantage of prompt chaining over one large prompt?</p>
@@ -294,8 +409,8 @@ def score(classify_fn):
 <ul>
 <li>A prompt is a specification for a capable colleague who knows nothing of your situation: state the task, audience, format, length and what to do with missing information.</li>
 <li>Give context and reasons, diverse examples and clear structure. Documents first, question last.</li>
-<li>Use reasoning for hard multi-step problems, structured output and prefill for format control, chaining for complex jobs, and self-consistency where reliability matters.</li>
-<li>Treat prompts as code: templates, version control and a labelled test set. Iterate on the misses.</li>
+<li>Use reasoning for hard multi-step problems (and let reasoning models choose their own steps), structured output for format control, chaining for complex jobs, and self-consistency where a checkable answer justifies the cost.</li>
+<li>Treat prompts as code: templates, version control and a labelled test set. Iterate on the misses, and only then consider automatic optimisation.</li>
 </ul>
 </div>
 <h3>Go deeper</h3>
@@ -304,4 +419,5 @@ def score(classify_fn):
 <li><a href="https://platform.openai.com/docs/guides/prompt-engineering">OpenAI prompt engineering guide</a></li>
 <li>Wei et al., "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models" (arXiv 2201.11903)</li>
 <li>Wang et al., "Self-Consistency Improves Chain of Thought Reasoning in Language Models" (arXiv 2203.11171)</li>
+<li>Khattab et al., "DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines" (arXiv 2310.03714)</li>
 </ul>

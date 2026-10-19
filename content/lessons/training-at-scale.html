@@ -34,31 +34,26 @@
 }
 -->
 <h2>The idea in one paragraph</h2>
-<p>The TinyGPT you trained in lesson <a data-ref="transformers"></a> had a few million parameters and fitted easily on one device. A frontier model has hundreds of billions of parameters, sees trillions of tokens (lesson <a data-ref="how-llms-are-built"></a>) and trains on thousands of accelerators for weeks. Three things change at that scale. Speed is limited by moving data rather than by arithmetic, so you need a picture of the hardware. The model, its gradients and its optimiser no longer fit on one device, so they are split across many, in several ways at once. And many architecture choices you meet in model cards, such as FlashAttention, mixture of experts and state-space layers, exist mainly to make all this cheaper. You will not need a cluster: every idea here is measured or simulated on a laptop CPU.</p>
+<p>Your TinyGPT from lesson <a data-ref="transformers"></a> fitted on one device. A frontier model has hundreds of billions of parameters, trillions of tokens (lesson <a data-ref="how-llms-are-built"></a>) and thousands of accelerators. At that scale speed is limited by moving data rather than arithmetic, the training state must be split across many devices, and architectures such as FlashAttention, mixture of experts and state-space layers exist largely to make both cheaper. Everything here runs on a laptop CPU.</p>
 
 <h2>How an accelerator spends its time</h2>
-<p>A GPU is thousands of simple arithmetic cores, grouped into units that each have dedicated matrix-multiply hardware (tensor cores, on NVIDIA GPUs). TPUs and other accelerators differ in detail but share the shape: enormous arithmetic throughput, fed by a hierarchy of memories that get bigger and slower the further they sit from the cores.</p>
+<p>A GPU (like a TPU) is thousands of simple cores with dedicated matrix-multiply units, fed by memories that get bigger and slower further from the cores.</p>
 <table>
-<thead><tr><th>Level</th><th>What lives there</th><th>Speed (illustrative)</th></tr></thead>
+<thead><tr><th>Level</th><th>Holds</th><th>Speed (illustrative)</th></tr></thead>
 <tbody>
-<tr><td>Registers</td><td>The numbers a core is working on right now</td><td>Fastest</td></tr>
-<tr><td>On-chip SRAM, tens of MB in total</td><td>Tiles of the matrices being multiplied</td><td>Around ten times HBM</td></tr>
-<tr><td>HBM, tens to a couple of hundred GB</td><td>Weights, gradients, optimiser state, activations</td><td>A few TB/s</td></tr>
+<tr><td>Registers</td><td>Numbers being worked on now</td><td>Fastest</td></tr>
+<tr><td>On-chip SRAM, tens of MB</td><td>Tiles of matrices in use</td><td>Roughly ten times HBM</td></tr>
+<tr><td>HBM, about 80 GB or more</td><td>Weights, gradients, optimiser state, activations</td><td>A few TB/s</td></tr>
 <tr><td>Other GPUs in the server (NVLink)</td><td>Other parts of the model</td><td>Hundreds of GB/s</td></tr>
-<tr><td>Other servers (InfiniBand or Ethernet)</td><td>The rest of the cluster</td><td>Tens of GB/s per GPU</td></tr>
+<tr><td>Other servers (network)</td><td>The rest of the cluster</td><td>Tens of GB/s per GPU</td></tr>
 </tbody>
 </table>
-<p>Meanwhile the matrix units of a current data-centre accelerator perform hundreds of teraFLOP/s to a few petaFLOP/s in 16-bit precision. The exact figures change with every hardware generation, but arithmetic has been getting faster more quickly than memory for years, so the gap keeps widening: arithmetic is cheap, moving bytes is expensive.</p>
+<p>The matrix units manage hundreds of teraFLOP/s to a few petaFLOP/s in 16-bit precision. Figures change every generation, but arithmetic has long grown faster than bandwidth: arithmetic is cheap, moving bytes is expensive.</p>
 
-<h3>Arithmetic intensity</h3>
-<p>The question to ask of any operation is how much work it does per byte it moves. That ratio is its <strong>arithmetic intensity</strong>:</p>
-\[ I = \frac{\text{FLOPs performed}}{\text{bytes read and written}} \]
-<p>Adding two vectors of \(n\) float32 numbers does \(n\) additions but reads \(8n\) bytes and writes \(4n\), so \(I = 1/12\). Multiplying two \(n \times n\) matrices does \(2n^3\) FLOPs on \(12n^2\) bytes of inputs and output, so \(I = n/6\), growing with size. Matrix multiplication is the common operation whose intensity grows like that, which is why accelerators are built around it, and why transformers, which are mostly matrix multiplications, run well on them.</p>
-
-<h3>The roofline model</h3>
-<p>The <strong>roofline model</strong> turns this into a prediction. An operation can go no faster than the arithmetic units allow, and no faster than memory can deliver its bytes:</p>
+<h3>Arithmetic intensity and the roofline</h3>
+<p>So ask how much work an operation does per byte it moves: its <strong>arithmetic intensity</strong> \(I\), in FLOPs per byte. Adding two float32 vectors of length \(n\) does \(n\) FLOPs on \(12n\) bytes, \(I = 1/12\). Multiplying two \(n \times n\) matrices does \(2n^3\) FLOPs on \(12n^2\) bytes, \(I = n/6\), growing with size. The <strong>roofline model</strong> says neither limit can be beaten:</p>
 \[ \text{attainable FLOP/s} = \min\left(\text{peak FLOP/s},\; I \times \text{memory bandwidth}\right) \]
-<p>The two limits cross at the <strong>ridge point</strong>, peak divided by bandwidth. For an illustrative accelerator with 1,000 TFLOP/s and 3 TB/s, that is about 330 FLOPs per byte. An operation to the left of the ridge is <strong>memory-bound</strong>: faster arithmetic would not help it. One to the right is <strong>compute-bound</strong>.</p>
+<p>The limits cross at the <strong>ridge point</strong>, peak divided by bandwidth: about 330 FLOPs per byte for an illustrative accelerator with 1,000 TFLOP/s and 3 TB/s. Left of it an operation is <strong>memory-bound</strong>, right of it <strong>compute-bound</strong>.</p>
 <figure>
 <svg class="diagram" viewBox="0 0 560 270" role="img" aria-label="Roofline model: attainable FLOP/s rises with arithmetic intensity along a sloped line set by memory bandwidth until the ridge point, then stays flat at peak compute. Element-wise addition sits low on the slope, a small matrix multiply sits higher on the slope, and a large matrix multiply sits under the flat roof.">
 <path class="wire" d="M60 20 V220 H540"/>
@@ -80,7 +75,7 @@
 </svg>
 <figcaption>Below the ridge point, speed rises with arithmetic intensity; above it, the arithmetic units are the limit. Most element-wise operations sit far to the left.</figcaption>
 </figure>
-<p>You can see both regimes on your own machine. This code times matrix multiplications of growing size and one large element-wise addition, then converts the times into achieved GFLOP/s and GB/s.</p>
+<p>Measure both regimes on your own machine:</p>
 <pre><code class="language-python">import time
 import torch
 
@@ -118,11 +113,11 @@ matmul 256        42.67     123.1     2.9
 matmul 1024      170.67     489.8     2.9
 matmul 2048      341.33     390.2     1.1
 add                0.08       3.6    42.7</code></pre>
-<p>Read it as a roofline. The addition does almost no arithmetic per byte and reaches about 1% of the large matmuls' FLOP/s, yet it moves data more than ten times faster than any of them: its speed is set by memory bandwidth. The large matrix multiplications are compute-bound and approach the CPU's peak. Dividing the best GFLOP/s by the addition's GB/s gives this CPU's ridge point, around 10 FLOPs per byte; GPUs sit much further to the right. The smallest matmul is slow for a third reason, fixed overhead per call, which GPUs share: launching each kernel costs a few microseconds. The notebook plots your points against a roofline built from your own measurements.</p>
-<p>Two practical lessons follow. First, a chain of element-wise operations (add a bias, apply GELU, apply dropout) reads and writes the whole tensor at every step. <strong>Kernel fusion</strong> does them all in one pass over memory, and <code>torch.compile</code> does it for you. Second, small matrix multiplications waste an accelerator. The exercise shows that a linear layer's intensity is roughly the number of tokens it processes at once, which is why training uses big batches and why serving batches many users together (lesson <a data-ref="deployment-llmops"></a>).</p>
+<p>The addition reaches about 1% of the large matmuls' FLOP/s but moves data over ten times faster: bandwidth sets its speed. The large matmuls approach peak. Their GFLOP/s over the addition's GB/s puts this CPU's ridge point near 10; GPUs sit far to the right. The smallest matmul pays fixed per-call overhead, as GPU kernel launches do.</p>
+<p>Two lessons follow. Chains of element-wise operations (bias, GELU, dropout) each reread the tensor; <strong>kernel fusion</strong>, which <code>torch.compile</code> does for you, makes one pass. And a linear layer's intensity is roughly the number of tokens it processes at once (see the exercise), which is why inference engines batch users together (lesson <a data-ref="llm-inference"></a>).</p>
 
 <h2>Number formats and mixed precision</h2>
-<p>A floating-point number spends its bits on a sign, an exponent, which sets the range, and a mantissa, which sets the precision. Fewer bits mean less memory, less bandwidth and faster matrix units, so training uses the smallest formats it can get away with. PyTorch will tell you what each one can represent:</p>
+<p>A float spends bits on a sign, an exponent (range) and a mantissa (precision). Fewer bits mean less memory and faster matrix units:</p>
 <pre><code class="language-python">formats = [torch.float32, torch.bfloat16, torch.float16,
            torch.float8_e4m3fn, torch.float8_e5m2]
 for dt in formats:
@@ -134,8 +129,7 @@ bfloat16       16 bits   max 3.39e+38 smallest normal 1.2e-38  eps 0.0078
 float16        16 bits   max 6.55e+04 smallest normal 6.1e-05  eps 0.00098
 float8_e4m3fn   8 bits   max 448      smallest normal 0.016    eps 0.12
 float8_e5m2     8 bits   max 5.73e+04 smallest normal 6.1e-05  eps 0.25</code></pre>
-<p><strong>bf16</strong> (bfloat16) keeps float32's 8 exponent bits, so it has the same huge range, but only 7 mantissa bits: the gap between 1 and the next number is about 0.008, two to three significant digits. fp16 has more precision but tops out at 65,504 and has no normal numbers below about \(6 \times 10^{-5}\). The two 8-bit formats split the difference: E4M3 for weights and activations, E5M2, with more range, for gradients.</p>
-<p>Low precision fails in two characteristic ways, both easy to reproduce:</p>
+<p><strong>bf16</strong> keeps float32's exponent, so its range, but has only 7 mantissa bits: neighbouring numbers near 1 are 0.008 apart. fp16 is more precise but overflows above 65,504 and loses normal numbers below \(6 \times 10^{-5}\). The 8-bit formats trade the two: E4M3 for weights and activations, E5M2 for gradients. Low precision fails in two ways:</p>
 <pre><code class="language-python">w32 = torch.tensor(1.0)
 w16 = torch.tensor(1.0, dtype=torch.bfloat16)
 for _ in range(1000):
@@ -152,11 +146,10 @@ print((grads * scale).half().float() / scale)   # ...unscale in fp32: no loss</c
 tensor([1.0004e-03, 1.0133e-06, 0.0000e+00], dtype=torch.float16)
 tensor([9.9945e-04, 9.9838e-07, 1.0012e-08], dtype=torch.bfloat16)
 tensor([1.0004e-03, 1.0002e-06, 9.9972e-09])</code></pre>
-<p>The first line is the lost update. Near 1.0, bf16 numbers are about 0.008 apart, so adding \(10^{-4}\) rounds back to 1.0 every time, and a thousand steps change nothing. This is why mixed-precision training keeps a float32 <strong>master copy</strong> of the weights for the optimiser to update, and uses bf16 copies for the forward and backward passes. The second problem is underflow: in fp16, a gradient of \(10^{-8}\) becomes zero. <strong>Loss scaling</strong> multiplies the loss by a large factor before the backward pass, lifting every gradient into fp16's range, and divides it out in float32 before the update. PyTorch's <code>torch.amp.GradScaler</code> does this dynamically, lowering the factor and skipping the step whenever it finds an infinity. bf16 does not need it, one reason it became the default for training (lesson <a data-ref="pytorch"></a> showed <code>torch.autocast</code>).</p>
-<p>Inside the matrix units, products of bf16 numbers are summed in float32, and sensitive operations such as softmax, normalisation and the loss usually run in float32 too. That is what "mixed" means: low precision where it is safe and cheap, high precision where errors would pile up.</p>
+<p>First, lost updates: adding \(10^{-4}\) to 1.0 in bf16 rounds back to 1.0 every time, so mixed-precision training keeps a float32 <strong>master copy</strong> of the weights for the optimiser and computes with bf16 copies. Second, underflow: in fp16 a gradient of \(10^{-8}\) becomes zero. <strong>Loss scaling</strong> multiplies the loss before the backward pass and divides it out in float32; <code>torch.amp.GradScaler</code> picks the factor and skips steps that overflow. bf16 needs none, one reason it is the default (lesson <a data-ref="pytorch"></a> used <code>torch.autocast</code>). Sums of products, softmax, normalisation and the loss stay in float32.</p>
 
 <h2>The memory budget of training</h2>
-<p>Training holds four things in memory: the weights, their gradients, the optimiser state, and the <strong>activations</strong> saved in the forward pass for the backward pass to use. With Adam in mixed precision, the first three cost a fixed 16 bytes per parameter, the rule of thumb from lesson <a data-ref="fine-tuning"></a>: 2 for bf16 weights, 2 for bf16 gradients, and 12 for the float32 master weights and Adam's two moment estimates. Activations depend on how many tokens you process at once. A widely used estimate (Korthikanti et al., 2022) is about 34 bytes per token, per unit of model width, per layer, with 16-bit activations and a fused attention kernel:</p>
+<p>Training holds weights, gradients, optimiser state and the <strong>activations</strong> saved for the backward pass. Mixed-precision Adam costs 16 bytes per parameter (lesson <a data-ref="fine-tuning"></a>): 2 for bf16 weights, 2 for gradients, 12 for float32 master weights and Adam's two moments. Activations take about 34 bytes per token per unit of width per layer, a common estimate (Korthikanti et al., 2022) for 16-bit activations and fused attention.</p>
 <pre><code class="language-python">def training_memory_gb(n_params, n_layers, d_model, seq_len, micro_batch,
                        checkpointing=False):
     """Rough memory to train on ONE device with mixed-precision Adam."""
@@ -178,10 +171,10 @@ for name, (n, layers, d) in models.items():
 1B            16             4.6              0.6
 7B           112            18.3              1.6
 70B         1120            91.3              6.5</code></pre>
-<p>The assumptions matter, so state them: one sequence of 4,096 tokens, layer counts and widths typical of open models of these sizes, and nothing for temporary buffers or the output logits, so treat the numbers as lower bounds. The conclusion is still stark. A 7B model needs about 112 GB before a single activation, more than one 80 GB accelerator holds, and a 70B model needs over a terabyte. No batch size or setting fixes that: the state itself must be split across devices, which is session 2. Activations, though, can be traded against compute.</p>
+<p>These assume one 4,096-token sequence and typical shapes, and ignore buffers and logits, so they are lower bounds. A 7B model needs 112 GB before any activation, more than one 80 GB device; 70B needs over a terabyte. The state must be split (session 2). Activations can be traded for compute.</p>
 
 <h3>Activation checkpointing</h3>
-<p><strong>Gradient checkpointing</strong> (also called activation checkpointing) keeps only each layer's input during the forward pass and discards the layer's internals. In the backward pass it reruns that layer's forward just before the internals are needed. Activation memory falls from every layer's internals to one input per layer plus one layer's internals at a time. The price is roughly one extra forward pass, about a third more compute, since a backward pass costs about twice a forward. The code counts the bytes autograd saves for the backward pass, with and without checkpointing, and compares the gradients:</p>
+<p><strong>Gradient checkpointing</strong> keeps only each layer's input in the forward pass and reruns the layer during the backward pass to rebuild its internals. That costs one extra forward pass, about a third more compute.</p>
 <pre><code class="language-python">import torch.nn as nn
 from torch.utils.checkpoint import checkpoint
 
@@ -225,10 +218,10 @@ print(f"saved for backward: {mb1:.1f} MB plain, {mb2:.1f} MB checkpointed")
 print("identical gradients:", all(torch.equal(a, b) for a, b in zip(g1, g2)))</code></pre>
 <pre><code class="language-text">saved for backward: 54.0 MB plain, 4.7 MB checkpointed
 identical gradients: True</code></pre>
-<p>The gradients are identical, bit for bit, because exactly the same operations are rerun (PyTorch even restores the random-number state so dropout masks match). Large runs often checkpoint <strong>selectively</strong>: they recompute only parts that are cheap to redo but expensive to store, such as attention's internals, and keep the rest.</p>
+<p>Gradients are bit-identical because the same operations rerun (PyTorch restores the random state for dropout). Large runs often checkpoint <strong>selectively</strong>: only what is cheap to redo but costly to store.</p>
 
 <h3>Gradient accumulation</h3>
-<p>Pretraining uses batches of millions of tokens, far more than fit in memory at once. <strong>Gradient accumulation</strong> runs several micro-batches through forward and backward, lets the gradients add up in <code>.grad</code>, and takes one optimiser step at the end. Divide each micro-batch's loss by the number of micro-batches and you get exactly the big batch's gradient:</p>
+<p>Pretraining batches hold millions of tokens. <strong>Gradient accumulation</strong> runs several micro-batches, lets gradients add up in <code>.grad</code>, and steps once. Divide each loss by the number of micro-batches:</p>
 <pre><code class="language-python">import copy
 torch.manual_seed(0)
 model = nn.Sequential(nn.Linear(20, 64), nn.ReLU(), nn.Linear(64, 1))
@@ -247,26 +240,26 @@ accum = [p.grad.clone() for p in model.parameters()]
 print("max difference:",
       max((a - b).abs().max().item() for a, b in zip(full, accum)))</code></pre>
 <pre><code class="language-text">max difference: 1.043081283569336e-07</code></pre>
-<p>The difference is float32 rounding, not a bug. Two mistakes are common: forgetting the division, which silently multiplies your learning rate, and averaging per-sequence losses when sequences hold different numbers of tokens, which over-weights short ones. Sum the token losses and divide by the total token count across all micro-batches instead.</p>
+<p>The difference is rounding. Common mistakes: forgetting the division, which scales the learning rate, and averaging per-sequence losses over unequal lengths; divide summed token losses by the total token count.</p>
 
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: when does a linear layer become compute-bound?</p>
 <ol>
-<li>Write <code>linear_intensity(b, d)</code> for \(y = xW\) with \(x\) of shape \((b, d)\) and \(W\) of shape \((d, d)\), in bf16 (2 bytes per number). Count \(2bd^2\) FLOPs, and bytes for reading \(x\) and \(W\) and writing \(y\).</li>
-<li>For \(d = 8192\), print the intensity for \(b = 1, 16, 128, 1024, 8192\). What is it roughly equal to while \(b\) is much smaller than \(d\)?</li>
-<li>Find the smallest \(b\) at which the layer passes the ridge point of the illustrative accelerator (1,000 TFLOP/s, 3 TB/s).</li>
-<li>Measure it: with \(d = 2048\) in float32, time <code>x @ W</code> with <code>bench</code> for \(b\) from 1 to 4,096, print the GFLOP/s and plot them.</li>
+<li>Write <code>linear_intensity(b, d)</code> for \(y = xW\) with \(x\) of shape \((b, d)\) and \(W\) of shape \((d, d)\) in bf16: \(2bd^2\) FLOPs over the bytes of \(x\), \(W\) and \(y\).</li>
+<li>Print it for \(d = 8192\) and \(b = 1, 16, 128, 1024, 8192\). What is it close to when \(b \ll d\)?</li>
+<li>Find the smallest \(b\) past the illustrative ridge point (1,000 TFLOP/s, 3 TB/s).</li>
+<li>Time <code>x @ W</code> with <code>bench</code> for \(d = 2048\) and \(b\) from 1 to 4,096, and plot GFLOP/s against \(b\).</li>
 </ol>
-<p>You are done when you can explain why generating text for one user at a time is memory-bound while training is compute-bound.</p>
+<p>You are done when you can say why generating text for one user is memory-bound while training is compute-bound.</p>
 </div>
 <details class="solution">
 <summary>Show what you should find</summary>
-<p>The intensity is \(bd/(2b + d)\), about \(b\) while \(b \ll d\): 1.0, 15.9, 124.1, 819.2 and 2,730.7 FLOPs per byte. It passes 333 at \(b = 363\). On a CPU, whose ridge point is far lower, the measured GFLOP/s climb steeply with \(b\) and level off near the matmul peak once \(b\) reaches a few tens (the exact numbers are noisy); on a GPU the same curve keeps climbing into the hundreds. Training multiplies thousands of tokens at a time (batch size times sequence length), far right of the ridge. Generation produces one token per sequence per step, so with few users \(b\) is tiny and each step reads every weight from memory to do very little arithmetic: memory-bound. That is why serving engines batch many users together. The full code is in the solutions notebook.</p>
+<p>The intensity is \(bd/(2b + d)\), about \(b\): 1.0, 15.9, 124.1, 819.2 and 2,730.7. It passes 333 at \(b = 363\). On a CPU, with its low ridge point, GFLOP/s level off once \(b\) reaches a few tens; on a GPU the curve keeps climbing into the hundreds. Training multiplies thousands of tokens at once; generating for a few users reads every weight to do very little arithmetic. Code is in the solutions notebook.</p>
 </details>
 
 <hr data-session="2">
 <h2>Data parallelism</h2>
-<p>The simplest way to use many GPUs is <strong>data parallelism</strong>: every GPU holds a complete copy of the model, each processes a different slice of the batch, and before the optimiser step they average their gradients with an operation called an <strong>all-reduce</strong>. Every replica then applies the same update to the same weights, so they stay identical. Simulate four workers in one process, with the model and data from the previous section, and check this gives exactly the full-batch gradient:</p>
+<p>In <strong>data parallelism</strong> every GPU holds the whole model and a different slice of the batch; an <strong>all-reduce</strong> averages their gradients so every replica takes the same step. Simulate four workers:</p>
 <pre><code class="language-python">n_workers = 4
 workers = [copy.deepcopy(model) for _ in range(n_workers)]   # a full replica each
 for w, Xs, ys in zip(workers, X.chunk(n_workers), y.chunk(n_workers)):
@@ -283,10 +276,10 @@ dp = [p.grad for p in workers[0].parameters()]
 print("max difference from full batch:",
       max((a - b).abs().max().item() for a, b in zip(full, dp)))</code></pre>
 <pre><code class="language-text">max difference from full batch: 1.043081283569336e-07</code></pre>
-<p>Equal up to float32 rounding, because the additions happen in a different order. Averaging matches the full batch only because every shard is the same size and the loss is a mean; unequal shards need weighting. Batch normalisation is another trap, since each worker computes statistics over its own shard only.</p>
+<p>Equal up to rounding. This relies on equal shards and a mean loss; batch norm, note, sees only each worker's shard.</p>
 
 <h3>How an all-reduce works</h3>
-<p>Sending every gradient to one GPU, summing and sending back would make that GPU's link the bottleneck. The classic alternative is a <strong>ring</strong>. Arrange the workers in a circle, split each gradient into \(N\) chunks, and pass chunks to the next neighbour. During the first \(N-1\) steps, the <strong>reduce-scatter</strong>, each passing chunk is added to, until every worker holds the finished sum of one chunk. During the next \(N-1\) steps, the <strong>all-gather</strong>, the finished chunks travel round so everyone has all of them.</p>
+<p>Funnelling gradients through one GPU makes its link the bottleneck. A <strong>ring</strong> splits each gradient into \(N\) chunks passed between neighbours: \(N-1\) steps of <strong>reduce-scatter</strong> sum each chunk on its way round, then \(N-1\) steps of <strong>all-gather</strong> share the results.</p>
 <pre><code class="language-python">import numpy as np
 
 def ring_all_reduce(arrays):
@@ -323,10 +316,10 @@ for n in [2, 4, 8, 64]:
   4 workers: correct=True, each sends 1.50 x its gradient
   8 workers: correct=True, each sends 1.75 x its gradient
  64 workers: correct=True, each sends 1.97 x its gradient</code></pre>
-<p>Each worker sends \(2(N-1)/N\) times its gradient, which approaches twice the gradient size however many workers you add. The time is set by the gradient size and the link speed, not the number of GPUs (each step adds a little latency, which is why libraries such as NCCL also use trees). PyTorch's <code>DistributedDataParallel</code> (DDP) adds one more trick: it groups gradients into buckets and starts all-reducing each bucket as soon as the backward pass produces it, hiding communication behind computation. Keep reduce-scatter and all-gather in mind; they are the building blocks of what follows.</p>
+<p>Each worker sends about twice its gradient whatever the worker count, so time depends on gradient size and link speed. PyTorch's <code>DistributedDataParallel</code> (DDP) also all-reduces buckets of gradients while the backward pass is still running.</p>
 
 <h2>ZeRO and FSDP: stop storing everything N times</h2>
-<p>Plain data parallelism is wasteful: every GPU stores the full 16 bytes per parameter. <strong>ZeRO</strong> (Rajbhandari et al., 2020) removes the redundancy in three stages. Stage 1 shards the optimiser state: each GPU keeps Adam's statistics and master weights for only \(1/N\) of the parameters, and updates only that slice. Stage 2 also shards the gradients, using a reduce-scatter instead of an all-reduce so each GPU receives just the slice it needs. Stage 3 shards the weights too: each layer's weights are all-gathered just before the layer runs, in the forward and again in the backward pass, then freed. PyTorch's <strong>FSDP</strong> (fully sharded data parallel, now the <code>fully_shard</code> API of FSDP2) is ZeRO stage 3; DeepSpeed implements all three stages.</p>
+<p>Data parallelism stores all 16 bytes per parameter on every GPU. <strong>ZeRO</strong> (Rajbhandari et al., 2020) shards them: stage 1 the optimiser state, stage 2 also the gradients (via reduce-scatter), stage 3 also the weights, all-gathering each layer just before it runs. PyTorch's <strong>FSDP</strong> (<code>fully_shard</code> in FSDP2) is stage 3; DeepSpeed implements all three.</p>
 <pre><code class="language-python">def zero_memory_gb(n_params, n_gpus, stage):
     """Training-state memory per GPU (bf16 weights and grads, fp32 Adam)."""
     weights, grads, optim = 2 * n_params, 2 * n_params, 12 * n_params
@@ -346,11 +339,11 @@ for name, n in [("7B", 7e9), ("70B", 70e9)]:
 7B       64     112.0      29.3      15.5       1.8
 70B       8    1120.0     385.0     262.5     140.0
 70B      64    1120.0     293.1     155.3      17.5</code></pre>
-<p>With 64 GPUs, stage 3 brings a 70B model's training state down to 17.5 GB per GPU. Stages 1 and 2 cost no more communication than plain data parallelism; stage 3 moves about 1.5 times as much, because the weights travel too. Note what ZeRO does not shard: activations. Each GPU still holds the activations for its own micro-batch.</p>
+<p>Stages 1 and 2 cost no more communication than plain data parallelism; stage 3 moves about 1.5 times as much. None of them shards activations.</p>
 
 <h2>Model parallelism: splitting the model itself</h2>
 <h3>Tensor parallelism</h3>
-<p><strong>Tensor parallelism</strong> splits each layer's weight matrices across GPUs, so the GPUs compute every layer together. The standard layout, from the Megatron-LM papers, needs only one all-reduce for a transformer MLP. Split the first matrix by columns, so each GPU owns some of the hidden units; GELU acts on each hidden unit separately, so each GPU applies it locally. Split the second matrix by rows to match, and each GPU produces a partial result that only needs summing:</p>
+<p><strong>Tensor parallelism</strong> splits each layer's matrices across GPUs. The Megatron-LM layout needs one all-reduce per MLP: split the first matrix by columns, so each GPU applies GELU to its own hidden units, and the second by rows, giving partial sums.</p>
 <pre><code class="language-python">import torch.nn.functional as F
 torch.manual_seed(0)
 tokens, d, d_ff, n_gpus = 6, 16, 64, 4
@@ -372,11 +365,10 @@ print("GELU of partial sums matches:",
       torch.allclose(wrong, F.gelu(X @ A), atol=1e-4))</code></pre>
 <pre><code class="language-text">column-then-row split matches: True
 GELU of partial sums matches: False</code></pre>
-<p>The second check shows why the order matters. Splitting the first matrix the other way gives partial sums, and GELU of a partial sum is not part of the answer, so an extra all-reduce would be needed before the activation. Attention splits the same way, by heads. The catch is that tensor parallelism communicates inside every layer, in both passes, while the GPUs wait. It needs the fastest links available, so it is nearly always kept within one server, over NVLink, usually across at most 8 GPUs.</p>
+<p>The order matters: GELU of a partial sum is not part of the answer. Attention splits by heads. Tensor parallelism communicates inside every layer while GPUs wait, so it stays within a server, on NVLink, usually at most 8 GPUs.</p>
 
 <h3>Pipeline parallelism</h3>
-<p><strong>Pipeline parallelism</strong> gives each GPU a block of consecutive layers, a stage, and passes activations forward and gradients back between neighbours. The messages are small, so stages can sit in different servers. The problem is idle time: when one batch goes through, the last stage waits for all the others, and on the way back the first stage waits again. Splitting the batch into micro-batches keeps more stages busy at once. With \(p\) stages and \(m\) micro-batches the idle fraction, the <strong>bubble</strong>, is</p>
-\[ \text{bubble} = \frac{p-1}{m+p-1} \]
+<p><strong>Pipeline parallelism</strong> gives each GPU a stage of consecutive layers, passing small activation messages between neighbours, even across servers. The cost is idle time: with \(p\) stages and \(m\) micro-batches the <strong>bubble</strong> is \((p-1)/(m+p-1)\).</p>
 <pre><code class="language-python">def bubble_fraction(stages, micro_batches):
     return (stages - 1) / (micro_batches + stages - 1)
 
@@ -403,10 +395,10 @@ GPU 0  F0 F1 F2 F3 .  .  .  .  .  .  B0 B1 B2 B3
 GPU 1  .  F0 F1 F2 F3 .  .  .  .  B0 B1 B2 B3 .
 GPU 2  .  .  F0 F1 F2 F3 .  .  B0 B1 B2 B3 .  .
 GPU 3  .  .  .  F0 F1 F2 F3 B0 B1 B2 B3 .  .  .</code></pre>
-<p>The schedule gives forward and backward one slot each (a backward really takes about twice as long, which does not change the fraction); every dot is a GPU waiting. More micro-batches shrink the bubble, but in this simple GPipe schedule each stage holds activations for every micro-batch in flight. The 1F1B schedule starts each backward as early as possible, keeping the same bubble with far less activation memory, and interleaved and "zero-bubble" schedules shrink the bubble further.</p>
+<p>Each dot is a GPU waiting. GPipe stores activations for every micro-batch in flight; the 1F1B schedule starts backward passes early to save memory, and interleaved schedules shrink the bubble.</p>
 
 <h3>Sequence and context parallelism</h3>
-<p>Two more splits deal with long sequences. <strong>Sequence parallelism</strong> complements tensor parallelism: operations that tensor parallelism leaves duplicated on every GPU, such as layer norm and dropout, are split along the sequence instead, saving activation memory. <strong>Context parallelism</strong> splits a long sequence across GPUs for attention itself. Each GPU keeps its share of the queries and passes blocks of keys and values around a ring, combining partial results with the online-softmax trick you will implement in session 3. It is one of the main tools for training with very long contexts.</p>
+<p><strong>Sequence parallelism</strong> splits layer norm and dropout along the sequence inside tensor-parallel groups. <strong>Context parallelism</strong> splits a long sequence across GPUs and passes key and value blocks round a ring, combining them with the online softmax of session 3.</p>
 
 <h2>Putting it together: 3-D parallelism</h2>
 <figure>
@@ -434,13 +426,13 @@ GPU 3  .  .  .  F0 F1 F2 F3 B0 B1 B2 B3 .  .  .</code></pre>
 </svg>
 <figcaption>Data parallelism copies the model, tensor parallelism splits every layer, pipeline parallelism splits the stack of layers. Large runs use all three at once.</figcaption>
 </figure>
-<p>Real runs combine all three, each matched to the links it needs. A typical layout puts tensor parallelism inside each 8-GPU server, where NVLink is fast; pipeline stages across servers, since they exchange only activations; and data parallelism, usually with ZeRO-1 or FSDP sharding, across everything else. As an illustration, 1,024 GPUs could run as 8-way tensor parallel times 4 pipeline stages times 32 data-parallel replicas. Mixture-of-experts models add a fourth axis, expert parallelism, which you will meet in session 3. The rule is to put the chattiest parallelism on the fastest wires: links inside a server are roughly an order of magnitude faster than the network between servers.</p>
-<p>You will not write this machinery yourself. PyTorch provides DDP and FSDP2, and launches one process per GPU with <code>torchrun</code>; <code>torch.compile</code> fuses kernels; DeepSpeed provides ZeRO; Megatron-LM and Megatron-style libraries provide tensor and pipeline parallelism; and PyTorch's torchtitan shows them combined. What you need is the mental model, so that a configuration such as "TP=8, PP=4, DP=32 with ZeRO-1" tells you what each GPU stores and when it talks.</p>
+<p>Real runs combine them, putting the chattiest parallelism on the fastest wires (links inside a server are roughly ten times faster than the network): tensor parallelism inside 8-GPU servers, pipeline stages across servers, sharded data parallelism across the rest. For example, 1,024 GPUs as 8-way tensor times 4 stages times 32 replicas.</p>
+<p>The tools are PyTorch's DDP and FSDP2 (launched with <code>torchrun</code>), DeepSpeed, Megatron-LM and torchtitan. You need the mental model, so that "TP=8, PP=4, DP=32 with ZeRO-1" tells you what each GPU stores and when it talks.</p>
 
 <h2>Compute budgets and MFU</h2>
-<p>Lesson <a data-ref="how-llms-are-built"></a> gave the rule that training a dense transformer with \(N\) parameters on \(D\) tokens costs about \(6ND\) FLOPs. Divide by what your cluster really delivers and you have a schedule:</p>
+<p>Training a dense transformer costs about \(6ND\) FLOPs (lesson <a data-ref="how-llms-are-built"></a>), so</p>
 \[ \text{training time} \approx \frac{6ND}{\text{GPUs} \times \text{peak FLOP/s per GPU} \times \text{MFU}} \]
-<p><strong>MFU</strong>, model FLOPs utilisation, is the fraction of the hardware's peak that goes into the model's own arithmetic: \(6N\) times the tokens per second you achieve, divided by the total peak. Communication, pipeline bubbles, memory-bound operations and recomputation all pull it down (recomputed FLOPs do not count, which is why checkpointing lowers MFU). Well-tuned large runs commonly report something like 30 to 50 per cent. The calculator assumes an illustrative 1 petaFLOP/s per GPU and 40 per cent MFU:</p>
+<p><strong>MFU</strong>, model FLOPs utilisation, is the share of peak spent on the model's own arithmetic; communication, bubbles, memory-bound work and recomputation lower it. Well-tuned large runs commonly report 30 to 50 per cent. With an illustrative 1 petaFLOP/s per GPU and 40 per cent MFU:</p>
 <pre><code class="language-python">def training_time(n_params, n_tokens, n_gpus, peak_flops=1e15, mfu=0.4):
     """FLOPs, days and GPU-hours for a dense transformer, from C = 6 N D."""
     flops = 6 * n_params * n_tokens
@@ -457,39 +449,38 @@ for name, n, d_tok, gpus in runs:
 <pre><code class="language-text">1B on 20B tokens   1.2e+20 FLOPs     8 GPUs    0.4 days          83 GPU-hours
 7B on 2T tokens    8.4e+22 FLOPs   512 GPUs    4.7 days      58,333 GPU-hours
 70B on 15T tokens  6.3e+24 FLOPs  8192 GPUs   22.3 days   4,375,000 GPU-hours</code></pre>
-<p>These are planning numbers, not predictions: real runs also lose time to failures, restarts and evaluations. They do let you sanity-check claims. Training a 70B model on 15 trillion tokens in one week on 1,000 such GPUs would need each GPU to run at about ten times its peak.</p>
+<p>Use it to sanity-check claims: 70B on 15 trillion tokens in a week on 1,000 such GPUs would need ten times their peak.</p>
 
 <h2>What goes wrong at scale</h2>
 <ul>
-<li><strong>Loss spikes.</strong> The loss suddenly jumps and sometimes never recovers. Causes include bad batches, learning rates near the edge of stability and attention logits growing too large. Defences are gradient clipping, learning-rate warm-up, normalisation inside attention and monitoring that catches spikes early. The PaLM team, for example, restarted from a checkpoint shortly before each spike and skipped the batches that had followed it.</li>
-<li><strong>Hardware failures.</strong> With tens of thousands of GPUs, something breaks every few hours: a GPU, a memory chip, a network link. Meta's Llama 3 report describes hundreds of unexpected interruptions in under two months of pretraining. Runs restart automatically from the latest checkpoint, with spare machines ready.</li>
-<li><strong>Big checkpoints.</strong> At 16 bytes per parameter, a 70B model's training state is over a terabyte. Each GPU writes its own shard, often asynchronously so training does not pause, and the checkpoint includes the data loader's position and random-number states so a restart sees the right data.</li>
-<li><strong>Stragglers and silent errors.</strong> One slow GPU slows every synchronised step, and a faulty chip can produce wrong numbers without crashing. Teams track per-device timings and run health checks.</li>
-<li><strong>Determinism.</strong> Floating-point addition is not associative, so a different GPU count or reduction order changes the last bits of the result, as you saw above. Bit-exact reproducibility is possible but costs speed; most teams settle for a reproducible data order and statistically reproducible loss curves.</li>
+<li><strong>Loss spikes.</strong> Defences include gradient clipping, warm-up and normalisation inside attention; the PaLM team restarted from a checkpoint before each spike and skipped the batches that followed.</li>
+<li><strong>Hardware failures.</strong> Meta's Llama 3 report describes hundreds of unexpected interruptions in under two months; runs restart automatically from checkpoints.</li>
+<li><strong>Big checkpoints.</strong> A 70B model's training state exceeds a terabyte; GPUs write their shards in parallel, with data position and random states.</li>
+<li><strong>Stragglers and silent errors.</strong> One slow GPU slows every synchronised step; a faulty chip can compute wrong numbers without crashing.</li>
+<li><strong>Determinism.</strong> Floating-point addition is not associative, so changing the GPU count changes the last bits.</li>
 </ul>
 
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: plan a 13B training run</p>
-<p>You have 64 GPUs with 80 GB each, and a dense 13B model with 40 layers of width 5,120, to train on 1 trillion tokens in sequences of 4,096 with one sequence per micro-batch. Use the functions from this lesson.</p>
+<p>You have 64 GPUs of 80 GB, and a dense 13B model with 40 layers of width 5,120, to train on 1 trillion tokens in 4,096-token sequences, one per micro-batch.</p>
 <ol>
-<li>For ZeRO stages 0 to 3, print the training state per GPU and how much of the 80 GB is left.</li>
-<li>Compute the activation memory with and without checkpointing. What is the lowest ZeRO stage that fits without checkpointing?</li>
-<li>How many days does training take at 40% MFU on 64 GPUs, and on 512?</li>
-<li>With 8 pipeline stages, how many micro-batches keep the bubble under 10%?</li>
-<li>Stretch: measure your laptop's MFU. Time a few AdamW steps of <code>MLPStack</code> on a batch of 512, compute \(6 \times \text{parameters} \times \text{tokens per second}\), and divide by the matmul peak you measured.</li>
+<li>Print the training state per GPU, and the memory left, for ZeRO stages 0 to 3.</li>
+<li>Compute activation memory with and without checkpointing. What is the lowest stage that fits without checkpointing?</li>
+<li>How many days at 40% MFU on 64 GPUs, and on 512?</li>
+<li>How many micro-batches keep an 8-stage pipeline's bubble under 10%?</li>
+<li>Stretch: time a few AdamW steps of <code>MLPStack</code> on a batch of 512 and compute your laptop's MFU against the matmul peak you measured.</li>
 </ol>
 </div>
 <details class="solution">
 <summary>Show what you should find</summary>
-<p>Stage 0 needs 208 GB per GPU and cannot work. Stage 1 needs 54.4 GB, leaving 25.6 GB; stage 2 needs 28.8 GB, leaving 51.2 GB; stage 3 needs 3.2 GB. Activations take 28.5 GB per GPU without checkpointing and 2.4 GB with it. So stage 1 fits only with checkpointing, while stage 2 fits without it; stage 2 is the better choice, since checkpointing costs about a third more compute. Training takes about 35 days on 64 GPUs and 4.4 days on 512. Eight stages need 64 micro-batches, for a bubble of 9.9%. On a laptop CPU the stretch measurement gave an MFU of about 17 per cent in one run; anything from a few per cent to around 30 is plausible, depending on the machine and what else is running. Small matrices, element-wise work, the optimiser step and Python overhead all take time that does no model FLOPs: the same story as on a cluster, at a smaller scale.</p>
+<p>Stage 0 needs 208 GB. Stage 1 leaves 25.6 GB, less than the 28.5 GB of activations, so it fits only with checkpointing (2.4 GB); stage 2 leaves 51.2 GB and fits without, the better choice. Training takes about 35 days on 64 GPUs, 4.4 on 512. Eight stages need 64 micro-batches (9.9%). The stretch measurement gave an MFU of about 17 per cent on a laptop CPU in one run (anything from a few per cent to about 30 is plausible): small matrices, element-wise work, the optimiser step and Python overhead all do no model FLOPs.</p>
 </details>
 
 <hr data-session="3">
 <h2>FlashAttention: attention that respects the memory hierarchy</h2>
-<p>Look at standard attention with roofline eyes. It computes a \(T \times T\) score matrix, writes it to HBM, reads it back for the softmax, writes the probabilities, and reads them again to multiply by the values. The softmax does a handful of operations per number, so these steps are memory-bound, and the \(T \times T\) matrices take memory that grows with the square of the context. <strong>FlashAttention</strong> (Dao et al., 2022) computes exactly the same result without ever writing that matrix to HBM. It loads a block of queries into on-chip SRAM, streams blocks of keys and values past it, and keeps only a running result for each query.</p>
-<p>The obstacle is the softmax: each row needs its maximum and its sum over all keys before any weight is known. The <strong>online softmax</strong> keeps a running maximum \(m\), a running sum \(\ell\) and a running output \(o\) for each row, and rescales them whenever a new block of scores \(s_j\) raises the maximum:</p>
+<p>Standard attention writes a \(T \times T\) score matrix to HBM and reads it back for the softmax and again for the values: memory-bound steps, with memory growing as \(T^2\). <strong>FlashAttention</strong> (Dao et al., 2022) gets exactly the same result without writing that matrix. It holds a block of queries in SRAM and streams blocks of keys and values past it, using the <strong>online softmax</strong>: a running maximum \(m\), sum \(\ell\) and output \(o\) per row, rescaled when a new block of scores \(s_j\) raises the maximum:</p>
 \[ m' = \max\big(m, \max_j s_j\big), \quad \ell' = e^{m - m'}\,\ell + \sum_j e^{s_j - m'}, \quad o' = e^{m - m'}\,o + \sum_j e^{s_j - m'}\, v_j \]
-<p>After the last block, \(o / \ell\) is the exact attention output for that row.</p>
+<p>After the last block, \(o/\ell\) is the exact output.</p>
 <pre><code class="language-python">def naive_attention(q, k, v):
     scores = q @ k.T / q.shape[-1] ** 0.5        # (T, T): the whole matrix exists
     return scores.softmax(dim=-1) @ v
@@ -526,23 +517,10 @@ print(f"largest score matrix: naive {T * T:,} values, tiled {128 * 128:,}")</cod
 <pre><code class="language-text">tiled matches naive: True
 PyTorch's fused kernel matches: True
 largest score matrix: naive 4,194,304 values, tiled 16,384</code></pre>
-<p>Same answer, but the largest intermediate shrinks from four million numbers to sixteen thousand, small enough for SRAM. In the backward pass FlashAttention recomputes the scores block by block from the saved \(m\) and \(\ell\) instead of storing them: checkpointing again, trading cheap FLOPs for expensive bytes. The FLOP count is unchanged, still quadratic in \(T\); the gains are far less memory traffic and memory that grows linearly with \(T\). As a Python loop on a CPU, this version is slower than the naive one. The benefit appears only in a fused GPU kernel, which is what <code>F.scaled_dot_product_attention</code> calls when one is available.</p>
-
-<div class="admonition exercise">
-<p class="admonition-title">Hands-on: causal FlashAttention</p>
-<ol>
-<li>Write <code>causal_tiled_attention</code>, a copy of <code>tiled_attention</code> with a causal mask: query \(i\) may attend only to keys \(j \le i\) (lesson <a data-ref="transformers"></a>).</li>
-<li>Skip key blocks that lie entirely in the future of the query block, and apply the mask only inside the block on the diagonal.</li>
-<li>Count the tiles you compute, and check your output against <code>F.scaled_dot_product_attention(..., is_causal=True)</code>.</li>
-</ol>
-</div>
-<details class="solution">
-<summary>Show what you should find</summary>
-<p>Loop over key blocks only up to the end of the current query block, <code>range(0, i + block, block)</code>. In the diagonal block, set scores where the key position is greater than the query position to \(-\infty\) before updating the running maximum; every row can still see itself, so the maximum stays finite. The output matches PyTorch's causal kernel, and for \(T = 2048\) with blocks of 128 you compute 136 of 256 tiles, 53%. Skipping whole tiles is why causal attention costs about half as much as full attention in real kernels.</p>
-</details>
+<p>The largest intermediate shrinks from four million numbers to sixteen thousand. The backward pass recomputes scores from the saved \(m\) and \(\ell\), checkpointing again. FLOPs stay quadratic, but memory traffic falls sharply and memory grows linearly with \(T\). The gain needs a fused GPU kernel (in Python on a CPU this loop is slower), which <code>F.scaled_dot_product_attention</code> uses when available. With a causal mask, wholly future tiles are skipped, roughly halving the work.</p>
 
 <h2>Mixture of experts</h2>
-<p>A <strong>mixture of experts</strong> (MoE) layer replaces a transformer's single MLP with many expert MLPs and a small <strong>router</strong>, a linear layer that scores every expert for every token (Shazeer et al., 2017). Each token goes to its top \(k\) experts, typically 1 to 8 out of dozens or hundreds, and their outputs are mixed using the router's weights. Parameters grow with the number of experts; compute per token grows only with \(k\).</p>
+<p>A <strong>mixture of experts</strong> (MoE) layer replaces the MLP with many expert MLPs and a <strong>router</strong>, a linear layer that sends each token to its top \(k\) experts and weights their outputs (Shazeer et al., 2017). Parameters grow with the number of experts, compute per token only with \(k\).</p>
 <pre><code class="language-python">class MoE(nn.Module):
     """A mixture-of-experts MLP: each token goes to its top-k experts."""
     def __init__(self, d=64, d_ff=256, n_experts=8, k=2):
@@ -587,17 +565,11 @@ print("after skewing:    ", moe.load.tolist(), f"loss {moe.aux_loss.item():.3f}"
 <pre><code class="language-text">total 265,216 parameters, active per token 66,688 (25%)
 tokens per expert: [248, 251, 240, 235, 228, 281, 252, 265] loss 1.001
 after skewing:     [978, 43, 41, 316, 80, 72, 73, 397] loss 1.961</code></pre>
-<p>Each token uses a quarter of the parameters. Two problems come with that. Routers tend to collapse: an expert that receives slightly more tokens trains faster, gets better and attracts still more, until a few experts do all the work. The <strong>load-balancing loss</strong> of the Switch Transformer (Fedus et al., 2021) multiplies the fraction of tokens each expert receives by its mean router probability and sums over experts. It is 1.0 when the load is even, rises when it is not (skewing the inputs towards expert 0 nearly doubled it), and is added to the training loss with a small weight. Some recent models instead nudge a per-expert bias up or down to even out the load. The second problem is systems. Experts usually live on different GPUs (<strong>expert parallelism</strong>), so every MoE layer sends tokens to their experts and back with an all-to-all exchange, and each expert has a fixed capacity, beyond which extra tokens are dropped and skip the layer through the residual connection.</p>
-<p>When a model card says a model has about 47 billion parameters in total but 13 billion active per token (roughly the shape of Mixtral 8x7B), budget memory for 47 billion and compute for 13 billion: use the active count in \(6ND\).</p>
+<p>Routers tend to collapse onto a few experts, which then train faster and attract more tokens. The Switch Transformer's <strong>load-balancing loss</strong> (Fedus et al., 2021), the fraction of tokens per expert times its mean router probability, summed, is 1.0 for an even load and rises otherwise; it joins the training loss with a small weight. Experts usually sit on different GPUs (<strong>expert parallelism</strong>), so tokens travel to them and back in an all-to-all exchange. A model with about 47B parameters in total and 13B active (roughly Mixtral 8x7B) needs memory for 47B but compute for 13B: use the active count in \(6ND\).</p>
 
-<h2>Long context and the cost of attention</h2>
-<p>Per layer, a transformer's linear layers cost about \(24Td^2\) FLOPs in the forward pass for \(T\) tokens of width \(d\), while attention's two \(T \times T\) matrix multiplications cost about \(4T^2d\). The ratio is \(T/(6d)\): for a model of width 4,096, attention dominates the compute beyond roughly 25,000 tokens. FlashAttention removed the memory wall but not this quadratic cost, and the KV cache adds a serving cost that grows with context (lessons <a data-ref="transformers"></a> and <a data-ref="deployment-llmops"></a>). So models are usually pretrained mostly on shorter sequences and extended in a final phase on long ones, with context parallelism when one sequence's activations will not fit.</p>
-<p>The positional encoding has to cooperate. With RoPE, each pair of dimensions rotates at its own frequency, and positions far beyond the training length produce combinations of angles the model has never seen. <strong>RoPE scaling</strong> methods such as position interpolation, NTK-aware scaling and YaRN rescale those frequencies so that long positions look like ones seen in training, usually followed by a short fine-tune at the new length. In a model card, a large RoPE base (theta) or a YaRN factor is the sign of this.</p>
-
-<h2>State-space models and hybrids</h2>
-<p>Attention keeps every past token and compares against all of them. A <strong>state-space model</strong> (SSM) instead carries a fixed-size state forward through the sequence, like an RNN, updating it with a linear recurrence:</p>
-\[ h_t = \bar{A}_t \odot h_{t-1} + \bar{B}_t\, x_t, \qquad y_t = C_t\, h_t \]
-<p>Because the recurrence is linear in \(h\), it can be computed with a parallel scan instead of strictly one step at a time, which made SSMs trainable at scale where classic RNNs struggled. <strong>Mamba</strong> (Gu and Dao, 2023) made the parameters selective: \(\bar{A}_t\), \(\bar{B}_t\) and \(C_t\) depend on the current input, so the model can decide what to keep and what to forget, and a hardware-aware kernel computes the scan with the expanded state held in SRAM. Here is a minimal selective scan, timed against naive attention:</p>
+<h2>Long context and state-space models</h2>
+<p>Per layer, linear layers cost about \(24Td^2\) forward FLOPs and attention about \(4T^2d\), a ratio of \(T/(6d)\): at width 4,096, attention dominates beyond about 25,000 tokens. So models are pretrained mostly on shorter sequences and extended at the end. Positions beyond the training length give RoPE (lesson <a data-ref="transformers"></a>) unseen rotation angles; <strong>RoPE scaling</strong> methods such as position interpolation and YaRN rescale its frequencies.</p>
+<p>A <strong>state-space model</strong> (SSM) carries a fixed-size state with a linear recurrence, \(h_t = \bar{A}_t \odot h_{t-1} + \bar{B}_t x_t\), \(y_t = C_t h_t\). Linearity allows a parallel scan, which made SSMs trainable where classic RNNs struggled. <strong>Mamba</strong> (Gu and Dao, 2023) makes \(\bar{A}_t\), \(\bar{B}_t\) and \(C_t\) depend on the input, so the model chooses what to keep, and runs the scan in a hardware-aware kernel.</p>
 <pre><code class="language-python">def selective_scan(x, delta, A, B, C):
     """h_t = exp(delta_t A) h_(t-1) + delta_t B_t x_t, then y_t = h_t C_t."""
     decay = torch.exp(delta[:, :, None] * A)              # (T, d, n), in (0, 1)
@@ -627,40 +599,37 @@ for T in [1024, 2048, 4096, 8192]:
   2048           5.0      44.9         17
   4096          24.5      66.4         67
   8192         135.0     157.7        268</code></pre>
-<p>The Python loop is slow in absolute terms (a real kernel runs the scan in parallel on chip), so look at the growth instead. Each doubling of \(T\) quadruples the attention score matrix, and attention's time grows by a factor of about four to five, while the scan's time roughly doubles. At generation time the difference is starker: the SSM keeps only its latest state, here \(64 \times 16 = 1{,}024\) numbers, however long the conversation, while a KV cache grows with every token. The flip side is that a fixed-size state cannot recall an arbitrary detail from long ago as precisely as attention, which can look it up. So many recent long-context models are <strong>hybrids</strong>: mostly SSM or linear-attention layers, with a few full attention layers mixed in (AI21's Jamba was an early example).</p>
+<p>The Python loop is slow, so watch the growth: each doubling of \(T\) multiplies attention's time by about four to five and the scan's by about two. When generating, an SSM keeps only its latest state, here 1,024 numbers, while a KV cache grows with every token (lesson <a data-ref="llm-inference"></a>). A fixed-size state recalls distant details less precisely, so many long-context models are <strong>hybrids</strong> of SSM or linear-attention layers with a few attention layers (AI21's Jamba was an early example).</p>
 
 <h2>Smaller caches and lower precision</h2>
-<p>Grouped-query attention, from lesson <a data-ref="transformers"></a>, shares each key and value head among several query heads, shrinking the KV cache by that factor. <strong>Multi-head latent attention</strong> (MLA), introduced in DeepSeek-V2, goes further: it caches one compressed latent vector per token and layer, and projects it up into keys and values for every head when needed. Both trade a little modelling freedom for a much smaller cache, which matters most for long contexts and many concurrent users.</p>
-<p>On precision, bf16 is today's default for training, and FP8 matrix multiplication is increasingly used for the bulk of the compute, with scale factors kept per tensor or per small block so values stay in range; DeepSeek-V3's technical report, for example, describes FP8 training at large scale. Newer accelerators add block-scaled formats down to 4 bits. The pattern is the one you saw with bf16: cheap formats for the matrix multiplications, higher precision for master weights, optimiser state, accumulation and sensitive operations.</p>
+<p>Grouped-query attention (lesson <a data-ref="transformers"></a>) shares key and value heads; <strong>multi-head latent attention</strong> (MLA), from DeepSeek-V2, caches one compressed latent per token and projects keys and values from it. And FP8 matrix multiplication, with per-tensor or per-block scales, increasingly carries the bulk of training compute (DeepSeek-V3's report describes it at scale), while master weights, optimiser state and accumulation stay in higher precision.</p>
 
 <h2>Reading a model card's architecture section</h2>
-<p>You can now turn most of a model card's architecture table into costs:</p>
 <table>
 <thead><tr><th>What you read</th><th>What it tells you</th></tr></thead>
 <tbody>
-<tr><td>Parameter count (dense)</td><td>About 2 bytes per parameter to serve in bf16, 16 to train; compute from \(6ND\)</td></tr>
-<tr><td>Total and active parameters (MoE)</td><td>Memory follows the total, compute per token follows the active count</td></tr>
-<tr><td>Layers, width, heads, KV heads</td><td>Inputs to the memory and KV-cache calculators; fewer KV heads than query heads means GQA</td></tr>
-<tr><td>MLA or latent attention</td><td>A compressed KV cache, so long contexts are cheaper to serve</td></tr>
-<tr><td>Context length, RoPE base, YaRN</td><td>How the context was extended; attention cost still grows with \(T^2\)</td></tr>
-<tr><td>Mamba, SSM or linear-attention layers</td><td>A hybrid: a fixed-size state in most layers, attention in a few</td></tr>
-<tr><td>Training tokens, GPU count, precision</td><td>Check them against \(6ND\) and a plausible MFU</td></tr>
+<tr><td>Dense parameter count</td><td>About 2 bytes per parameter to serve in bf16, 16 to train; compute from \(6ND\)</td></tr>
+<tr><td>Total and active parameters (MoE)</td><td>Memory follows the total, compute the active count</td></tr>
+<tr><td>Layers, width, heads, KV heads</td><td>Memory and KV-cache size; fewer KV heads than query heads means GQA</td></tr>
+<tr><td>MLA, context length, RoPE base or YaRN</td><td>A smaller cache and an extended context; attention still grows with \(T^2\)</td></tr>
+<tr><td>Mamba, SSM or linear-attention layers</td><td>A hybrid with a fixed-size state in most layers</td></tr>
+<tr><td>Training tokens, GPUs, precision</td><td>Check against \(6ND\) and a plausible MFU</td></tr>
 </tbody>
 </table>
 
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: read a model card</p>
-<p>A made-up model card lists 32 layers of width 4,096; a vocabulary of 128,000 with separate input and output embeddings; 32 query heads and 8 KV heads of dimension 128; and in every layer 64 SwiGLU experts of hidden size 1,536, with 4 active per token. A SwiGLU expert has three matrices of shape \(d \times d_{\text{expert}}\).</p>
+<p>A made-up card lists 32 layers of width 4,096, a 128,000-token vocabulary with separate input and output embeddings, 32 query heads and 8 KV heads of dimension 128, and in every layer 64 SwiGLU experts of hidden size 1,536 (three \(d \times d_{\text{expert}}\) matrices each), 4 active per token.</p>
 <ol>
-<li>Write <code>count_params(config)</code> that returns total and active parameters (ignore norms and biases).</li>
+<li>Write <code>count_params(config)</code> returning total and active parameters (ignore norms).</li>
 <li>How much memory do the weights need in bf16?</li>
-<li>What is the KV cache per token in bf16, and what would it be with 32 KV heads?</li>
-<li>How many FLOPs would training on 10 trillion tokens take, and how does that compare with a dense model of the same total size?</li>
+<li>What is the KV cache per token in bf16, and with 32 KV heads?</li>
+<li>How many FLOPs would 10 trillion training tokens take, compared with a dense model of the same total size?</li>
 </ol>
 </div>
 <details class="solution">
 <summary>Show what you should find</summary>
-<p>Per layer, the Q, O, K and V projections have \(4096 \times 128 \times (2 \cdot 32 + 2 \cdot 8)\) parameters, about 42 million; each expert has \(3 \times 4096 \times 1536\), about 18.9 million; the router has \(4096 \times 64\). With both embedding matrices, the model has about 41.1 billion parameters in total and 4.8 billion active per token. The weights need about 82 GB in bf16, so serving needs more than one 80 GB GPU even though each token uses under an eighth of them. The KV cache is 131 KB per token, against 524 KB with 32 KV heads. Training on 10 trillion tokens costs about \(2.9 \times 10^{23}\) FLOPs using the active count, against \(2.5 \times 10^{24}\) for a dense 41B model: almost nine times less compute for the same memory.</p>
+<p>Attention has about 42 million parameters per layer, each expert about 18.9 million; with embeddings, about 41.1B in total and 4.8B active. The weights need about 82 GB in bf16, more than one 80 GB GPU, though each token uses under an eighth of them. The KV cache is 131 KB per token (524 KB with 32 KV heads). Training costs about \(2.9 \times 10^{23}\) FLOPs, against \(2.5 \times 10^{24}\) for a dense 41B model.</p>
 </details>
 
 <h2>Check yourself</h2>
@@ -693,20 +662,20 @@ for T in [1024, 2048, 4096, 8192]:
 <li class="correct">It communicates inside every layer, so it needs the fastest links</li>
 <li>It changes the maths of the model</li>
 </ul>
-<p class="why">The all-reduces sit on the critical path of every layer in both passes; over slower network links the GPUs would spend most of their time waiting.</p>
+<p class="why">Its all-reduces sit on the critical path of every layer in both passes; over the slower network the GPUs would mostly wait.</p>
 </div>
 <div class="q">
 <p>What does FlashAttention change?</p>
 <ul>
 <li>It approximates attention with low-rank matrices</li>
-<li>It reduces attention's FLOPs from quadratic to linear in sequence length</li>
+<li>It reduces attention's FLOPs from quadratic to linear</li>
 <li class="correct">It computes exact attention tile by tile in on-chip memory, never writing the full score matrix to HBM</li>
 <li>It only speeds up inference, not training</li>
 </ul>
-<p class="why">Same result and the same FLOPs, but far less memory traffic, and memory that grows linearly rather than quadratically with context.</p>
+<p class="why">Same result and the same FLOPs, but far less memory traffic, and memory that grows linearly with context.</p>
 </div>
 <div class="q">
-<p>A mixture-of-experts model has 64 experts per layer and sends each token to 2 of them. Compared with a dense model of the same total parameter count, it needs...</p>
+<p>A mixture-of-experts model has 64 experts per layer and sends each token to 2. Compared with a dense model of the same total size, it needs...</p>
 <ul>
 <li>much less memory and much less compute per token</li>
 <li class="correct">about the same memory, but much less compute per token</li>
@@ -720,11 +689,11 @@ for T in [1024, 2048, 4096, 8192]:
 <div class="admonition takeaways">
 <p class="admonition-title">Key takeaways</p>
 <ul>
-<li>Accelerators are limited by moving bytes far more often than by arithmetic. Arithmetic intensity and the roofline tell you which limit applies; large matrix multiplications are compute-bound, element-wise work is memory-bound.</li>
-<li>Mixed-precision training computes in bf16 but keeps float32 master weights and optimiser state: about 16 bytes per parameter before activations. Checkpointing trades compute for activation memory; accumulation builds big batches from small ones.</li>
-<li>Data parallelism copies the model and all-reduces gradients; ZeRO and FSDP shard optimiser state, gradients and weights; tensor parallelism splits layers over fast links; pipeline parallelism splits the stack and pays a bubble. Big runs combine them.</li>
-<li>Training time is about \(6ND\) divided by GPUs, peak FLOP/s and MFU. At scale, plan for loss spikes, hardware failures and terabyte checkpoints.</li>
-<li>FlashAttention, mixture of experts, GQA and MLA, state-space layers and low-precision formats all buy the same thing: more model per byte moved, per byte stored or per FLOP spent.</li>
+<li>Accelerators are usually limited by moving bytes. The roofline says which limit applies: big matmuls are compute-bound, element-wise work memory-bound.</li>
+<li>Mixed-precision Adam needs about 16 bytes per parameter before activations. Checkpointing trades compute for activation memory; accumulation builds big batches from small ones.</li>
+<li>Data parallelism copies the model and all-reduces gradients; ZeRO and FSDP shard the state; tensor parallelism splits layers over fast links; pipeline parallelism splits the stack and pays a bubble.</li>
+<li>Training time is about \(6ND\) over GPUs, peak FLOP/s and MFU. At scale, plan for spikes, failures and terabyte checkpoints.</li>
+<li>FlashAttention, MoE, GQA and MLA, state-space layers and low precision all buy more model per byte moved, byte stored or FLOP spent.</li>
 </ul>
 </div>
 

@@ -1,0 +1,955 @@
+<!--
+{
+  "title": "Interpretability and explainability",
+  "short": "Interpretability",
+  "summary": "Find out why a model made a prediction, what it has learned and how far to trust the answer: coefficients, permutation importance and Shapley values for tabular models, gradients for neural networks, and probes, the logit lens, activation patching and sparse autoencoders inside a small transformer.",
+  "sessions": [
+    "Why explain, models you can read, and global explanations for any model",
+    "Local explanations: LIME, Shapley values, counterfactuals and gradient attributions",
+    "Inside a transformer: attention, probes, the logit lens, patching, sparse autoencoders and steering"
+  ],
+  "objectives": [
+    "Choose between an interpretable model and a post-hoc explanation, and say what each can and cannot tell you",
+    "Compute permutation importance, partial dependence and ICE curves, and recognise when correlated features make them mislead",
+    "Implement LIME and exact Shapley values from scratch and check that the contributions add up",
+    "Attribute a neural network's prediction to its inputs with integrated gradients, and test the attributions with sanity checks and deletion curves",
+    "Find the circuit inside a small transformer with probes, the logit lens and activation patching, and untangle its features with a sparse autoencoder"
+  ],
+  "prerequisites": ["classical-ml", "neural-networks", "transformers"],
+  "runs_on": "Any computer (CPU), offline. The whole notebook runs in about a minute. Two optional cells download the shap library and GPT-2 small.",
+  "glossary": [
+    {"term": "Interpretability", "def": "How well a person can understand why a model produced an output or what it has learned; explainability usually refers to the methods that produce that understanding."},
+    {"term": "Permutation importance", "def": "How much a model's held-out score drops when one feature's values are shuffled, which breaks that feature's link with the target."},
+    {"term": "Partial dependence plot", "def": "A curve of the model's average prediction as one feature is set to each value in turn for every row; ICE curves show the same sweep for individual rows."},
+    {"term": "Shapley value (SHAP)", "def": "A feature's average marginal contribution to one prediction over all orders in which features could be added; the contributions sum to the prediction minus a baseline."},
+    {"term": "LIME", "def": "Local Interpretable Model-agnostic Explanations: explaining one prediction by fitting a simple weighted model to the black box's outputs on perturbed copies of the input."},
+    {"term": "Saliency map", "def": "A map of how sensitive a network's output is to each input pixel, usually the absolute value of the gradient."},
+    {"term": "Integrated gradients", "def": "An attribution method that averages gradients along a straight path from a baseline input to the real one, so the attributions add up to the change in output."},
+    {"term": "Linear probe", "def": "A linear classifier trained on a model's frozen internal activations to test whether some piece of information can be read from them."},
+    {"term": "Logit lens", "def": "Reading an intermediate layer by passing its residual stream through the model's final unembedding, as if the network stopped there."},
+    {"term": "Activation patching", "def": "Copying an activation from one run of a model into another run to measure whether that activation causes a difference in the output."},
+    {"term": "Superposition", "def": "A network representing more features than it has dimensions, by giving sparse features directions that are almost, but not exactly, orthogonal."},
+    {"term": "Sparse autoencoder", "def": "A wide autoencoder trained to rebuild activations from a few active features at a time, used to split superposed representations into interpretable directions."}
+  ]
+}
+-->
+<h2>Why explain a model?</h2>
+<p>A model can score well on a test set and still be right for the wrong reasons. A chest X-ray classifier can learn which hospital took the image, because disease rates differ between hospitals; a hiring model can learn a proxy for gender. Accuracy will not tell you. Asking <em>why</em> the model predicts what it does often will.</p>
+<p>Who wants the explanation decides which method you need:</p>
+<ul>
+<li><strong>You, debugging.</strong> Leakage and shortcuts show up as explanations a domain expert finds absurd.</li>
+<li><strong>The person affected.</strong> Someone refused a loan wants to know what counted and what would change the outcome.</li>
+<li><strong>Auditors and regulators.</strong> Rules for high-risk systems, such as the EU AI Act from lesson <a data-ref="safety-security"></a>, require outputs that users can interpret.</li>
+<li><strong>Scientists.</strong> A model that predicts well may have found a pattern worth understanding.</li>
+</ul>
+<p>Three distinctions organise the methods: <strong>global</strong> (the whole model) or <strong>local</strong> (one prediction); <strong>intrinsically interpretable</strong> (simple enough to read) or <strong>post-hoc</strong> (explained after training); and specific to one kind of model or <strong>model-agnostic</strong>, needing only predictions.</p>
+<table>
+<thead><tr><th>Method</th><th>Explains</th><th>Works on</th></tr></thead>
+<tbody>
+<tr><td>Coefficients, shallow trees, GAMs</td><td>Global and local</td><td>Only that model (intrinsic)</td></tr>
+<tr><td>Permutation importance, partial dependence</td><td>Global</td><td>Any model</td></tr>
+<tr><td>LIME, Shapley values, counterfactuals</td><td>Local</td><td>Any model</td></tr>
+<tr><td>Gradients, integrated gradients</td><td>Local</td><td>Differentiable models</td></tr>
+<tr><td>Probes, logit lens, patching, SAEs</td><td>Internal mechanisms</td><td>Neural networks</td></tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">An explanation is a model of the model</p>
+<p>A post-hoc explanation is fitted to the black box and can be wrong about it. Even a faithful one describes the model, not the world: if the prediction rises with blood pressure, that is a fact about learned correlations, not evidence that lowering someone's blood pressure would lower their risk. Methods disagree, and they can be gamed: Slack et al. (2020) built classifiers that hide their reliance on a sensitive feature from LIME and SHAP. Treat every explanation as a hypothesis to test.</p>
+</div>
+<h2>Models you can read</h2>
+<p>The most reliable explanation is a model simple enough to read. We use scikit-learn's diabetes data in original units: 442 patients, ten baseline measurements (age, sex, BMI, mean blood pressure, and six blood serum values s1 to s6, among them total cholesterol, LDL and, in s5, log triglycerides), and disease progression a year later.</p>
+<h3>Linear models: read the coefficients, carefully</h3>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+from sklearn.datasets import load_diabetes
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression, Ridge
+
+# 442 patients, 10 baseline measurements; target = disease progression a year later
+X, y = load_diabetes(return_X_y=True, as_frame=True, scaled=False)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)
+
+ols = make_pipeline(StandardScaler(), LinearRegression()).fit(X_tr, y_tr)
+ridge = make_pipeline(StandardScaler(), Ridge(alpha=20)).fit(X_tr, y_tr)
+coefs = pd.DataFrame({"ols": ols[-1].coef_, "ridge": ridge[-1].coef_},
+                     index=X.columns)
+print(coefs.round(1).T)
+print("correlation of s1 and s2:", round(X.s1.corr(X.s2), 2))</code></pre>
+<pre><code class="language-text">       age  sex   bmi    bp    s1    s2   s3   s4    s5   s6
+ols   -2.1 -9.9  28.9  14.3 -26.5  12.4 -0.4  6.6  34.5  1.4
+ridge -1.5 -9.2  27.8  13.7  -4.8  -4.4 -9.6  4.6  24.3  2.2
+correlation of s1 and s2: 0.9</code></pre>
+<p>With standardised features, each coefficient is the change in prediction per standard deviation of that feature, the others held fixed. BMI and s5 dominate. Now look at s1 and s2, total and LDL cholesterol: ordinary least squares gives them large opposite signs, -26.5 and +12.4, and a little ridge regularisation makes both small and negative. The predictions barely change, but the story does. The two are correlated at 0.9, so the data cannot separate their effects, and "the others held fixed" describes patients who do not exist. Coefficients are only as trustworthy as the features are independent.</p>
+<h3>Shallow trees and additive models</h3>
+<p>A depth-2 tree is a set of rules you can print. A <strong>generalised additive model (GAM)</strong> keeps the linear model's additivity but gives each feature its own curve:</p>
+\[
+f(\mathbf{x}) = \beta_0 + f_1(x_1) + f_2(x_2) + \dots + f_p(x_p)
+\]
+<p>scikit-learn has no GAM class, but a spline basis followed by a linear model is one: <code>SplineTransformer</code> turns each feature into a few smooth bumps, and the ridge regression weights them, feature by feature, with no terms that mix features.</p>
+<pre><code class="language-python">from sklearn.tree import DecisionTreeRegressor, export_text
+from sklearn.preprocessing import SplineTransformer
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import cross_val_score
+
+tree = DecisionTreeRegressor(max_depth=2, random_state=0).fit(X_tr, y_tr)
+print(export_text(tree, feature_names=list(X.columns)))
+
+# A GAM: one smooth curve per feature (a spline basis), added up by a linear model
+gam = make_pipeline(StandardScaler(), SplineTransformer(n_knots=5, degree=3),
+                    Ridge(alpha=20))
+params = dict(n_estimators=200, max_depth=2, learning_rate=0.05,
+              subsample=0.8, random_state=0)
+gbm = GradientBoostingRegressor(**params)
+for name, model in [("ridge", ridge), ("tree, depth 2", tree),
+                    ("GAM", gam), ("boosting", gbm)]:
+    r2 = cross_val_score(model, X, y, cv=5, scoring="r2").mean()
+    print(f"{name:14s} cross-validated R^2 {r2:.2f}")
+gam.fit(X_tr, y_tr)
+gbm.fit(X_tr, y_tr)</code></pre>
+<pre><code class="language-text">|--- s5 &lt;= 4.88
+|   |--- bmi &lt;= 26.85
+|   |   |--- value: [103.13]
+|   |--- bmi &gt;  26.85
+|   |   |--- value: [172.95]
+|--- s5 &gt;  4.88
+|   |--- bmi &lt;= 27.60
+|   |   |--- value: [172.45]
+|   |--- bmi &gt;  27.60
+|   |   |--- value: [249.11]
+
+ridge          cross-validated R^2 0.48
+tree, depth 2  cross-validated R^2 0.33
+GAM            cross-validated R^2 0.46
+boosting       cross-validated R^2 0.44</code></pre>
+<p>The tree reads like a clinical rule (high s5 and high BMI: about 249) but gives up a lot of accuracy. The GAM matches ridge and the boosted model within noise, and its per-feature curves, plotted in the notebook, are the whole model. This is common on tabular data, and Rudin (2019) argued that for high-stakes decisions you should try hard to build an interpretable model before explaining a black box. The rest of the lesson is for when you cannot.</p>
+<h2>Global explanations for any model</h2>
+<p>Suppose you keep the gradient-boosted model. Two questions come first: which features does it rely on, and how does its prediction change with each?</p>
+<h3>Impurity importance versus permutation importance</h3>
+<p>Tree ensembles come with <code>feature_importances_</code>: the total reduction in training loss from splits on each feature, called <strong>impurity importance</strong>. It is free and it misleads. It is measured on training data, so it rewards splits that only fit noise, and it favours features with many distinct values, which offer more split points. <strong>Permutation importance</strong>, from lesson <a data-ref="classical-ml"></a>, shuffles one feature in held-out data and measures how much the score \(s\) drops, averaged over \(K\) shuffles:</p>
+\[
+I_j = s(f, X, y) - \frac{1}{K}\sum_{k=1}^{K} s\big(f, X^{(k)}_{\text{shuffle } j}, y\big)
+\]
+<p>To see the difference, add a column of pure noise.</p>
+<pre><code class="language-python">from sklearn.inspection import permutation_importance
+
+rng = np.random.default_rng(0)
+Xn = X.assign(noise=rng.normal(size=len(X)))          # a column of pure noise
+Xn_tr, Xn_te = Xn.loc[X_tr.index], Xn.loc[X_te.index]
+gbm_noise = GradientBoostingRegressor(**params).fit(Xn_tr, y_tr)
+
+perm = permutation_importance(gbm_noise, Xn_te, y_te, n_repeats=30, random_state=0)
+imp = pd.DataFrame({"impurity": gbm_noise.feature_importances_,
+                    "permutation": perm.importances_mean,
+                    "perm_sd": perm.importances_std}, index=Xn.columns)
+print(imp.sort_values("permutation", ascending=False).round(3))</code></pre>
+<pre><code class="language-text">       impurity  permutation  perm_sd
+s5        0.320        0.186    0.056
+bmi       0.321        0.159    0.052
+bp        0.084        0.062    0.040
+sex       0.013        0.029    0.013
+age       0.025        0.023    0.016
+s6        0.056        0.011    0.015
+s2        0.041        0.000    0.018
+s1        0.027       -0.000    0.011
+s4        0.022       -0.005    0.007
+noise     0.035       -0.008    0.009
+s3        0.056       -0.017    0.020</code></pre>
+<p>The noise column earns more impurity importance (0.035) than age, sex, s1 or s4, because the trees found splits on it that reduced training error. Its permutation importance is slightly negative: shuffling it does not hurt test performance at all. Look at the spread too: below bp, the standard deviation across shuffles is about as large as the importance itself, so the order of the small features means little.</p>
+<h3>Partial dependence and ICE curves</h3>
+<p>Importance says how much, not in which direction or with what shape. A <strong>partial dependence (PD)</strong> curve sets feature \(j\) to a value \(v\) in every row, predicts, and averages:</p>
+\[
+\mathrm{PD}_j(v) = \frac{1}{n}\sum_{i=1}^{n} f\big(v, \mathbf{x}_{i,\setminus j}\big)
+\]
+<p>where \(\mathbf{x}_{i,\setminus j}\) is row \(i\) without feature \(j\). An <strong>individual conditional expectation (ICE)</strong> curve is the same sweep for one row. The PD curve is the average of the ICE curves, and averages hide things, so look at both.</p>
+<pre><code class="language-python">def ice_curves(model, X, feature, grid):
+    """One curve per row: the prediction as `feature` sweeps over `grid`."""
+    curves = []
+    for v in grid:
+        X_v = X.copy()
+        X_v[feature] = v                  # give every patient the same value
+        curves.append(model.predict(X_v))
+    return np.array(curves).T             # (rows, grid points)
+
+grid = np.quantile(X_tr.bmi, [0.05, 0.25, 0.5, 0.75, 0.95])
+print("bmi grid       ", grid.round(1))
+for name, model in [("GAM", gam), ("boosting", gbm)]:
+    ice = ice_curves(model, X_te, "bmi", grid)
+    centred = ice - ice[:, :1]            # start every curve at zero
+    print(f"{name:8s} PD    ", ice.mean(axis=0).round(1))
+    print(f"{name:8s} ICE sd", centred.std(axis=0).round(1))</code></pre>
+<pre><code class="language-text">bmi grid        [20.2 23.  25.6 29.2 34.4]
+GAM      PD     [135.  135.4 145.6 168.6 187.1]
+GAM      ICE sd [0. 0. 0. 0. 0.]
+boosting PD     [127.2 129.5 132.4 182.4 207.5]
+boosting ICE sd [0.  2.  5.4 9.1 8.8]</code></pre>
+<p>For the GAM, every patient's curve has the same shape (the centred ICE curves have zero spread): that is what additive means. For the boosted model the average rises steeply between a BMI of 26 and 29, but individual curves fan out because the trees combine BMI with other features. When ICE curves diverge, one PD curve is a summary, not the truth. The notebook draws both with <code>PartialDependenceDisplay</code>.</p>
+<p>One more caution: to evaluate the curve at BMI 34, the method invents patients with their own blood pressure and cholesterol but a BMI of 34, combinations that may never occur. Where features are correlated, those answers are extrapolations. Accumulated local effects (ALE) plots (Apley and Zhu, 2020) reduce the problem by comparing only nearby values.</p>
+<h3>The correlated-features trap</h3>
+<p>Permutation importance shares that weakness. Add a near-identical second copy of BMI, as you might get from two measurements of the same thing, and retrain.</p>
+<pre><code class="language-python">rng = np.random.default_rng(1)
+X_dup = X.assign(bmi_copy=X.bmi + rng.normal(0, 0.5, len(X)))   # near-duplicate
+Xd_tr, Xd_te = X_dup.loc[X_tr.index], X_dup.loc[X_te.index]
+gbm_dup = GradientBoostingRegressor(**params).fit(Xd_tr, y_tr)
+
+before = permutation_importance(gbm, X_te, y_te, n_repeats=30, random_state=0)
+after = permutation_importance(gbm_dup, Xd_te, y_te, n_repeats=30, random_state=0)
+print("test R^2 without and with the copy:",
+      round(gbm.score(X_te, y_te), 2), round(gbm_dup.score(Xd_te, y_te), 2))
+print("importance of bmi, original model: ", before.importances_mean[2].round(3))
+print("importance of bmi and bmi_copy:    ", after.importances_mean[[2, 10]].round(3))</code></pre>
+<pre><code class="language-text">test R^2 without and with the copy: 0.28 0.29
+importance of bmi, original model:  0.159
+importance of bmi and bmi_copy:     [ 0.029 -0.006]</code></pre>
+<p>The model is as accurate as before, but now neither BMI column looks important: 0.029 and -0.006, down from 0.159. Shuffle one copy and the model reads the other, so the score hardly drops. The information is as important as ever, split across two columns that are each redundant alone. Real data is full of such pairs (income and postcode, two lab tests for the same thing), and shuffling one of a pair also creates impossible rows, such as a patient whose two BMI readings disagree by ten units. Measure correlated features as a group, or cluster them and keep one per cluster, before interpreting importance.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: importance for groups of features</p>
+<ol>
+<li>Write <code>group_importance(model, X, y, cols)</code> that shuffles all the columns in <code>cols</code> with the same permutation of rows and returns the mean drop in \(R^2\) over 30 repeats.</li>
+<li>Apply it to <code>["bmi", "bmi_copy"]</code> for <code>gbm_dup</code>, and to <code>["bmi"]</code> for the original <code>gbm</code>.</li>
+<li>Apply it to the cholesterol group <code>["s1", "s2", "s3", "s4"]</code> of <code>gbm</code>, and to each of the four alone.</li>
+</ol>
+<p>You are done when the grouped BMI importance is back near the original model's 0.16.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">def group_importance(model, X, y, cols, n_repeats=30, seed=0):
+    """Mean drop in R^2 when the columns in `cols` are shuffled together."""
+    rng = np.random.default_rng(seed)
+    base = model.score(X, y)
+    drops = []
+    for _ in range(n_repeats):
+        X_p = X.copy()
+        X_p[cols] = X[cols].to_numpy()[rng.permutation(len(X))]  # one shuffle for all
+        drops.append(base - model.score(X_p, y))
+    return float(np.mean(drops))
+
+print("bmi + bmi_copy, shuffled together:",
+      round(group_importance(gbm_dup, Xd_te, y_te, ["bmi", "bmi_copy"]), 3))
+print("bmi alone, original model:        ",
+      round(group_importance(gbm, X_te, y_te, ["bmi"]), 3))
+chol = ["s1", "s2", "s3", "s4"]
+print("cholesterol group s1-s4:          ",
+      round(group_importance(gbm, X_te, y_te, chol), 3))
+print("each of s1-s4 alone:              ",
+      [round(group_importance(gbm, X_te, y_te, [c]), 3) for c in chol])</code></pre>
+<pre><code class="language-text">bmi + bmi_copy, shuffled together: 0.159
+bmi alone, original model:         0.168
+cholesterol group s1-s4:           0.014
+each of s1-s4 alone:               [0.001, -0.007, 0.003, 0.0]</code></pre>
+<p>Shuffled together, the two BMI columns are as important as BMI was in the original model, so the information never went away. The cholesterol group is the opposite case: alone or together, the four columns add little to this model, so their low single scores were telling the truth. Grouping does not inflate importance; it stops correlated features from hiding each other.</p>
+</details>
+<hr data-session="2">
+<h2>Local explanations: why this prediction?</h2>
+<p>Global summaries describe the model on average. A patient, a loan applicant or an engineer chasing a bad prediction usually cares about one case. Take a test patient with a high predicted progression score.</p>
+<h3>LIME: a simple model of the model, nearby</h3>
+<p><strong>LIME</strong> (Ribeiro, Singh and Guestrin, 2016) explains one prediction by fitting a simple model to the black box in its neighbourhood: perturb the input many times, get the black box's predictions, weight each perturbed point by its closeness to the original, and fit a weighted linear model. Its coefficients are the explanation.</p>
+<pre><code class="language-python">x = X_te.loc[71]                          # one patient with a high predicted score
+print("prediction for this patient:", gbm.predict(x.to_frame().T).round(1))
+
+def lime(model, x, X_ref, n=5000, width=1.0, seed=0):
+    """Fit a weighted linear model to the black box in a neighbourhood of x."""
+    rng = np.random.default_rng(seed)
+    mu, sd = X_ref.mean().to_numpy(), X_ref.std().to_numpy()
+    z = (x.to_numpy() - mu) / sd                       # work in standard units
+    Z = z + rng.normal(size=(n, len(z)))               # perturb around x
+    preds = model.predict(pd.DataFrame(Z * sd + mu, columns=X_ref.columns))
+    w = np.exp(-((Z - z) ** 2).sum(1) / (width ** 2 * len(z)))  # near = heavy
+    local = Ridge(alpha=1.0).fit(Z - z, preds, sample_weight=w)
+    return pd.Series(local.coef_, index=X_ref.columns)  # slope per standard deviation
+
+expl = pd.DataFrame({f"width {w}": lime(gbm, x, X_tr, width=w) for w in [0.5, 1, 2]})
+print(expl.round(1).T)</code></pre>
+<pre><code class="language-text">prediction for this patient: [272.6]
+           age  sex   bmi    bp   s1   s2   s3   s4    s5   s6
+width 0.5  0.2 -1.1  31.6  10.7 -7.8 -5.5 -8.1  3.1  27.9  8.7
+width 1   -1.4 -1.8  29.8   9.8 -6.8 -5.5 -7.6  2.9  25.1  6.5
+width 2   -1.7 -1.8  29.0   9.4 -6.3 -5.5 -7.5  2.8  24.0  5.8</code></pre>
+<p>Near this patient the model behaves like a linear one in which BMI and s5 push the prediction up most steeply. The answer moves with the width of "nearby" (s6 goes from 8.7 to 5.8). The <code>lime</code> package samples differently, discretises features by default and picks a default width, and each choice changes the explanation. There is no correct width, only a choice to report and vary.</p>
+<h3>Shapley values: sharing out the prediction</h3>
+<p>LIME's coefficients are slopes: how the prediction changes for a small move. Often you want something else: how much did each feature contribute to <em>this</em> prediction being 273 rather than the average of about 163? Game theory has an answer. Treat the features as players in a cooperative game whose payout is the prediction. For a coalition \(S\) of features, let \(v(S)\) be the model's average prediction when the features in \(S\) take this patient's values and the rest take values from a background sample of other patients. The <strong>Shapley value</strong> of feature \(j\) is its marginal contribution \(v(S \cup \{j\}) - v(S)\), averaged over every order in which the \(p\) features could join:</p>
+\[
+\phi_j = \sum_{S \subseteq N \setminus \{j\}} \frac{|S|!\,(p-|S|-1)!}{p!}\,\big(v(S \cup \{j\}) - v(S)\big)
+\]
+<p>The weight is the fraction of orderings in which exactly the features in \(S\) arrive before \(j\). Shapley (1953) proved this is the only way of sharing the payout that satisfies four fairness rules: the shares add up to the total (<strong>efficiency</strong>), interchangeable players get equal shares (<strong>symmetry</strong>), a player who never changes the payout gets nothing (<strong>dummy</strong>), and the shares for a sum of two games are the sums of the shares (<strong>additivity</strong>). Efficiency is the one you can check:</p>
+\[
+\sum_{j=1}^{p} \phi_j = f(\mathbf{x}) - \mathbb{E}\big[f(X)\big]
+\]
+<figure>
+<svg class="diagram" viewBox="0 0 560 330" role="img" aria-label="The eight coalitions of three features bmi, bp and s5 arranged in four rows from the empty set to all three, with the four edges that add bp highlighted and labelled with their Shapley weights one third, one sixth, one sixth and one third">
+<path class="wire" d="M280 50 L100 106 M280 50 L460 106"/>
+<path class="wire" d="M100 140 L280 196 M280 140 L100 196 M280 140 L460 196 M460 140 L280 196"/>
+<path class="wire" d="M100 230 L280 286 M460 230 L280 286"/>
+<path class="accent-stroke" stroke-width="3" d="M280 50 V106 M100 140 V196 M460 140 V196 M280 230 V286"/>
+<rect class="box" x="200" y="16" width="160" height="34" rx="6"/><text x="280" y="38" text-anchor="middle">{ } (baseline)</text>
+<rect class="box" x="40" y="106" width="120" height="34" rx="6"/><text x="100" y="128" text-anchor="middle">{bmi}</text>
+<rect class="box" x="220" y="106" width="120" height="34" rx="6"/><text x="280" y="128" text-anchor="middle">{bp}</text>
+<rect class="box" x="400" y="106" width="120" height="34" rx="6"/><text x="460" y="128" text-anchor="middle">{s5}</text>
+<rect class="box" x="40" y="196" width="120" height="34" rx="6"/><text x="100" y="218" text-anchor="middle">{bmi, bp}</text>
+<rect class="box" x="220" y="196" width="120" height="34" rx="6"/><text x="280" y="218" text-anchor="middle">{bmi, s5}</text>
+<rect class="box" x="400" y="196" width="120" height="34" rx="6"/><text x="460" y="218" text-anchor="middle">{bp, s5}</text>
+<rect class="box" x="200" y="286" width="160" height="34" rx="6"/><text x="280" y="308" text-anchor="middle">{bmi, bp, s5} = f(x)</text>
+<text x="290" y="83" class="muted">1/3</text>
+<text x="110" y="173" class="muted">1/6</text>
+<text x="470" y="173" class="muted">1/6</text>
+<text x="290" y="263" class="muted">1/3</text>
+</svg>
+<figcaption>All coalitions of three features. The highlighted edges each add bp to a coalition; bp's Shapley value is the weighted average of the change in v along those four edges.</figcaption>
+</figure>
+<p>For ten features that is \(2^{10} = 1024\) coalitions, few enough to enumerate.</p>
+<pre><code class="language-python">from itertools import product
+from math import factorial
+
+def shapley_exact(model, x, background):
+    """Exact Shapley values by enumerating all 2^p coalitions of features."""
+    p = len(x)
+    coalitions = np.array(list(product([False, True], repeat=p)))   # (2^p, p)
+    # v(S): mean prediction with S taken from x and the rest from background rows
+    B = background.to_numpy()
+    hybrid = np.where(coalitions[:, None, :], x.to_numpy(), B[None, :, :])
+    preds = model.predict(pd.DataFrame(hybrid.reshape(-1, p), columns=x.index))
+    v = preds.reshape(len(coalitions), len(B)).mean(axis=1)
+    index = {tuple(S): k for k, S in enumerate(coalitions)}
+    phi = np.zeros(p)
+    for S, v_S in zip(coalitions, v):
+        s = S.sum()
+        for j in np.flatnonzero(~S):                     # every feature not yet in S
+            S_j = S.copy()
+            S_j[j] = True
+            weight = factorial(s) * factorial(p - s - 1) / factorial(p)
+            phi[j] += weight * (v[index[tuple(S_j)]] - v_S)
+    return pd.Series(phi, index=x.index), v[0]           # v(empty set) = the baseline
+
+background = X_tr.sample(100, random_state=0)
+phi, baseline = shapley_exact(gbm, x, background)
+print(phi.sort_values(key=abs, ascending=False).round(1).to_string())
+total = baseline + phi.sum()
+print(f"baseline {baseline:.1f} + contributions {phi.sum():.1f} = {total:.1f}")
+print(f"model prediction {gbm.predict(x.to_frame().T)[0]:.1f}")</code></pre>
+<pre><code class="language-text">bp     39.9
+bmi    29.6
+s5     29.4
+s6     15.6
+age    -4.5
+sex     3.5
+s1     -2.3
+s2     -0.9
+s3     -0.8
+s4     -0.2
+baseline 163.3 + contributions 109.3 = 272.6
+model prediction 272.6</code></pre>
+<p>The contributions add up exactly to the prediction minus the baseline. Blood pressure has the largest Shapley value although LIME gave it a modest slope: this patient's blood pressure (131 mm Hg) is far above the average of 95, so the model's whole response between the two counts, not just the slope at 131. LIME and Shapley values answer different questions, and both answers are right.</p>
+<p>Exact enumeration took \(2^p\) coalitions times 100 background rows, 102,400 model calls, and is hopeless for a hundred features. <strong>KernelSHAP</strong> (Lundberg and Lee, 2017) samples coalitions and fits a weighted linear regression whose solution approximates the Shapley values: in effect, LIME with a particular kernel. <strong>TreeSHAP</strong> computes exact values for tree ensembles in polynomial time by walking the trees. Both are in the <code>shap</code> library; an optional notebook cell installs it and reproduces the numbers above with <code>shap.TreeExplainer</code>. Two cautions apply to every implementation: the values depend on the background data, which defines "average", and filling in absent features from other patients again creates unrealistic rows when features are correlated.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: Shapley values by sampling</p>
+<p>The definition is an average over orderings, so you can estimate it by sampling orderings.</p>
+<ol>
+<li>Write <code>shapley_sampled(model, x, background, n_perm)</code>. For each random ordering, start from a random background patient, switch the features to this patient's values one at a time in that order, and credit each feature with the change in prediction when it switched.</li>
+<li>Average the credits and compare with the exact <code>phi</code> for 10, 100, 1,000 and 10,000 orderings. Count the model calls each needs.</li>
+</ol>
+<p>Expect the largest error to fall from about ten points to well under one.</p>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">def shapley_sampled(model, x, background, n_perm, seed=0):
+    """Monte Carlo Shapley: average marginal contributions over random orderings."""
+    rng = np.random.default_rng(seed)
+    p, xs, B = len(x), x.to_numpy(), background.to_numpy()
+    chains, orders = [], []
+    for _ in range(n_perm):
+        order = rng.permutation(p)
+        z = B[rng.integers(len(B))].copy()   # start from a random background patient
+        chain = [z.copy()]
+        for j in order:                          # switch features to x, one at a time
+            z[j] = xs[j]
+            chain.append(z.copy())
+        chains.append(chain)
+        orders.append(order)
+    preds = model.predict(pd.DataFrame(np.concatenate(chains), columns=x.index))
+    preds = preds.reshape(n_perm, p + 1)
+    phi_hat = np.zeros(p)
+    for order, pr in zip(orders, preds):
+        phi_hat[order] += np.diff(pr)            # the change when each feature joined
+    return pd.Series(phi_hat / n_perm, index=x.index)
+
+for n_perm in [10, 100, 1000, 10000]:
+    est = shapley_sampled(gbm, x, background, n_perm)
+    print(f"{n_perm:6d} orderings: largest error {np.abs(est - phi).max():5.2f}, "
+          f"model calls {n_perm * (len(x) + 1)}")
+print("exact enumeration used", 2 ** len(x) * len(background), "model calls")</code></pre>
+<pre><code class="language-text">    10 orderings: largest error 12.62, model calls 110
+   100 orderings: largest error  3.92, model calls 1100
+  1000 orderings: largest error  2.33, model calls 11000
+ 10000 orderings: largest error  0.14, model calls 110000
+exact enumeration used 102400 model calls</code></pre>
+<p>Each ordering costs \(p + 1\) model calls, and its credits sum exactly to \(f(\mathbf{x})\) minus the starting patient's prediction, so the average is an unbiased estimate whose error shrinks roughly with the square root of the number of orderings. Here 10,000 orderings cost about as much as exact enumeration, but with fifty features, where enumeration is impossible, sampling still works. The permutation explainer in <code>shap</code> is built on this idea.</p>
+</details>
+<h3>Counterfactual explanations</h3>
+<p>People affected by a decision often ask what would have had to be different. A <strong>counterfactual explanation</strong> (Wachter, Mittelstadt and Russell, 2017) answers with the smallest change to the input that changes the outcome. Suppose, purely for illustration, that patients predicted above 200 are flagged for an intensive programme. Search a grid over a few features for the closest point, in standard units, where the prediction falls below 200.</p>
+<pre><code class="language-python">def counterfactual(model, x, features, target, X_ref, steps=25):
+    """The closest change to `features` that brings the prediction below target."""
+    grids = [np.linspace(X_ref[f].min(), X_ref[f].max(), steps) for f in features]
+    n = steps ** len(features)
+    cands = pd.DataFrame(np.tile(x.to_numpy(), (n, 1)), columns=x.index)
+    cands[features] = np.array(list(product(*grids)))   # stay in the observed range
+    ok = model.predict(cands) &lt; target
+    dist = (np.abs(cands[features] - x[features]) / X_ref[features].std()).sum(axis=1)
+    return cands.loc[dist[ok].idxmin()]
+
+for features in [["bmi", "bp"], ["bmi", "bp", "s5"]]:
+    cf = counterfactual(gbm, x, features, target=200, X_ref=X_tr)
+    change = ", ".join(f"{f} {x[f]:.1f} -&gt; {cf[f]:.1f}" for f in features)
+    print(f"{change}: prediction {gbm.predict(cf.to_frame().T)[0]:.0f}")</code></pre>
+<pre><code class="language-text">bmi 29.5 -&gt; 24.1, bp 131.0 -&gt; 127.1: prediction 199
+bmi 29.5 -&gt; 27.1, bp 131.0 -&gt; 127.1, s5 4.9 -&gt; 4.8: prediction 195</code></pre>
+<p>"Had your BMI been 24 rather than 29.5, you would not have been flagged" is easy to understand, and it shows the pitfalls. There are many counterfactuals (let s5 change and a different one appears), so the one you show is a choice. Features such as age and sex are not actionable and must be held fixed. Staying inside each feature's observed range, as this search does, does not guarantee a realistic combination. And a counterfactual describes the model: it does not follow that losing weight would change this patient's real progression by that amount.</p>
+<h2>Explaining neural networks</h2>
+<p>For a differentiable model, the gradient of the output with respect to the input is a local explanation computed in one backward pass. We train a small convolutional network on scikit-learn's 8×8 digits and explain its class score (the logit, before softmax).</p>
+<h3>Saliency maps and integrated gradients</h3>
+<p>A <strong>saliency map</strong> is the absolute gradient \(|\partial f_c / \partial x_i|\) at each pixel: how sensitive the class score is to a tiny change there. But a gradient describes only an infinitesimal change, and where the network has saturated it can be small even for pixels the network depends on. <strong>Integrated gradients</strong> (Sundararajan, Taly and Yan, 2017) instead accumulates the gradient along a straight path from a baseline \(\mathbf{x}'\), here a black image, to the input:</p>
+\[
+\mathrm{IG}_i(\mathbf{x}) = (x_i - x'_i)\int_0^1 \frac{\partial f\big(\mathbf{x}' + \alpha(\mathbf{x} - \mathbf{x}')\big)}{\partial x_i}\,d\alpha
+\]
+<p>By the fundamental theorem of calculus along that path, the attributions satisfy <strong>completeness</strong>: they sum to \(f(\mathbf{x}) - f(\mathbf{x}')\), the same kind of guarantee as Shapley efficiency. A 64-step Riemann sum approximates the integral.</p>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from sklearn.datasets import load_digits
+
+torch.set_num_threads(1)     # tiny networks: extra threads only add overhead
+digits = load_digits()
+images = torch.tensor(digits.images / 16, dtype=torch.float32)  # pixels in [0, 1]
+images = images.unsqueeze(1)                                    # (1797, 1, 8, 8)
+labels = torch.tensor(digits.target)
+g = torch.Generator().manual_seed(0)
+order = torch.randperm(len(labels), generator=g)
+train_idx, test_idx = order[:1400], order[1400:]
+
+def make_cnn(seed):
+    torch.manual_seed(seed)
+    return nn.Sequential(
+        nn.Conv2d(1, 16, 3, padding=1), nn.ReLU(),
+        nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),   # (32, 4, 4)
+        nn.Flatten(), nn.Linear(32 * 4 * 4, 64), nn.ReLU(), nn.Linear(64, 10))
+
+cnn = make_cnn(seed=0)
+opt = torch.optim.Adam(cnn.parameters(), lr=2e-3)
+for epoch in range(12):
+    for batch in torch.randperm(1400, generator=g).split(64):
+        b = train_idx[batch]
+        loss = F.cross_entropy(cnn(images[b]), labels[b])
+        opt.zero_grad(); loss.backward(); opt.step()
+cnn.eval()
+with torch.no_grad():
+    acc = (cnn(images[test_idx]).argmax(1) == labels[test_idx]).float().mean()
+print(f"test accuracy {acc:.3f}")
+
+def saliency(model, img, c):
+    """|d score_c / d pixel|: how sensitive the class score is to each pixel."""
+    img = img.clone().requires_grad_(True)
+    model(img[None])[0, c].backward()
+    return img.grad[0].abs()
+
+def integrated_gradients(model, img, c, baseline=None, steps=64):
+    """(x - x') times the gradient averaged along the straight path from x' to x."""
+    if baseline is None:
+        baseline = torch.zeros_like(img)                   # a black image
+    alphas = ((torch.arange(steps) + 0.5) / steps).view(-1, 1, 1, 1)
+    path = (baseline + alphas * (img - baseline)).requires_grad_(True)
+    model(path)[:, c].sum().backward()
+    return ((img - baseline) * path.grad.mean(0))[0]
+
+img, c = images[test_idx[0]], labels[test_idx[0]].item()
+ig = integrated_gradients(cnn, img, c)
+with torch.no_grad():
+    gap = cnn(img[None])[0, c] - cnn(torch.zeros_like(img)[None])[0, c]
+print(f"digit {c}: sum of IG {ig.sum():.3f}, f(x) - f(baseline) {gap:.3f}")</code></pre>
+<pre><code class="language-text">test accuracy 0.982
+digit 0: sum of IG 14.078, f(x) - f(baseline) 14.066</code></pre>
+<p>The network reaches 98% test accuracy, and the attributions add up to the change in score to within about 0.01. Checking completeness is a cheap test that your implementation is right. The notebook plots saliency and IG maps side by side for a few digits.</p>
+<h3>Do the explanations explain the model?</h3>
+<p>Attribution maps are persuasive pictures, which is the danger. Adebayo et al. (2018), in "Sanity Checks for Saliency Maps", proposed explaining a network whose weights have been randomised: if the map barely changes, it cannot be telling you much about what the trained network learned. Some popular methods, guided backpropagation among them, produced nearly the same maps either way. A second test is <strong>faithfulness</strong>: delete the pixels an explanation ranks highest and check that the prediction collapses faster than when deleting other pixels. A third, <strong>stability</strong>, asks that tiny changes to the input do not change the explanation much. We run the first two.</p>
+<pre><code class="language-python">def rank_corr(a, b):
+    """Spearman correlation: do two maps rank the pixels in the same order?"""
+    ra, rb = (t.flatten().argsort().argsort().float() for t in (a, b))
+    return torch.corrcoef(torch.stack([ra, rb]))[0, 1].item()
+
+# 1. Sanity check: explain an untrained network. A faithful map should change.
+random_cnn = make_cnn(seed=1)                  # same architecture, untrained
+rows = []
+for i in test_idx[:100]:
+    im, cl = images[i], labels[i].item()
+    ig_rand = integrated_gradients(random_cnn, im, cl).abs()
+    rows.append([rank_corr(saliency(cnn, im, cl), saliency(random_cnn, im, cl)),
+                 rank_corr(integrated_gradients(cnn, im, cl).abs(), ig_rand),
+                 rank_corr(ig_rand, im[0])])
+r = np.mean(rows, axis=0)
+print(f"trained vs random model: saliency {r[0]:.2f}, IG {r[1]:.2f}")
+print(f"IG of the random model vs the input image itself: {r[2]:.2f}")
+
+# 2. Faithfulness: black out the most-attributed pixels first and watch P(class) fall
+def deletion_score(model, img, c, attribution):
+    rank = attribution.flatten().argsort(descending=True).argsort()   # 0 = top pixel
+    ks = torch.arange(0, 65, 4)                                       # pixels removed
+    batch = img.flatten() * (rank[None] &gt;= ks[:, None])               # (17, 64)
+    with torch.no_grad():
+        probs = model(batch.view(-1, 1, 8, 8)).softmax(-1)[:, c]
+    return probs.mean().item()          # area under the curve: lower = more faithful
+
+gen = torch.Generator().manual_seed(0)
+scores = {"integrated gradients": [], "saliency": [],
+          "random pixels": [], "random ink pixels": []}
+for i in test_idx[:200]:
+    im, cl = images[i], labels[i].item()
+    noise = torch.rand(8, 8, generator=gen)
+    attributions = {"integrated gradients": integrated_gradients(cnn, im, cl),
+                    "saliency": saliency(cnn, im, cl),
+                    "random pixels": noise,
+                    "random ink pixels": (im[0] &gt; 0).float() + 0.5 * noise}
+    for name, a in attributions.items():
+        scores[name].append(deletion_score(cnn, im, cl, a))
+for name, s in scores.items():
+    print(f"{name:21s} deletion score {np.mean(s):.3f}")</code></pre>
+<pre><code class="language-text">trained vs random model: saliency 0.12, IG 0.92
+IG of the random model vs the input image itself: 0.94
+integrated gradients  deletion score 0.088
+saliency              deletion score 0.252
+random pixels         deletion score 0.519
+random ink pixels     deletion score 0.329</code></pre>
+<p>Plain saliency passes the randomisation test: the trained and random networks rank pixels very differently. Integrated gradients with a black baseline does not: its maps for the two networks are almost the same, and both look like the digit itself. The cause is the \((x_i - x'_i)\) factor: a black pixel always gets exactly zero, whatever the network does. Yet IG wins the deletion test easily, even against a fair baseline that deletes inked pixels in random order, so it is also finding the strokes that matter. Both results hold at once. No single metric certifies an explanation, and part of what makes a map convincing can come from the input rather than the model. Deletion has its own flaw: an image with holes is out of distribution, which is why some benchmarks retrain the model on deleted images (Hooker et al., 2019).</p>
+<hr data-session="3">
+<h2>Looking inside a transformer</h2>
+<p>Everything so far treats a model as a function from inputs to outputs. <strong>Mechanistic interpretability</strong> goes inside: it looks for the representations and algorithms a network has learned, and tests them with interventions. In lesson <a data-ref="transformers"></a> you met the residual stream, the shared workspace that every layer reads from and writes to. That picture is the map we use here, and the best way to learn the tools is on a model whose algorithm we can know for sure.</p>
+<h3>A model small enough to read</h3>
+<p>The task is to continue a repeated sequence. Each sequence is a random segment of 4 to 12 distinct tokens, the same segment again, then random filler; once the model has seen <code>7 3 9 1 7 3</code>, the next token should be 9. To predict the second copy the model must find where the current token appeared before and copy the token that followed it. The segment length varies, so position alone cannot solve the task. The model has two attention-only layers with two heads each, a 32-dimensional residual stream, and no MLPs or LayerNorm, so every computation is easy to take apart. It trains in seconds.</p>
+<pre><code class="language-python">VOCAB, T = 24, 24
+
+def make_batch(n, gen, L=None):
+    """A segment of L distinct tokens, the same segment again, then random filler."""
+    if L is None:
+        L = torch.randint(4, 13, (n, 1), generator=gen)   # varies per sequence
+    else:
+        L = torch.full((n, 1), L)
+    seg = torch.rand(n, VOCAB, generator=gen).argsort(1)[:, :12]  # distinct tokens
+    pos = torch.arange(T)
+    src = torch.where(pos &lt; L, pos, pos - L).clamp(max=11)   # index into seg
+    filler = torch.randint(0, VOCAB, (n, T), generator=gen)
+    seq = torch.where(pos &lt; 2 * L, seg.gather(1, src), filler)
+    predictable = (pos[:-1] &gt;= L) &amp; (pos[:-1] &lt;= 2 * L - 2)  # next token repeats
+    return seq, predictable
+
+class Attention(nn.Module):
+    def __init__(self, d, n_heads):
+        super().__init__()
+        self.h, self.dh = n_heads, d // n_heads
+        self.qkv = nn.Linear(d, 3 * d, bias=False)
+        self.out = nn.Linear(d, d, bias=False)
+
+    def forward(self, x):
+        B, T, D = x.shape
+        q, k, v = self.qkv(x).view(B, T, 3, self.h, self.dh).unbind(2)  # (B,T,h,dh)
+        scores = torch.einsum("bqhd,bkhd-&gt;bhqk", q, k) / self.dh ** 0.5
+        future = torch.triu(torch.ones(T, T, dtype=torch.bool), diagonal=1)
+        self.pattern = scores.masked_fill(future, float("-inf")).softmax(-1)  # kept
+        self.z = torch.einsum("bhqk,bkhd-&gt;bqhd", self.pattern, v)   # per head
+        return self.out(self.z.reshape(B, T, D))
+
+class TinyTransformer(nn.Module):
+    """Two attention-only layers, no MLPs and no LayerNorm: small enough to read."""
+    def __init__(self, d=32, n_heads=2, n_layers=2):
+        super().__init__()
+        self.embed = nn.Embedding(VOCAB, d)
+        self.pos = nn.Embedding(T, d)
+        self.layers = nn.ModuleList(Attention(d, n_heads) for _ in range(n_layers))
+        self.unembed = nn.Linear(d, VOCAB, bias=False)
+
+    def forward(self, tokens, edit=None):
+        x = self.embed(tokens) + self.pos(torch.arange(tokens.shape[1]))
+        resid = []               # residual stream before each layer and at the end
+        for i in range(len(self.layers) + 1):
+            if edit is not None:
+                x = edit(i, x)           # a hook for interventions
+            resid.append(x)
+            if i &lt; len(self.layers):
+                x = x + self.layers[i](x)
+        return self.unembed(x), resid
+
+torch.manual_seed(0)
+gen = torch.Generator().manual_seed(0)
+model = TinyTransformer()
+opt = torch.optim.AdamW(model.parameters(), lr=3e-3)
+for step in range(601):
+    seq, m = make_batch(64, gen)
+    logits, _ = model(seq)
+    pred, target = logits[:, :-1][m], seq[:, 1:][m]
+    loss = F.cross_entropy(pred, target)
+    opt.zero_grad(); loss.backward(); opt.step()
+    if step % 150 == 0:
+        acc = (pred.argmax(-1) == target).float().mean()
+        print(f"step {step:3d}  loss {loss.item():.3f}  "
+              f"accuracy on repeats {acc:.2f}")</code></pre>
+<pre><code class="language-text">step   0  loss 3.475  accuracy on repeats 0.05
+step 150  loss 0.211  accuracy on repeats 0.96
+step 300  loss 0.012  accuracy on repeats 1.00
+step 450  loss 0.001  accuracy on repeats 1.00
+step 600  loss 0.002  accuracy on repeats 1.00</code></pre>
+<h3>Attention patterns, and what they do not tell you</h3>
+<p>The algorithm we expect needs two steps. A head in layer 0 copies each token's predecessor into its position: a <strong>previous-token head</strong>. A head in layer 1 then, at a token in the second copy, looks for the position whose predecessor matches the current token, which is the position just after its earlier occurrence, and copies the token there: an <strong>induction head</strong>. We can score every head for both patterns. We can also measure how much each head pushes up the correct logit. Without LayerNorm the logits are a linear function of the sum of everything written into the residual stream, so this <strong>direct logit attribution</strong> is exact.</p>
+<pre><code class="language-python">L = 8
+seq, m = make_batch(500, torch.Generator().manual_seed(1), L=L)
+with torch.no_grad():
+    logits, resid = model(seq)
+t = torch.arange(1, L)                 # positions in the first copy
+q = torch.arange(L, 2 * L - 1)         # positions in the second copy
+for i, layer in enumerate(model.layers):
+    for h in range(layer.h):
+        P = layer.pattern[:, h]                        # (batch, query, key)
+        prev = P[:, t, t - 1].mean()       # attention to the previous token
+        ind = P[:, q, q - L + 1].mean()    # to the token after the earlier copy
+        print(f"L{i}H{h}: previous-token score {prev:.2f}, induction score {ind:.2f}")
+
+# Direct logit attribution: with no LayerNorm, logits = W_U (sum of everything written
+# into the residual stream), so each component's share of the correct logit is exact.
+def head_outputs(layer):
+    W = layer.out.weight.view(-1, layer.h, layer.dh)    # (d, h, dh)
+    return torch.einsum("bthe,dhe-&gt;bthd", layer.z, W)   # (B, T, h, d)
+
+target = seq[:, 1:]
+with torch.no_grad():
+    parts = {"embed+pos": resid[0]}
+    for i, layer in enumerate(model.layers):
+        for h, out in enumerate(head_outputs(layer).unbind(2)):
+            parts[f"L{i}H{h}"] = out
+    for name, part in parts.items():
+        lg = part[:, :-1] @ model.unembed.weight.T   # direct effect on the logits
+        share = lg.gather(-1, target[..., None])[..., 0] - lg.mean(-1)
+        print(f"{name:9s} adds {share[m].mean():5.2f} to the correct logit")</code></pre>
+<pre><code class="language-text">L0H0: previous-token score 0.98, induction score 0.07
+L0H1: previous-token score 0.32, induction score 0.18
+L1H0: previous-token score 0.23, induction score 0.97
+L1H1: previous-token score 0.23, induction score 0.96
+embed+pos adds  0.05 to the correct logit
+L0H0      adds  0.08 to the correct logit
+L0H1      adds  0.15 to the correct logit
+L1H0      adds 11.64 to the correct logit
+L1H1      adds  5.70 to the correct logit</code></pre>
+<p>The picture is clean: L0H0 is a previous-token head, and both layer-1 heads are induction heads that between them write almost all of the correct logit. Still, attention patterns are not explanations on their own. A head can attend to a position and pass on nothing that matters, because its values are small or its output is ignored downstream. Jain and Wallace (2019) found that quite different attention weights could give the same predictions in some models; Wiegreffe and Pinter (2019) replied that it depends on what you claim attention explains. The safe reading: attention shows where information can flow, not what flowed or whether it was used. L0H0 adds almost nothing to the logit directly, yet it is essential, as you will see. Claims about mechanism need interventions.</p>
+<h3>Linear probes and the logit lens</h3>
+<p>A <strong>linear probe</strong> is a linear classifier trained on a layer's frozen activations to test whether some information can be read from them. Here: can the residual stream at position \(t\) tell us the token at \(t-1\)? That is not in the embeddings, so if a probe finds it after layer 0, layer 0 put it there. A probe can also learn patterns of its own, so run a control on an untrained network of the same shape (Hewitt and Liang, 2019, discuss such controls).</p>
+<p>The <strong>logit lens</strong> (nostalgebraist, 2020) is a probe you do not have to train: read each point of the residual stream with the model's own unembedding, as if the network ended there. In a model with a final LayerNorm, apply that first.</p>
+<figure>
+<svg class="diagram" viewBox="0 0 560 380" role="img" aria-label="The residual stream of the two-layer model drawn bottom to top: embeddings, layer 0 and layer 1 each reading from the stream and adding back to it, and the unembedding at the top, with a dashed read-out through the unembedding at each of the three points resid 0, resid 1 and resid 2">
+<path class="wire" d="M280 330 V64"/>
+<rect class="box" x="180" y="330" width="200" height="34" rx="6"/><text x="280" y="352" text-anchor="middle">tokens → embed + pos</text>
+<path class="wire" d="M280 300 H435 V288 M435 250 V235 H290"/>
+<rect class="box" x="330" y="250" width="210" height="38" rx="6"/><text x="435" y="274" text-anchor="middle">layer 0: heads L0H0, L0H1</text>
+<circle class="box" cx="280" cy="235" r="10"/><text x="280" y="240" text-anchor="middle">+</text>
+<path class="wire" d="M280 205 H435 V193 M435 155 V140 H290"/>
+<rect class="box" x="330" y="155" width="210" height="38" rx="6"/><text x="435" y="179" text-anchor="middle">layer 1: heads L1H0, L1H1</text>
+<circle class="box" cx="280" cy="140" r="10"/><text x="280" y="145" text-anchor="middle">+</text>
+<rect class="box" x="180" y="30" width="200" height="34" rx="6"/><text x="280" y="52" text-anchor="middle">unembed W_U → logits</text>
+<path class="wire" d="M280 300 H200 M280 205 H200 M280 110 H200" stroke-dasharray="4 3"/>
+<rect class="box" x="30" y="283" width="170" height="34" rx="6"/><text x="115" y="305" text-anchor="middle">resid[0] → W_U</text>
+<rect class="box" x="30" y="188" width="170" height="34" rx="6"/><text x="115" y="210" text-anchor="middle">resid[1] → W_U</text>
+<rect class="box" x="30" y="93" width="170" height="34" rx="6"/><text x="115" y="115" text-anchor="middle">resid[2] → W_U</text>
+<text x="115" y="84" text-anchor="middle" class="muted">logit lens read-outs</text>
+</svg>
+<figcaption>Each layer reads the residual stream and adds its output back. The logit lens reads every point of the stream through the unembedding; a probe does the same with a trained matrix in place of W_U.</figcaption>
+</figure>
+<pre><code class="language-python">def residuals(m, n, seed):
+    s, _ = make_batch(n, torch.Generator().manual_seed(seed))
+    with torch.no_grad():
+        _, r = m(s)
+    return s, r
+
+def probe_accuracy(acts_tr, y_tr, acts_te, y_te, steps=200):
+    """Train a linear classifier on frozen activations; report held-out accuracy."""
+    torch.manual_seed(0)
+    probe = nn.Linear(acts_tr.shape[-1], VOCAB)
+    opt = torch.optim.Adam(probe.parameters(), lr=0.05)
+    for _ in range(steps):
+        loss = F.cross_entropy(probe(acts_tr), y_tr)
+        opt.zero_grad(); loss.backward(); opt.step()
+    return (probe(acts_te).argmax(-1) == y_te).float().mean().item()
+
+torch.manual_seed(1)
+untrained = TinyTransformer()          # control: same shape, random weights
+for name, net in [("trained", model), ("untrained", untrained)]:
+    s_tr, r_tr = residuals(net, 1000, seed=2)
+    s_te, r_te = residuals(net, 500, seed=3)
+    accs = []
+    for i in range(3):                               # resid[0], resid[1], resid[2]
+        # at positions 1-11, can a linear probe read off the PREVIOUS token?
+        a_tr = r_tr[i][:, 1:12].reshape(-1, 32)
+        a_te = r_te[i][:, 1:12].reshape(-1, 32)
+        accs.append(probe_accuracy(a_tr, s_tr[:, :11].reshape(-1),
+                                   a_te, s_te[:, :11].reshape(-1)))
+    print(f"{name:9s} previous-token probe accuracy:", np.round(accs, 3))
+
+# The logit lens: read each point of the stream with the model's own unembedding
+for i, point in enumerate(resid):
+    with torch.no_grad():
+        read = model.unembed(point)[:, :-1][m].argmax(-1)
+    acc = (read == target[m]).float().mean()
+    print(f"logit lens at resid[{i}]: correct next token {acc:.2f}")</code></pre>
+<pre><code class="language-text">trained   previous-token probe accuracy: [0.05  0.976 0.951]
+untrained previous-token probe accuracy: [0.05  0.13  0.153]
+logit lens at resid[0]: correct next token 0.05
+logit lens at resid[1]: correct next token 0.07
+logit lens at resid[2]: correct next token 1.00</code></pre>
+<p>Before layer 0 the previous token is unreadable (5%, where chance is 4%). After it, a probe recovers it 98% of the time, against 13% for the untrained control: independent evidence that L0H0 writes "the token before me was ..." into each position. The logit lens shows the answer is absent until the induction heads have run, and certain afterwards. In large models it shows predictions forming gradually; the notebook's optional cell runs it on GPT-2 small, where for "The Eiffel Tower is in the city of", " Paris" enters the top three after the tenth of twelve blocks and leads from the eleventh. A probe shows that information is present and linearly readable, not that the model uses it.</p>
+<h3>Activation patching: from correlation to cause</h3>
+<p><strong>Activation patching</strong> turns observations into causal evidence. Run the model on a clean input and on a corrupted one that differs in one detail, then rerun the corrupted input with one activation copied in from the clean run. If the output flips back, that activation carries the deciding information. Our clean sequences have a segment of length 8; the corrupted ones replace the token at position 4 in the first copy only. Position 11 holds the token from position 3 again, so the clean model predicts the token from position 4 and the corrupted model predicts the substitute. We patch the residual stream at every layer and position in turn and report the fraction of the clean logit difference recovered.</p>
+<pre><code class="language-python">L, k = 8, 4
+q = L + k - 1                  # this position holds the token seg[k-1] again
+clean, _ = make_batch(200, torch.Generator().manual_seed(4), L=L)
+answer = clean[:, k]           # so the model should predict seg[k]
+# corrupt: replace token k in the first copy only, with a token not in the segment
+unused = torch.ones(200, VOCAB).scatter(1, clean[:, :L], 0.0)
+wrong = torch.multinomial(unused, 1, generator=torch.Generator().manual_seed(5))[:, 0]
+corrupt = clean.clone()
+corrupt[:, k] = wrong
+
+def logit_diff(logits):
+    lg = logits[:, q]
+    diff = lg.gather(1, answer[:, None]) - lg.gather(1, wrong[:, None])
+    return diff.mean().item()
+
+with torch.no_grad():
+    clean_logits, clean_resid = model(clean)
+    corrupt_logits, _ = model(corrupt)
+ld_clean, ld_corrupt = logit_diff(clean_logits), logit_diff(corrupt_logits)
+print(f"logit difference: clean {ld_clean:.1f}, corrupted {ld_corrupt:.1f}")
+
+recovered = np.zeros((3, q + 1))
+for i in range(3):
+    for p in range(q + 1):
+        def patch(layer_i, x, i=i, p=p):    # copy one clean vector into the run
+            if layer_i == i:
+                x = x.clone()
+                x[:, p] = clean_resid[i][:, p]
+            return x
+        with torch.no_grad():
+            patched, _ = model(corrupt, edit=patch)
+        recovered[i, p] = (logit_diff(patched) - ld_corrupt) / (ld_clean - ld_corrupt)
+print("position  ", "".join(f"{p:5d}" for p in range(q + 1)))
+for i in range(3):
+    print(f"resid[{i}]  ", "".join(f"{v:5.1f}" for v in recovered[i]))</code></pre>
+<pre><code class="language-text">logit difference: clean 18.5, corrupted -18.2
+position       0    1    2    3    4    5    6    7    8    9   10   11
+resid[0]     0.0  0.0  0.0  0.0  1.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0
+resid[1]     0.0  0.0  0.0  0.0  1.0 -0.0  0.0 -0.0 -0.0  0.0  0.0  0.0
+resid[2]     0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0</code></pre>
+<p>Read the table as a map of where the deciding information lives. Entering layers 0 and 1, it sits only at position 4, where the token was changed; after layer 1, only at position 11. Patching one vector in the right place restores the answer completely, and patching anywhere else does nothing. Layer 1 moved the information from position 4 to position 11, which is what an induction head does. Run over heads and positions, the same method traced the circuit GPT-2 small uses to complete "When Mary and John went to the store, John gave a drink to" with "Mary" (Wang et al., 2022). Results depend on the corruption you choose, so state it, and keep corrupted inputs realistic.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: knock out heads</p>
+<ol>
+<li>Write <code>ablate(heads)</code> that zeroes the columns of each layer's <code>out.weight</code> belonging to the listed heads, for example <code>[(0, 0)]</code>, measures accuracy on repeats over 500 fresh sequences, and then restores the weights.</li>
+<li>Ablate each head alone, then both layer-1 heads together.</li>
+<li>Compare with the direct logit attribution. Which heads are necessary, and which matter only together?</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<pre><code class="language-python">def accuracy(net, n=500, seed=9):
+    s, m_ = make_batch(n, torch.Generator().manual_seed(seed))
+    with torch.no_grad():
+        lg, _ = net(s)
+    return (lg[:, :-1][m_].argmax(-1) == s[:, 1:][m_]).float().mean().item()
+
+def ablate(heads):
+    """Zero each listed head's slice of the output projection, then restore."""
+    saved = {i: model.layers[i].out.weight.detach().clone() for i, _ in heads}
+    with torch.no_grad():
+        for i, h in heads:
+            dh = model.layers[i].dh
+            model.layers[i].out.weight[:, h * dh:(h + 1) * dh] = 0
+    acc = accuracy(model)
+    with torch.no_grad():                            # put the weights back
+        for i, w in saved.items():
+            model.layers[i].out.weight.copy_(w)
+    return acc
+
+print(f"no ablation: {accuracy(model):.2f}")
+for heads in [[(0, 0)], [(0, 1)], [(1, 0)], [(1, 1)], [(1, 0), (1, 1)]]:
+    names = " + ".join(f"L{i}H{h}" for i, h in heads)
+    print(f"ablate {names:9s}: accuracy on repeats {ablate(heads):.2f}")</code></pre>
+<pre><code class="language-text">no ablation: 1.00
+ablate L0H0     : accuracy on repeats 0.33
+ablate L0H1     : accuracy on repeats 0.99
+ablate L1H0     : accuracy on repeats 0.92
+ablate L1H1     : accuracy on repeats 1.00
+ablate L1H0 + L1H1: accuracy on repeats 0.06</code></pre>
+<p>Removing the previous-token head L0H0 drops accuracy from 100% to 33%, although its direct effect on the logits was almost nil: it matters by changing what layer 1 looks for. Removing either induction head alone costs little, because the other does the same job; removing both drops accuracy to 6%. Single ablations understate redundant parts, the same lesson as the duplicated BMI column. Zeroing is also crude: it pushes activations outside their usual range, and real models can partly compensate for a removed component (McGrath et al., 2023). Mean-ablation and patching are gentler.</p>
+</details>
+<h3>Superposition and sparse autoencoders</h3>
+<p>The stream entering layer 1 holds at least the current token, the previous token and the position: at positions 1 to 11 that is 24 + 24 + 11 possible values, in 32 dimensions. A network can store more <strong>features</strong> than it has dimensions when they are sparse (each input uses only a few), by giving them directions that are almost, but not quite, orthogonal. This is <strong>superposition</strong> (Elhage et al., 2022, "Toy Models of Superposition"). It is one reason single neurons in large models are often <em>polysemantic</em>, responding to several unrelated things, and why reading a model one neuron at a time often fails.</p>
+<p>A <strong>sparse autoencoder (SAE)</strong> tries to undo superposition. It maps each activation vector to a much wider vector of non-negative feature activations, penalised so that only a few are non-zero, and rebuilds the original from them. If it works, each feature is a direction the model uses, and many are interpretable. Bricken et al. (2023) found thousands of such features in a one-layer transformer; Templeton et al. (2024) scaled the method to Claude 3 Sonnet. We train one on the stream entering layer 1, where we know the ground truth.</p>
+<pre><code class="language-python">seqs, _ = make_batch(2000, torch.Generator().manual_seed(6))
+with torch.no_grad():
+    _, stream = model(seqs)
+acts = stream[1][:, 1:12].reshape(-1, 32)   # entering layer 1, first copy
+truth = {"current token": (seqs[:, 1:12].reshape(-1), VOCAB),   # what we can check
+         "previous token": (seqs[:, :11].reshape(-1), VOCAB),
+         "position": (torch.arange(1, 12).repeat(len(seqs)), T)}
+
+class SparseAutoencoder(nn.Module):
+    def __init__(self, d, n_features):
+        super().__init__()
+        self.enc = nn.Linear(d, n_features)
+        self.dec = nn.Linear(n_features, d)
+
+    def forward(self, x):
+        f = F.relu(self.enc(x - self.dec.bias))     # sparse, non-negative activations
+        return self.dec(f), f
+
+torch.manual_seed(0)
+sae = SparseAutoencoder(32, 128)                     # 4 times more features than dims
+opt = torch.optim.Adam(sae.parameters(), lr=3e-3)
+for step in range(2000):
+    xb = acts[torch.randint(len(acts), (1024,))]
+    x_hat, f = sae(xb)
+    sparsity = (f * sae.dec.weight.norm(dim=0)).sum(-1).mean()   # L1 penalty
+    loss = (x_hat - xb).pow(2).sum(-1).mean() + 1.0 * sparsity
+    opt.zero_grad(); loss.backward(); opt.step()
+
+with torch.no_grad():
+    x_hat, f = sae(acts)
+explained = 1 - (x_hat - acts).pow(2).sum() / (acts - acts.mean(0)).pow(2).sum()
+print(f"variance explained {explained:.3f}, features active per vector "
+      f"{(f &gt; 0).float().sum(1).mean():.1f} of 128")
+
+def correlations(f, values, n):
+    """Correlation of every feature with every one-hot indicator, e.g. 'token = 7'."""
+    onehot = F.one_hot(values, n).float()
+    fz = (f - f.mean(0)) / (f.std(0) + 1e-8)
+    oz = (onehot - onehot.mean(0)) / (onehot.std(0) + 1e-8)
+    return fz.T @ oz / len(f)                         # (features, n)
+
+corr = {kind: correlations(f, v, n) for kind, (v, n) in truth.items()}
+clean_counts, covered = {}, set()
+for j in range(128):
+    best_r, kind, value = max((c[j].max().item(), kind, c[j].argmax().item())
+                              for kind, c in corr.items())
+    if best_r &gt; 0.8:
+        clean_counts[kind] = clean_counts.get(kind, 0) + 1
+        covered.add((kind, value))
+print("features that track one variable (r &gt; 0.8):", clean_counts)
+print("ground-truth variables found:", len(covered), "of", 24 + 24 + 11)</code></pre>
+<pre><code class="language-text">variance explained 0.981, features active per vector 8.8 of 128
+features that track one variable (r &gt; 0.8): {'previous token': 46, 'current token': 26, 'position': 15}
+ground-truth variables found: 59 of 59</code></pre>
+<p>About nine of the 128 features are active for a typical vector, and together they rebuild 98% of the variance. Most features track a single variable cleanly (correlation above 0.8 with an indicator such as "previous token = 7"), and every one of the 59 ground-truth variables has such a feature, although the training objective never mentions tokens or positions. The other features are harder to name, some variables are split across several features, and a real model comes with no answer key: the open problems of the method, in miniature.</p>
+<h3>Steering</h3>
+<p>If a feature is a direction the model uses, adding that direction should change behaviour predictably. That is <strong>steering</strong>. Take the SAE feature for "current token = b", for a token b not in the sequence, and add its decoder direction, scaled to \(\alpha\) times its typical activation, to the stream entering layer 1 at position 4 only. If our account is right, the induction head at position 11 should now copy b.</p>
+<pre><code class="language-python">best = corr["current token"].argmax(0)     # the feature for 'current token = b'
+typical = torch.stack([f[truth["current token"][0] == b, best[b]].mean()
+                       for b in range(VOCAB)])        # its usual activation when on
+
+L, k = 8, 4
+q = L + k - 1
+clean, _ = make_batch(300, torch.Generator().manual_seed(7), L=L)
+unused = torch.ones(300, VOCAB).scatter(1, clean[:, :L], 0.0)
+new = torch.multinomial(unused, 1, generator=torch.Generator().manual_seed(8))[:, 0]
+direction = sae.dec.weight[:, best[new]].T * typical[new][:, None]   # (300, 32)
+for alpha in [0, 1, 2, 4]:
+    def steer(layer_i, x):
+        if layer_i == 1:                    # entering layer 1, at position k
+            x = x.clone()
+            x[:, k] += alpha * direction
+        return x
+    with torch.no_grad():
+        logits, _ = model(clean, edit=steer)
+    pred = logits[:, q].argmax(-1)
+    orig = (pred == clean[:, k]).float().mean()
+    steered = (pred == new).float().mean()
+    print(f"alpha {alpha}: predicts the original token {orig:.2f}, "
+          f"the new one {steered:.2f}")</code></pre>
+<pre><code class="language-text">alpha 0: predicts the original token 1.00, the new one 0.00
+alpha 1: predicts the original token 0.82, the new one 0.13
+alpha 2: predicts the original token 0.06, the new one 0.91
+alpha 4: predicts the original token 0.00, the new one 1.00</code></pre>
+<p>At twice the feature's usual strength the model predicts the injected token 91% of the time; at four times, always. That is causal confirmation that the feature means what we labelled it, and a miniature of Anthropic's "Golden Gate Claude" demonstration (2024), which amplified one SAE feature until a large model kept bringing up the bridge. Steering vectors can also be built without an SAE, for example from the difference between activations on two contrasting prompts (Turner et al., 2023). The same handle cuts both ways: Arditi et al. (2024) found that refusal in several open chat models is mediated largely by a single direction, and removing it disables refusals.</p>
+<h2>What has been found in real models, and the limits</h2>
+<p>Findings from larger models, stated with the care they need:</p>
+<ul>
+<li><strong>Induction heads</strong> were described in small attention-only models by Elhage et al. (2021). Olsson et al. (2022) found that they form during a sudden change early in training that coincides with a jump in in-context learning, and argued they may be a mechanism behind much of it; the evidence is strongest for small models.</li>
+<li><strong>Circuits</strong> for specific behaviours have been traced with patching, such as indirect-object identification in GPT-2 small (Wang et al., 2022). Factual associations in GPT-style models were localised largely to middle-layer MLPs and edited there (Meng et al., 2022), although later work found that where a fact is localised does not predict where editing it works best (Hase et al., 2023).</li>
+<li><strong>Linear representations</strong> are common. A model trained only on Othello move sequences learned an internal representation of the board (Li et al., 2023), which later work showed is linearly readable.</li>
+<li><strong>Features</strong> found by SAEs in a production model include abstract and multilingual concepts, and safety-relevant ones such as deception and security vulnerabilities in code (Templeton et al., 2024).</li>
+</ul>
+<p>The limits are substantial. SAEs do not reconstruct everything, the remainder can matter, and the features depend on dictionary size and training choices; some studies found SAE features no more useful than simple linear probes on practical tasks. A label read off a feature's top activations is a hypothesis that only interventions test. Patching and ablation depend on the corruption and on redundancy. And careful circuit analyses cover small behaviours in small models: mapping a frontier model's computation end to end is far beyond current methods. Interpretability is still worth doing, for debugging, for science and as one input to a safety case, if you treat each finding as a claim to test.</p>
+<h2>Check yourself</h2>
+<div class="quiz">
+<div class="q">
+<p>A column of pure noise gets noticeable impurity importance in a gradient-boosted model but zero permutation importance on test data. Why?</p>
+<ul>
+<li>The permutation was implemented wrongly</li>
+<li class="correct">Impurity importance credits training-set splits, which can fit noise; permutation importance measures reliance on held-out data</li>
+<li>Noise columns always carry some signal</li>
+<li>Permutation importance cannot handle continuous features</li>
+</ul>
+<p class="why">The trees split on the noise to reduce training error, and impurity importance counts that; shuffling the noise in test data does not hurt the score.</p>
+</div>
+<div class="q">
+<p>You add a near-duplicate of an important feature and retrain. What happens to the permutation importance of the two copies?</p>
+<ul>
+<li>Both show the original importance</li>
+<li>The importance doubles</li>
+<li class="correct">Both can look unimportant, because the model reads the other copy when one is shuffled</li>
+<li>The model's accuracy collapses</li>
+</ul>
+<p class="why">The information is split across the pair. Shuffling the copies together recovers their joint importance.</p>
+</div>
+<div class="q">
+<p>Which statement about Shapley values is true?</p>
+<ul>
+<li>They measure the effect of changing a feature in the real world</li>
+<li>They are the same as LIME's coefficients</li>
+<li>They do not depend on the background data</li>
+<li class="correct">For each prediction, the contributions sum to the prediction minus the average prediction over the background data</li>
+</ul>
+<p class="why">That is the efficiency property. The values explain the model relative to a chosen baseline, not the world.</p>
+</div>
+<div class="q">
+<p>Integrated gradients with a black baseline gave almost the same maps for a trained and an untrained CNN. What should you conclude?</p>
+<ul>
+<li>The trained network learned nothing</li>
+<li class="correct">Much of what the map shows comes from the input itself, so a convincing picture is not evidence that it explains the model</li>
+<li>Integrated gradients must never be used</li>
+<li>The baseline should have been white</li>
+</ul>
+<p class="why">The \((x_i - x'_i)\) factor makes IG look like the input whatever the network does. The same method still did well on the deletion test, which is why you run several checks.</p>
+</div>
+<div class="q">
+<p>In the tiny transformer, patching the clean residual stream at position 4 entering layer 1 fully restored the answer at position 11, while patching position 11 at that point did nothing. What does this show?</p>
+<ul>
+<li>Attention patterns are explanations</li>
+<li>Layer 0 computes the answer</li>
+<li>The model has memorised the training data</li>
+<li class="correct">Entering layer 1, the deciding information is still at position 4, so layer 1 must move it to position 11</li>
+</ul>
+<p class="why">Patching gives causal evidence of where information lives at each depth; after layer 1 it lives at position 11.</p>
+</div>
+</div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>Prefer a model you can read (a regularised linear model, a shallow tree, a GAM) when it is accurate enough. Otherwise explain the black box, and remember the explanation is a model of the model, not of the world.</li>
+<li>Use permutation importance on held-out data rather than impurity importance, check partial dependence against ICE curves, and group correlated features before interpreting either.</li>
+<li>LIME gives local slopes; Shapley values share out the prediction minus a baseline, and their contributions add up exactly. Both depend on choices (neighbourhood, background) you should report. Counterfactuals describe the model's decision boundary, not what would happen in reality.</li>
+<li>Integrated gradients satisfies completeness, but run randomisation and deletion tests, with fair baselines, before trusting any attribution map.</li>
+<li>Inside a transformer: attention shows where information can flow, probes and the logit lens show what is present, patching and ablation show what is causal, and sparse autoencoders plus steering find and test features. Redundancy and superposition make every one of these harder than it looks.</li>
+</ul>
+</div>
+<h3>Go deeper</h3>
+<ul>
+<li>Christoph Molnar, <em>Interpretable Machine Learning</em> (free online book): the standard reference for the methods in sessions 1 and 2</li>
+<li>Lundberg and Lee, "A Unified Approach to Interpreting Model Predictions" (NeurIPS 2017), the SHAP paper</li>
+<li>Sundararajan, Taly and Yan, "Axiomatic Attribution for Deep Networks" (ICML 2017), the integrated gradients paper</li>
+<li>Elhage et al., "A Mathematical Framework for Transformer Circuits" (2021) and Olsson et al., "In-context Learning and Induction Heads" (2022), both at transformer-circuits.pub</li>
+<li>Bricken et al., "Towards Monosemanticity: Decomposing Language Models With Dictionary Learning" (2023)</li>
+<li>Neel Nanda's TransformerLens library and tutorials, for running these experiments on real open models</li>
+</ul>

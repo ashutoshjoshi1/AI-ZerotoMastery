@@ -2,19 +2,30 @@
 {
   "title": "Capstone projects and your AI engineering career",
   "short": "Capstones and career",
-  "summary": "Prove your skills by building one end-to-end system from five capstone specifications with rubrics, then turn the work into a portfolio, prepare for interviews with worked questions, and plan your next ninety days.",
+  "summary": "Prove your skills by building one end-to-end system from seven capstone specifications with rubrics, then turn the work into a portfolio, prepare for interviews with worked questions, and plan your next ninety days.",
   "sessions": [
     "Choose and scope a capstone; set up the repository and the evaluation set first",
-    "Build the core pipeline end to end",
-    "Evaluate, harden and deploy",
+    "Build the walking skeleton: the core pipeline end to end, traced from day one",
+    "Evaluate, harden and deploy: measured improvements, attack tests, a container and a dashboard",
     "Write it up: README, demo video and a technical write-up",
     "Interview preparation: concepts, coding and system design",
     "Career paths, continuous learning and your next ninety days"
   ],
-  "objectives": [],
-  "prerequisites": [],
-  "runs_on": "Any computer. This notebook is a capstone workbook.",
-  "glossary": []
+  "objectives": [
+    "Scope a capstone to one user and one job, and write its evaluation set before its code",
+    "Build a traced walking skeleton of an AI system and improve it one measured change at a time, with a decision log",
+    "Harden and deploy a capstone with attack tests, limits, a container and a cost and latency dashboard",
+    "Write a results-first technical write-up that a stranger can follow and reproduce",
+    "Answer the recurring AI engineering interview questions on fundamentals, LLM systems, inference and the wider field, and design a system aloud in trade-offs",
+    "Choose a career direction that fits your background and plan the next ninety days of building, learning and publishing"
+  ],
+  "prerequisites": ["system-design", "evaluation", "deployment-llmops"],
+  "runs_on": "Any computer (CPU) for this workbook. The capstones themselves may need an API key or a GPU, as each specification says.",
+  "glossary": [
+    {"term": "Walking skeleton", "def": "The crudest version of a system that runs end to end through every stage, built first so that integration problems and measurement exist from day one. Each stage is then improved in turn."},
+    {"term": "Decision log", "def": "A running record of each significant design choice: what was chosen, the alternatives, the evidence, and the result. It becomes the most convincing part of a write-up."},
+    {"term": "Rubric", "def": "A table of the dimensions on which work is judged, with a description of what developing, solid and excellent look like on each, so that assessment is consistent and the target is visible before you start."}
+  ]
 }
 -->
 <h2>Why a capstone</h2>
@@ -28,63 +39,87 @@
 <li><strong>Keep a decision log.</strong> For each significant choice, write what you chose, the alternatives and the evidence. This becomes the most impressive part of your write-up.</li>
 <li><strong>Finish.</strong> Deployed, documented and measured beats ambitious and half-built.</li>
 </ol>
-<h2>The five capstones</h2>
-<p>Pick one. Each has a core specification, stretch goals and a rubric. They are designed so that together they exercise everything in the course; if you do more than one later, choose ones that cover different parts.</p>
+<h2>The seven capstones</h2>
+<p>Pick one. Each has a core specification, stretch goals and a rubric. Together they exercise everything in the course, including the wider field of part IX; if you do more than one later, choose ones that cover different parts.</p>
 <h3>Capstone A: technical documentation assistant (RAG)</h3>
 <p><strong>Build</strong> a question-answering assistant over a real document collection of at least 300 pages (manuals, standards, a project's documentation, public technical reports).</p>
 <p><strong>Core requirements</strong></p>
 <ul>
-<li>Parsing that handles the collection's real formats, including at least tables or scans.</li>
+<li>Parsing that handles the collection's real formats, including at least tables or scans (lessons <a data-ref="rag"></a>, <a data-ref="multimodal"></a>).</li>
 <li>Hybrid retrieval with reranking; metadata filters (document type or product).</li>
 <li>Answers with inline citations to document and page or section; explicit "not in the documents" behaviour.</li>
 <li>An evaluation set of at least 60 questions (including 10 unanswerable), with retrieval and answer metrics reported for at least three configurations.</li>
 <li>A streaming API (FastAPI) and a minimal web or command-line interface; request tracing.</li>
 </ul>
-<p><strong>Stretch goals</strong>: contextual retrieval; conversational follow-ups with query rewriting; an agentic mode for multi-part questions with a cost comparison; offline mode with a local model.</p>
+<p><strong>Stretch goals</strong>: contextual retrieval; conversational follow-ups with query rewriting and a conversation state kept under a token budget (lesson <a data-ref="context-engineering"></a>); an agentic mode for multi-part questions with a cost comparison; offline mode with a quantised local model (lesson <a data-ref="llm-inference"></a>).</p>
 <h3>Capstone B: operations agent with MCP tools</h3>
 <p><strong>Build</strong> an agent that helps operate something real or realistically simulated: a fleet of devices, a home lab, a cloud project, a data pipeline.</p>
 <p><strong>Core requirements</strong></p>
 <ul>
-<li>An MCP server exposing at least four tools (mostly read-only) and one resource.</li>
+<li>An MCP server exposing at least four tools (mostly read-only) and one resource (lesson <a data-ref="agents"></a>).</li>
 <li>At least one consequential tool protected by human approval showing the exact action.</li>
 <li>Step and cost limits; complete traces of every run.</li>
 <li>An evaluation of at least 25 tasks with checkable outcomes, reporting success rate, average steps, cost and latency.</li>
-<li>An attack set of at least 8 prompt-injection and misuse cases, with results before and after your defences.</li>
+<li>An attack set of at least 8 prompt-injection and misuse cases, with results before and after your defences (lesson <a data-ref="safety-security"></a>).</li>
 </ul>
-<p><strong>Stretch goals</strong>: a planner that writes and updates an explicit plan; long-term memory of past incidents via retrieval; a comparison with a fixed workflow for the most common tasks.</p>
+<p><strong>Stretch goals</strong>: a planner that writes and updates an explicit plan; a reasoning model for the hardest tasks, routed by difficulty, with a cost comparison (lesson <a data-ref="reasoning-models"></a>); long-term memory of past incidents via retrieval (lesson <a data-ref="context-engineering"></a>); a comparison with a fixed workflow for the most common tasks.</p>
 <h3>Capstone C: anomaly detection with narrative reports</h3>
 <p><strong>Build</strong> a pipeline over time-series data (your own sensor data, public air-quality or weather station data, server metrics) that detects anomalies and explains them.</p>
 <p><strong>Core requirements</strong></p>
 <ul>
 <li>Data cleaning and feature engineering (lesson <a data-ref="python-for-ai"></a>) with documented choices.</li>
-<li>At least two detection methods (rules plus a statistical or ML detector) evaluated against labelled or injected anomalies with precision and recall.</li>
+<li>At least two detection methods (rules plus a statistical or ML detector) evaluated against labelled or injected anomalies with precision and recall (lesson <a data-ref="classical-ml"></a>).</li>
 <li>An LLM step that turns each detection into a structured report (likely cause, evidence, confidence, recommended action), grounded in the data and any available logs.</li>
 <li>A judged evaluation of report quality on a sample, with a rubric.</li>
 <li>A daily scheduled run producing a readable summary.</li>
 </ul>
-<p><strong>Stretch goals</strong>: a chat interface for follow-up questions using tools over the data; forecasting to anticipate problems; a feedback loop where confirmed or dismissed alerts improve thresholds.</p>
+<p><strong>Stretch goals</strong>: a chat interface for follow-up questions using tools over the data; a forecasting model whose residuals become a third detector (lesson <a data-ref="time-series-recsys-graphs"></a>); a feedback loop where confirmed or dismissed alerts improve thresholds.</p>
 <h3>Capstone D: distil a small model for a structured task</h3>
 <p><strong>Build</strong> a fine-tuned small open model that performs a narrow extraction or classification task nearly as well as a frontier model at a fraction of the cost.</p>
 <p><strong>Core requirements</strong></p>
 <ul>
 <li>A task with a strict output schema and a held-out evaluation set of at least 100 human-checked examples.</li>
 <li>A training set of at least 500 examples (distilled from a large model, reviewed by sampling).</li>
-<li>LoRA or QLoRA fine-tuning of a model of 3 billion parameters or fewer, with training and validation curves.</li>
+<li>LoRA or QLoRA fine-tuning of a model of 3 billion parameters or fewer, with training and validation curves (lesson <a data-ref="fine-tuning"></a>).</li>
 <li>Comparison of four systems on the eval set: small model prompted, small model fine-tuned, large model prompted, and a routed combination; report accuracy per field, latency and cost per thousand requests.</li>
 <li>Deployment of the fine-tuned model behind an OpenAI-compatible server (vLLM, Ollama or llama.cpp).</li>
 </ul>
-<p><strong>Stretch goals</strong>: quantise to 4-bit and measure the quality change; a DPO round on preference pairs from your error analysis; run it on a CPU-only machine.</p>
+<p><strong>Stretch goals</strong>: quantise to 4-bit and measure the quality change (lesson <a data-ref="llm-inference"></a>); a preference-tuning round (DPO or a GRPO-style method) on pairs from your error analysis (lesson <a data-ref="advanced-fine-tuning"></a>); run it on a CPU-only machine.</p>
 <h3>Capstone E: evaluation and observability for an LLM feature</h3>
 <p><strong>Build</strong> the evaluation and monitoring layer for an existing LLM feature: one from earlier in the course, an open-source project, or one at work (with permission).</p>
 <p><strong>Core requirements</strong></p>
 <ul>
-<li>A golden dataset of at least 100 cases with slices, sourced from real or realistic usage.</li>
+<li>A golden dataset of at least 100 cases with slices, sourced from real or realistic usage (lesson <a data-ref="evaluation"></a>).</li>
 <li>Code graders plus at least two LLM-judge graders, each calibrated against at least 40 human grades with agreement reported.</li>
 <li>A harness producing per-slice reports with confidence intervals and fixed/broken case lists between two versions.</li>
 <li>CI integration that blocks a change on per-slice thresholds.</li>
-<li>A tracing setup and a dashboard of cost, latency percentiles and judged quality on sampled traffic.</li>
+<li>A tracing setup and a dashboard of cost, latency percentiles and judged quality on sampled traffic (lesson <a data-ref="deployment-llmops"></a>).</li>
 </ul>
 <p><strong>Stretch goals</strong>: an online feedback loop that turns low-rated traces into candidate eval cases; drift detection on input topics; a red-team suite run nightly.</p>
+<h3>Capstone F: a fast, cheap inference service for a small model</h3>
+<p><strong>Build</strong> a serving system for a small open model (3 billion parameters or fewer; the one you fine-tuned in Capstone D is ideal) that is as fast and cheap as you can make it without losing measured quality, with an evaluation report that explains every number.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A quality eval set of at least 100 cases for the task the model serves, scored by code graders or a calibrated judge (lesson <a data-ref="evaluation"></a>), run against every configuration below.</li>
+<li>A load-testing harness that replays realistic traffic at several concurrency levels and reports time to first token, p50 and p95 latency, output tokens per second and requests per second (lessons <a data-ref="llm-inference"></a>, <a data-ref="deployment-llmops"></a>).</li>
+<li>At least three serving configurations compared on quality, latency, throughput and cost per million tokens: for example 16-bit versus 8-bit versus 4-bit weights, or with and without continuous batching and prefix caching.</li>
+<li>One decoding optimisation beyond batching, measured: speculative decoding with a small draft model (report acceptance rate and speed-up), or prefix caching for shared prompts (report hit rate and the change in time to first token).</li>
+<li>An evaluation report: one table of configurations against quality, latency, throughput and cost, the GPU or CPU memory arithmetic that explains the numbers, and a recommendation.</li>
+<li>Containerised deployment with health checks, metrics and a dashboard.</li>
+</ul>
+<p><strong>Stretch goals</strong>: distil or fine-tune the model to the task first (Capstone D); compare against a hosted API on cost and quality at your real volume, including prompt caching; serve on CPU with llama.cpp and compare; autoscaling under bursty load.</p>
+<h3>Capstone G: a recommender with offline and online evaluation</h3>
+<p><strong>Build</strong> a recommender over a real or public interaction dataset (MovieLens, a bookshop's orders, your own listening history, an open e-commerce dataset) that serves recommendations through an API and measures itself both offline and online.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A data pipeline with a time-based split (train on earlier interactions, evaluate on later ones) and documented handling of new users and new items (lesson <a data-ref="time-series-recsys-graphs"></a>).</li>
+<li>At least three recommenders compared: a popularity baseline, a collaborative-filtering model (matrix factorisation or item-to-item), and one more (a two-tower model, gradient boosting on features, or a graph method), reporting recall@k, NDCG@k and catalogue coverage (lessons <a data-ref="classical-ml"></a>, <a data-ref="time-series-recsys-graphs"></a>).</li>
+<li>An API that serves top-k recommendations with p95 latency under 100 ms, using precomputed candidates and an approximate-nearest-neighbour index for embedding models (lesson <a data-ref="embeddings-vector-search"></a>).</li>
+<li>An online evaluation design: an A/B test or interleaving with a primary metric, guardrail metrics, a sample-size estimate and an exposure log; run it with willing users or a simulated user model, and report it honestly (lesson <a data-ref="evaluation"></a>).</li>
+<li>An analysis of feedback loops and fairness: popularity bias, exposure of new items, and what a user with no history sees.</li>
+</ul>
+<p><strong>Stretch goals</strong>: LLM-written explanations for each recommendation; natural-language search over the catalogue with embeddings; a session-based model; a bandit for exploration (lesson <a data-ref="reinforcement-learning"></a>).</p>
+<p><strong>Other wider-field variants.</strong> If your domain is images, adapt Capstone C's structure into a visual inspection pipeline: a trained classifier or detector on your own labelled images, a precision-recall analysis at the operating threshold, drift monitoring, and an LLM summary of the defect log (lesson <a data-ref="computer-vision"></a>). If it is control, train an RL policy in a simulator with a measured comparison against a hand-written controller (lesson <a data-ref="reinforcement-learning"></a>). Keep the same rubric.</p>
 <h3>Rubric (applies to every capstone)</h3>
 <table>
 <thead>
@@ -155,17 +190,162 @@
 <p><strong>Riskiest assumptions</strong>: tables of torque values parse correctly (test 10 tables on day one); technicians phrase questions very differently from the manual (collect real questions early); bulletins that supersede manual sections can be detected (check metadata).</p>
 <p><strong>Not building</strong>: user accounts, a mobile app, multi-manual support, fine-tuning.</p>
 </details>
+<hr data-session="2">
+<h2>Build the walking skeleton</h2>
+<p>The goal of this session is one request going through every stage of your system and coming out the other end with a trace, however bad the answer. A <strong>walking skeleton</strong> is deliberately crude: keyword lookup instead of retrieval, a template instead of a model call, a fixed threshold instead of a trained detector. What matters is that every stage exists and every run is measured.</p>
+<p>Set the repository up so that change stays cheap, as lesson <a data-ref="system-design"></a> argued:</p>
+<ul>
+<li><strong>One entry point</strong>: a <code>pipeline(input)</code> function (or class) that calls each stage in turn. Everything else, including the API and the eval harness, calls it.</li>
+<li><strong>Configuration in one place</strong>: model names, thresholds, top-k values and prompts live in a settings file or module, never inline, so an experiment is a one-line change (lesson <a data-ref="llm-apis"></a>).</li>
+<li><strong>Traces from day one</strong>: each run writes one JSON line with the input, each stage's output, timing and cost. You will debug from these, and they become eval cases (lesson <a data-ref="deployment-llmops"></a>).</li>
+<li><strong>Deterministic where possible</strong>: fixed seeds, temperature zero for graded calls, pinned package versions.</li>
+</ul>
+<p>A minimal harness ties the pipeline to the eval cases you wrote in session 1. It is a dozen lines, and you will run it hundreds of times:</p>
+<pre><code class="language-python">import json
+import time
+
+
+def run_eval(pipeline, grade, cases, trace_path="traces.jsonl"):
+    """Run every case through the pipeline, trace it, return the pass rate."""
+    passed = 0
+    with open(trace_path, "a") as f:
+        for case in cases:
+            t0 = time.perf_counter()
+            result = pipeline(case["input"])
+            ok = grade(result, case["expected"])
+            passed += ok
+            f.write(json.dumps({"id": case["id"], "input": case["input"],
+                                "result": result, "passed": ok,
+                                "seconds": round(time.perf_counter() - t0, 4)}) + "\n")
+    return passed / len(cases)</code></pre>
+<p>Then the loop that fills the rest of the session, and the next two weeks: run the harness, open the ten worst traces, find the stage that failed most often, improve only that stage, run again, and write one line in the decision log.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a traced walking skeleton</p>
+<p>Build the skeleton for your capstone in the notebook, with placeholders where the real components will go.</p>
+<ol>
+<li>Write at least ten eval cases in the format below and save them as <code>eval_cases.jsonl</code>. Include two that should be refused or abstained on.</li>
+<li>Write <code>pipeline(text)</code> with every stage present as a function, using the simplest logic you can: keyword matching for retrieval, a fixed template for generation, rules for detection. Every stage returns something that goes into the result dictionary.</li>
+<li>Write <code>grade(result, expected)</code>, a code grader that returns 1 or 0.</li>
+<li>Run <code>run_eval</code> and read <code>traces.jsonl</code>.</li>
+</ol>
+<pre><code class="language-python">cases = [
+    {"id": "q-001", "input": "Replace with a real question",
+     "expected": "what a correct answer must contain", "tags": ["lookup"]},
+    {"id": "q-002", "input": "A question your data cannot answer",
+     "expected": "NOT_IN_DOCS", "tags": ["unanswerable"]},
+]
+with open("eval_cases.jsonl", "w") as f:
+    for c in cases:
+        f.write(json.dumps(c) + "\n")
+print(len(cases), "cases written")</code></pre>
+<p>You are done when every stage appears in every trace line and the harness prints a pass rate, however low.</p>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>The solutions notebook builds a skeleton for Capstone A over a six-paragraph toy corpus: <code>retrieve</code> scores paragraphs by the number of query words they contain, <code>generate</code> returns the best paragraph with its id as the citation or <code>NOT_IN_DOCS</code> when no word matches, and <code>grade</code> checks that the expected phrase is in the answer. It prints:</p>
+<pre><code class="language-text">10 cases written
+pass rate: 0.6
+worst traces: q-004 q-006 q-008 q-010</code></pre>
+<p>Opening the failed traces shows that retrieval, not generation, is the weak stage: the right paragraph is rarely in the top result for paraphrased questions. That is the first entry in the decision log, and the first thing to improve in session 3.</p>
+</details>
+<hr data-session="3">
+<h2>Evaluate, harden and deploy</h2>
+<p>With the skeleton running, the next sessions are an improvement loop. Three habits separate projects that converge from projects that wander.</p>
+<h3>One change at a time, with an interval</h3>
+<p>Change one stage, rerun the whole eval set, and compare. Two pass rates are not enough: with 50 cases, a change of three cases is noise. Use the paired bootstrap from lesson <a data-ref="evaluation"></a> to put an interval on the difference, and list the cases that were fixed and broken, because a change that fixes eight and breaks six has taught you something about two kinds of input.</p>
+<pre><code class="language-python">import numpy as np
+
+
+def paired_bootstrap(before, after, n=5000, seed=0):
+    """Mean change and a 95% interval for the change in pass rate between two
+    runs on the same cases."""
+    rng = np.random.default_rng(seed)
+    before, after = np.asarray(before, float), np.asarray(after, float)
+    idx = rng.integers(0, len(before), size=(n, len(before)))
+    diffs = after[idx].mean(axis=1) - before[idx].mean(axis=1)
+    return (after - before).mean(), np.percentile(diffs, [2.5, 97.5])</code></pre>
+<h3>Harden</h3>
+<p>Before anyone else uses it: an attack set of injection and misuse cases run like any other eval (lesson <a data-ref="safety-security"></a>); step, token and cost limits on every loop; input validation and a defined failure behaviour for every stage (what the user sees when retrieval returns nothing or the model times out); and least privilege for every tool and credential.</p>
+<h3>Deploy</h3>
+<p>Deployed means a stranger can try it: a container, a streaming API with health checks, metrics for cost and latency percentiles, and a dashboard you can screenshot for the write-up (lesson <a data-ref="deployment-llmops"></a>). If you serve a model yourself, this is where the levers of lesson <a data-ref="llm-inference"></a> pay off: quantise, batch, cache the shared prefix, and measure again. Cost per request is measured from traces, not estimated.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: one measured improvement</p>
+<ol>
+<li>Make one real change to the weakest stage of your skeleton (for Capstone A, replace keyword counting with ranking by the fraction of query words matched, or with embeddings from lesson <a data-ref="embeddings-vector-search"></a>).</li>
+<li>Run the harness again into a second trace file.</li>
+<li>From the two trace files, list the fixed and broken case ids and compute <code>paired_bootstrap</code> on the per-case results.</li>
+<li>Write the decision-log row: date, decision, alternatives, evidence (the interval), result.</li>
+</ol>
+<p>You are done when you have a decision-log row with an interval in it, and can say whether the change is real or noise.</p>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>The solutions notebook ranks paragraphs by the fraction of query words matched after lower-casing and stripping punctuation, which handles paraphrases better. Reading both trace files back and comparing per case prints:</p>
+<pre><code class="language-text">before 0.6  after 0.8
+fixed: ['q-004', 'q-006']  broke: []
+change +0.20  95% interval [0.0, 0.4]</code></pre>
+<p>With ten cases the interval touches zero: the change is probably real but the evidence is thin, and the decision-log row should say so. The honest next step is more cases, not a bigger model.</p>
+</details>
+<hr data-session="4">
 <h2>Write it up</h2>
 <p>Your write-up is what most people will see. Structure it like a short engineering report:</p>
 <ol>
 <li><strong>The problem</strong> in two sentences, and a 60-second demo video or animated GIF at the top.</li>
-<li><strong>Results first</strong>: a table of your final metrics against the baseline.</li>
+<li><strong>Results first</strong>: a table of your final metrics against the baseline, with intervals.</li>
 <li><strong>Architecture</strong>: one diagram and a paragraph per component.</li>
 <li><strong>What I tried</strong>: the decision log, condensed. Include things that did not work and why; this is often the most impressive part.</li>
 <li><strong>Limitations and next steps</strong>, honestly.</li>
 <li><strong>How to run it</strong>: setup in under five commands.</li>
 </ol>
-<p>Publish the repository, and consider a blog post. Clear writing about a real project is one of the strongest signals of an engineer who can work on a team.</p>
+<p>Publish the repository, and consider a blog post. Clear writing about a real project is one of the strongest signals of an engineer who can work on a team. If an AI assistant helps you draft it, keep your own voice and check every number against your traces; reviewers notice prose that claims more than the results table shows.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a results-first README</p>
+<p>Draft the first screen of your README, the part a reader sees without scrolling:</p>
+<ol>
+<li>The problem in two sentences, naming the user.</li>
+<li>A results table: baseline versus final on your two or three headline metrics, with the interval or sample size, plus cost per thousand requests and p50 latency.</li>
+<li>Three bullet points of "what I tried", each with the evidence and including one thing that did not work.</li>
+<li>The five commands to run it.</li>
+</ol>
+<p>You are done when a colleague who has never seen the project can say in one minute what it does, how well, and how to try it.</p>
+</div>
+<details class="solution">
+<summary>Show an example first screen (Capstone F)</summary>
+<p><strong>Problem</strong>: a 3B model extracts structured fields from maintenance tickets for a fleet of 200 instruments. Technicians need results in under a second, and the team wants to serve it on one small GPU.</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Field accuracy (n=120)</th>
+<th>p50 / p95 latency</th>
+<th>Cost per 1,000 requests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hosted API (baseline)</td>
+<td>0.93</td>
+<td>1.4 s / 2.9 s</td>
+<td>measured, in the report</td>
+</tr>
+<tr>
+<td>Self-hosted 16-bit, no batching</td>
+<td>0.91</td>
+<td>0.9 s / 3.1 s</td>
+<td>measured</td>
+</tr>
+<tr>
+<td>Self-hosted 4-bit, batched, prefix cache</td>
+<td>0.90</td>
+<td>0.4 s / 0.8 s</td>
+<td>measured</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What I tried</strong>: 4-bit weights cost one point of accuracy and halved memory (interval on the difference included zero, so treated as a tie); speculative decoding with a 0.5B draft gave a 1.6 times decode speed-up at an acceptance rate of about 70%, but fell to no gain on short outputs, so it is off by default; constrained JSON decoding removed every schema error but added 15% to latency.</p>
+<p><strong>Run it</strong>: clone, <code>docker compose up</code>, <code>make eval</code>, <code>make load-test</code>, open the dashboard. The real README has the measured costs in the table; never publish a results table with placeholders.</p>
+</details>
+<hr data-session="5">
 <h2>Interview preparation</h2>
 <p>AI engineering interviews typically combine coding, ML and LLM fundamentals, system design and a discussion of your projects. The concept questions below come up repeatedly. Answer each aloud in under two minutes before opening the suggested answer.</p>
 <details class="note">
@@ -178,7 +358,19 @@
 </details>
 <details class="note">
 <summary>What is the KV cache, and why does it matter for serving?</summary>
-<p>During generation, keys and values of previous tokens are stored so each step only computes the new token's projections. It makes generation efficient but consumes memory proportional to layers × KV heads × head dimension × context length × concurrent sequences, which often limits how many users a GPU can serve (lessons <a data-ref="transformers"></a> and <a data-ref="deployment-llmops"></a>).</p>
+<p>During generation, keys and values of previous tokens are stored so each step only computes the new token's projections. It makes generation efficient but consumes memory proportional to layers × KV heads × head dimension × context length × concurrent sequences, which often limits how many users a GPU can serve; paged allocation and grouped-query attention exist to shrink it (lessons <a data-ref="transformers"></a> and <a data-ref="llm-inference"></a>).</p>
+</details>
+<details class="note">
+<summary>How do quantisation, batching and speculative decoding make serving cheaper?</summary>
+<p>Decoding one token reads every weight once, so it is bound by memory bandwidth, not arithmetic. Quantisation stores weights in 8 or 4 bits, cutting memory and the bytes read per token, at a small and measurable quality cost. Continuous batching serves many sequences per weight read, raising throughput without hurting each request much. Speculative decoding lets a small draft model propose several tokens that the large model verifies in one parallel pass, producing the same distribution faster when the acceptance rate is high (lesson <a data-ref="llm-inference"></a>).</p>
+</details>
+<details class="note">
+<summary>When would you use a reasoning model, and what does it cost?</summary>
+<p>Reasoning models spend extra tokens thinking before they answer, which helps on multi-step problems: maths, code, planning, diagnosis across several pieces of evidence. The cost is latency and output tokens, controlled by a thinking budget. They are not better at everything, so route only the hard cases to them, evaluate on your own set, and keep extraction and lookup on a standard model (lesson <a data-ref="reasoning-models"></a>).</p>
+</details>
+<details class="note">
+<summary>What is context engineering, and how does memory work in an agent?</summary>
+<p>Context engineering is deciding what enters the model's window on each turn: instructions, tools, retrieved documents, recent history and memory, within a token budget. Long conversations are compacted into rolling summaries; durable facts go to an external memory store and are retrieved when relevant rather than carried forever; stable prefixes are ordered first so that prompt caching applies (lesson <a data-ref="context-engineering"></a>).</p>
 </details>
 <details class="note">
 <summary>How would you reduce hallucinations in a customer-facing assistant?</summary>
@@ -186,7 +378,7 @@
 </details>
 <details class="note">
 <summary>RAG versus fine-tuning versus long context: how do you choose?</summary>
-<p>RAG for knowledge that is large, changing, access-controlled or needs citations. Fine-tuning for behaviour, format, style, or making a small model do a narrow task cheaply. Long context with caching for small, stable collections where simplicity matters. Often combined (lessons <a data-ref="rag"></a> and <a data-ref="fine-tuning"></a>).</p>
+<p>RAG for knowledge that is large, changing, access-controlled or needs citations. Fine-tuning for behaviour, format, style, or making a small model do a narrow task cheaply. Long context with caching for small, stable collections where simplicity matters. Often combined (lessons <a data-ref="rag"></a>, <a data-ref="fine-tuning"></a> and <a data-ref="context-engineering"></a>).</p>
 </details>
 <details class="note">
 <summary>Explain LoRA. Why does it work, and what does it save?</summary>
@@ -201,33 +393,63 @@
 <p>Instructions embedded in content the model reads (direct from users, or indirect via documents, web pages, tool results) that try to override the system's instructions. No complete fix exists, so defend in depth: separate and label untrusted content, but above all limit impact with least-privilege tools, human approval for consequential actions, output filtering, safe rendering and avoiding agents that combine untrusted input, private data and external communication (lesson <a data-ref="safety-security"></a>).</p>
 </details>
 <details class="note">
-<summary>Explain RLHF and DPO.</summary>
-<p>RLHF: collect human preference comparisons, train a reward model to predict them, then optimise the language model with reinforcement learning to maximise reward with a KL penalty that keeps it close to the supervised model. DPO: skip the reward model and RL, and optimise the preference pairs directly with a classification-style loss relative to a frozen reference model; simpler and more stable (lessons <a data-ref="how-llms-are-built"></a> and <a data-ref="fine-tuning"></a>).</p>
+<summary>Explain RLHF, DPO and the RL methods behind reasoning models.</summary>
+<p>RLHF: collect human preference comparisons, train a reward model to predict them, then optimise the language model with reinforcement learning (PPO) to maximise reward with a KL penalty that keeps it close to the supervised model. DPO: skip the reward model and RL, and optimise the preference pairs directly with a classification-style loss relative to a frozen reference model; simpler and more stable. Reasoning models are trained with RL against verifiable rewards (a test passes, an answer matches), with group-based methods such as GRPO that drop the separate value model (lessons <a data-ref="how-llms-are-built"></a>, <a data-ref="advanced-fine-tuning"></a> and <a data-ref="reinforcement-learning"></a>).</p>
+</details>
+<details class="note">
+<summary>When is a language model the wrong tool?</summary>
+<p>When the task is numbers, structure or control at volume: tabular prediction (gradient boosting), forecasting (seasonal baselines and boosting on lag features), ranking for users (collaborative filtering), images at scale (a trained CNN or vision transformer), routes and schedules (search and constraint solvers), actions with delayed reward (reinforcement learning). The language model then does the language around it: parsing requests, explaining results, writing reports (lesson <a data-ref="system-design"></a> and part IX).</p>
+</details>
+<details class="note">
+<summary>How do you evaluate a recommender?</summary>
+<p>Offline: a time-based split, recall@k and NDCG@k against the held-out interactions, always against a popularity baseline, with coverage to catch a model that only recommends hits. Offline metrics are biased by what the old system showed people, so the decision is made online: an A/B test with a primary metric, guardrail metrics and a sample-size estimate, watching for feedback loops (lesson <a data-ref="time-series-recsys-graphs"></a>).</p>
 </details>
 <details class="note">
 <summary>Your RAG system's answers got worse after a change. How do you debug it?</summary>
 <p>Reproduce on the eval set and list newly broken cases. For each, check the trace: was the right chunk retrieved (parsing, chunking, embedding, filters)? Was it ranked high enough (reranker)? Was it in the prompt but ignored or contradicted (prompt, model, context length)? Fix the stage responsible, re-run the full eval, and add the cases to the regression set (lessons <a data-ref="rag"></a>, <a data-ref="evaluation"></a> and <a data-ref="deployment-llmops"></a>).</p>
 </details>
 <h3>Coding interviews</h3>
-<p>Expect standard software engineering questions plus ML-flavoured ones. Practise implementing, without libraries and against a timer: softmax and cross-entropy; logistic regression with gradient descent; k-means; a cosine-similarity top-k search; scaled dot-product attention with a causal mask; a BPE merge step; a token-bucket rate limiter; and an async function that calls an API with retries and a concurrency limit. You have written versions of almost all of these in this course.</p>
+<p>Expect standard software engineering questions plus ML-flavoured ones. Practise implementing, without libraries and against a timer: softmax and cross-entropy; logistic regression with gradient descent; k-means; a cosine-similarity top-k search; scaled dot-product attention with a causal mask; a BPE merge step; a value-iteration sweep on a small gridworld; a 2D convolution by hand; a token-bucket rate limiter; and an async function that calls an API with retries and a concurrency limit. You have written versions of almost all of these in this course. Many interviews now allow an AI coding assistant; when they do, the interviewer is watching how you specify, test and verify, so narrate that.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a timed coding drill</p>
+<p>Set a timer for twenty minutes and, in NumPy only, implement:</p>
+<ol>
+<li><code>top_k_cosine(query, matrix, k)</code>: the indices of the k rows of <code>matrix</code> most similar to <code>query</code> by cosine similarity, most similar first.</li>
+<li><code>causal_attention(Q, K, V)</code>: scaled dot-product attention with a causal mask, for a single head with shapes (n, d).</li>
+</ol>
+<p>Then write three asserts for each: a hand-checkable case, a shape check and an edge case (a zero vector; n equal to 1). You are done when all six asserts pass inside the time limit, and you can explain both functions aloud without looking.</p>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>Normalise the rows and the query, take the dot product, and use <code>argsort</code> on the negative similarities (or <code>argpartition</code> for large matrices). For attention, build the mask with <code>np.triu(..., k=1)</code>, set those scores to minus infinity before the softmax, and subtract the row maximum for stability. The solutions notebook prints:</p>
+<pre><code class="language-text">top-3 for the query: [2 0 3]
+attention row sums: [1. 1. 1. 1.]
+first row attends only to itself: True
+all asserts passed</code></pre>
+</details>
 <h3>System design interviews</h3>
-<p>Use the eight-part framework from lesson <a data-ref="system-design"></a> and practise on prompts such as: a customer-support assistant for a software company; semantic search over a million product listings; a code-review bot; a meeting summariser; content moderation for a forum; an agent that books travel within a company policy. Talk in trade-offs, estimate costs and latency with rough numbers, and always say how you would evaluate it.</p>
+<p>Use the eight-part framework from lesson <a data-ref="system-design"></a> and practise on prompts such as: a customer-support assistant for a software company; semantic search over a million product listings; a code-review bot; a meeting summariser; content moderation for a forum; an agent that books travel within a company policy; a recommendation feed for a news app; a visual inspection station; demand forecasting for a warehouse. Talk in trade-offs, estimate costs and latency with rough numbers, say which problems do not need a language model, and always say how you would evaluate it.</p>
 <h3>Talking about your projects</h3>
 <p>Prepare a three-minute story for your capstone: the problem, your approach, one hard decision and the evidence behind it, the results, and what you would do next. Interviewers listen for measurement and judgement more than for the fanciest technique.</p>
+<hr data-session="6">
 <h2>Career paths and the next ninety days</h2>
 <h3>Where this course can take you</h3>
+<p>Job titles in this field change faster than the work does. In late 2026 these are the directions you will see advertised, under varying names:</p>
 <ul>
-<li><strong>AI engineer / LLM application engineer</strong>: building products on models. The direct target of this course.</li>
-<li><strong>ML engineer / MLOps</strong>: training pipelines, serving infrastructure, model platforms. Go deeper on lessons <a data-ref="pytorch"></a>, <a data-ref="fine-tuning"></a> and <a data-ref="deployment-llmops"></a>, plus distributed systems.</li>
-<li><strong>Applied scientist / research engineer</strong>: new methods and models. Go deeper on maths, papers and large-scale training.</li>
+<li><strong>AI engineer / LLM application engineer</strong>: building products on models, including agents. The direct target of this course. Some teams call the customer-facing version of this role <strong>forward-deployed engineer</strong>: you build with the customer's data and constraints, which rewards exactly the design and evaluation habits in lesson <a data-ref="system-design"></a>.</li>
+<li><strong>ML engineer / MLOps / inference and platform engineer</strong>: training pipelines, serving infrastructure, model platforms. Go deeper on lessons <a data-ref="pytorch"></a>, <a data-ref="fine-tuning"></a>, <a data-ref="llm-inference"></a>, <a data-ref="deployment-llmops"></a> and <a data-ref="training-at-scale"></a>, plus distributed systems.</li>
+<li><strong>Applied scientist / research engineer</strong>: new methods and models. Go deeper on maths, papers, lessons <a data-ref="advanced-fine-tuning"></a> and <a data-ref="training-at-scale"></a>, and large-scale experiments.</li>
+<li><strong>Evaluation, safety and interpretability</strong>: a growing specialism in its own right. Go deeper on lessons <a data-ref="evaluation"></a>, <a data-ref="safety-security"></a> and <a data-ref="interpretability"></a>.</li>
 <li><strong>Domain expert who builds with AI</strong>: often the most valuable profile of all. Deep knowledge of a field (atmospheric science, instrumentation, medicine, law, finance) combined with these skills lets you build things generalists cannot even specify. If you already have a domain, lean into it.</li>
 </ul>
+<p>Two cautions. First, do not plan around salary surveys or demand statistics; they go stale within a year and vary enormously by country, and this course deliberately quotes none. Second, hiring in 2026 assumes you use AI coding tools daily; what distinguishes candidates is whether they can specify a problem, build an evaluation and verify what the tools produce. That is the skill this course has been training all along.</p>
 <h3>Keep growing</h3>
 <ul>
 <li><strong>Build in public</strong>: a project or write-up every month or two.</li>
 <li><strong>Contribute</strong> to open-source AI tools you use: documentation, examples and bug reports count.</li>
 <li><strong>Teach</strong>: explaining forces understanding. Write the post you wish you had found.</li>
 <li><strong>Revisit fundamentals yearly</strong>: reread your learning log and redo two or three hands-on exercises; you will be surprised what you now see.</li>
+<li><strong>Pick a lesson from part IX you skipped</strong> and do it properly; the breadth is what lets you say "this is not a language-model problem" with confidence.</li>
 </ul>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: your ninety-day plan</p>
@@ -237,7 +459,7 @@
 <summary>Show an example plan</summary>
 <p><strong>Days 1 to 30</strong>: build Capstone A on the service manuals you use at work (with permission, or on public equivalents); go deeper on retrieval evaluation; publish the repository with a results table; get feedback by demoing to two colleagues who would actually use it.</p>
 <p><strong>Days 31 to 60</strong>: extend it with an MCP server and an agent mode (Capstone B ideas); go deeper on security and prompt injection; publish a write-up of what worked and what did not; get feedback by asking a security-minded colleague to attack it.</p>
-<p><strong>Days 61 to 90</strong>: distil the most common query type into a fine-tuned small model running offline (Capstone D ideas); go deeper on quantisation and serving; publish a cost-and-quality comparison; get feedback through an open-source contribution or a talk at a local meetup.</p>
+<p><strong>Days 61 to 90</strong>: distil the most common query type into a fine-tuned small model and serve it quantised and batched (Capstones D and F); go deeper on inference optimisation; publish a cost-and-quality comparison; get feedback through an open-source contribution or a talk at a local meetup.</p>
 </details>
 <h2>Check yourself</h2>
 <div class="quiz">
@@ -281,19 +503,31 @@
 </ul>
 <p class="why">Knowing the domain turns generic AI capability into specific, valuable systems.</p>
 </div>
+<div class="q">
+<p>Capstone G asks for both offline and online evaluation of a recommender. Why are offline metrics not enough?</p>
+<ul>
+<li>Offline metrics cannot be computed for recommenders</li>
+<li class="correct">Held-out interactions only contain what the old system chose to show, so offline gains may not translate into real behaviour; an A/B test measures the actual effect</li>
+<li>Online tests are cheaper to run</li>
+<li>NDCG is only defined for search engines</li>
+</ul>
+<p class="why">Offline evaluation is biased by past exposure; the decision to ship is made online, with guardrails.</p>
+</div>
 </div>
 <div class="admonition takeaways">
 <p class="admonition-title">Key takeaways</p>
 <ul>
 <li>A narrow, finished, measured project is worth more than any number of half-built ambitious ones. Build the eval set first and keep a decision log.</li>
-<li>The five capstones together exercise RAG, agents and MCP, classical ML with LLM reporting, fine-tuning and distillation, and evaluation and observability.</li>
+<li>The seven capstones together exercise RAG, agents and MCP, classical ML with LLM reporting, fine-tuning and distillation, evaluation and observability, efficient inference, and recommendation with online evaluation.</li>
+<li>Build a traced walking skeleton, then improve one stage at a time with an interval on every change.</li>
 <li>Write it up with results first, what you tried, honest limitations and easy setup.</li>
-<li>Interviews test fundamentals, coding, system design and judgement; you have built most of what they ask about.</li>
+<li>Interviews test fundamentals, coding, system design and judgement, including knowing when a language model is the wrong tool; you have built most of what they ask about.</li>
 <li>Keep building, publishing, teaching and revisiting fundamentals. If you have a domain, combine it with these skills.</li>
 </ul>
 </div>
 <h3>Go deeper</h3>
 <ul>
 <li>The <a href="../resources.html">further resources</a> page of this course</li>
+<li>Eugene Yan, Bryan Bischof, Charles Frye, Hamel Husain, Jason Liu and Shreya Shankar, "What We Learned from a Year of Building with LLMs" (applied-llms.org)</li>
 <li>Your own learning log, reread from lesson <a data-ref="welcome"></a></li>
 </ul>
