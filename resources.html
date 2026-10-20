@@ -2,85 +2,110 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Further resources | AI Engineering</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<meta name="description" content="Books, courses, papers and tools for going deeper.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121a22" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Further resources">
+<meta property="og:description" content="Books, courses, papers and tools for going deeper.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="assets/fonts/fonts.css">
-<link rel="stylesheet" href="assets/katex/katex.min.css">
-<link rel="stylesheet" href="assets/style.css">
-<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="stylesheet" href="assets/style.css?v=da7d24f3">
+<script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
+<script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
 <body class="is-page" data-root="" data-page="resources">
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
-<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-controls="course-map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
 <a class="brand" href="index.html">AI Engineering<span>from zero to mastery</span></a>
 <div class="search" role="search">
-<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<input id="search-input" type="search" placeholder="Search the course" autocomplete="off" aria-label="Search the course" enterkeyhint="search">
+<button class="icon-btn search-close" type="button" aria-label="Close search"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <div class="search-results" hidden></div>
 </div>
-<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+<button class="icon-btn search-toggle" type="button" aria-label="Search the course"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button class="icon-btn settings-toggle" type="button" aria-label="Reading settings and progress sync" aria-haspopup="dialog"><span class="aa" aria-hidden="true">Aa</span></button>
 </header>
-<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9" title="00 Welcome and your AI workbench" tabindex="-1"></a><a class="seg" href="lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3" title="01 Python for AI work" tabindex="-1"></a><a class="seg" href="lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb" title="02 The maths behind AI" tabindex="-1"></a><a class="seg" href="lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff" title="03 Machine learning fundamentals" tabindex="-1"></a><a class="seg" href="lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff" title="04 Classical machine learning" tabindex="-1"></a><a class="seg" href="lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe" title="05 Neural networks from scratch" tabindex="-1"></a><a class="seg" href="lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0" title="06 Deep learning with PyTorch" tabindex="-1"></a><a class="seg" href="lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8" title="07 Text as numbers, sequences and embeddings" tabindex="-1"></a><a class="seg" href="lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8" title="08 Attention and the transformer" tabindex="-1"></a><a class="seg" href="lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb" title="09 How large language models are built" tabindex="-1"></a><a class="seg" href="lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1" title="10 Working with LLM APIs" tabindex="-1"></a><a class="seg" href="lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7" title="11 Prompt engineering" tabindex="-1"></a><a class="seg" href="lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e" title="12 Reasoning models and test-time compute" tabindex="-1"></a><a class="seg" href="lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94" title="13 Embeddings and vector search" tabindex="-1"></a><a class="seg" href="lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a" title="14 Retrieval-augmented generation (RAG)" tabindex="-1"></a><a class="seg" href="lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e" title="15 Agents, tool use and MCP" tabindex="-1"></a><a class="seg" href="lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70" title="16 Context engineering and memory" tabindex="-1"></a><a class="seg" href="lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a" title="17 Evaluating LLM systems" tabindex="-1"></a><a class="seg" href="lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232" title="18 Fine-tuning language models" tabindex="-1"></a><a class="seg" href="lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05" title="19 Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging" tabindex="-1"></a><a class="seg" href="lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701" title="20 LLM inference in depth" tabindex="-1"></a><a class="seg" href="lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200" title="21 Deployment, serving and LLMOps" tabindex="-1"></a><a class="seg" href="lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07" title="22 Safety, security and responsible AI" tabindex="-1"></a><a class="seg" href="lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807" title="23 Multimodal AI: vision, documents, speech and image generation" tabindex="-1"></a><a class="seg" href="lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304" title="24 Search, planning and classical AI" tabindex="-1"></a><a class="seg" href="lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06" title="25 Reinforcement learning" tabindex="-1"></a><a class="seg" href="lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903" title="26 Generative models: autoencoders, VAEs, GANs, flows and diffusion" tabindex="-1"></a><a class="seg" href="lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307" title="27 Computer vision: detection, segmentation and beyond" tabindex="-1"></a><a class="seg" href="lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05" title="28 Time series, recommender systems and graphs" tabindex="-1"></a><a class="seg" href="lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005" title="29 Training at scale: GPUs, parallelism and efficient architectures" tabindex="-1"></a><a class="seg" href="lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05" title="30 Interpretability and explainability" tabindex="-1"></a><a class="seg" href="lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29" title="31 Designing AI systems" tabindex="-1"></a><a class="seg" href="lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48" title="32 Capstone projects and your AI engineering career" tabindex="-1"></a><span class="read-progress"></span></div>
 <div class="layout">
-<nav class="course-map" aria-label="Course map">
-<ul class="map-pages">
-<li><a href="index.html">Course home</a></li>
-<li><a href="schedule.html">Daily schedule</a></li>
-<li><a href="glossary.html">Glossary</a></li>
-<li><a href="resources.html" aria-current="page">Further resources</a></li>
-</ul>
-<section class="map-part" style="--pc:#ab19c8">
+<nav class="course-map" id="course-map" aria-label="Course map">
+<ul class="map-pages"><li><a href="index.html">Course home</a></li><li><a href="schedule.html">Daily schedule</a></li><li><a href="glossary.html">Glossary</a></li><li><a href="resources.html" aria-current="page">Further resources</a></li></ul>
+<section class="map-part" style="--pc:#a45ae9">
 <p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
-<li><a href="lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+<li><a href="lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#6d1ce3">
+<section class="map-part" style="--pc:#8368fb">
 <p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
-<li><a href="lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
-<li><a href="lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+<li><a href="lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1c44e3">
+<section class="map-part" style="--pc:#5877ff">
 <p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
-<li><a href="lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
-<li><a href="lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+<li><a href="lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1ce3c5">
+<section class="map-part" style="--pc:#0487f0">
 <p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
-<li><a href="lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
-<li><a href="lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
-<li><a href="lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+<li><a href="lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#65e31c">
+<section class="map-part" style="--pc:#0b94bb">
 <p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
-<li><a href="lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
-<li><a href="lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+<li><a href="lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#e37e1c">
+<section class="map-part" style="--pc:#0b9b8a">
 <p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
-<li><a href="lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
-<li><a href="lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
-<li><a href="lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
-<li><a href="lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
-<li><a href="lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
-<li><a href="lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
-<li><a href="lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Reasoning models</span></a></li>
+<li><a href="lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">RAG</span></a></li>
+<li><a href="lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Context engineering</span></a></li>
+<li><a href="lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Evaluation</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#d41a1a">
-<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
-<li><a href="lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
-<li><a href="lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
-<li><a href="lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+<section class="map-part" style="--pc:#479e05">
+<p class="map-part-name"><span class="roman">VII</span> Fine-tuning and inference</p><ol>
+<li><a href="lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Post-training in depth</span></a></li>
+<li><a href="lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">LLM inference</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#b21616">
-<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
-<li><a href="lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
-<li><a href="lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+<section class="map-part" style="--pc:#8b8c07">
+<p class="map-part-name"><span class="roman">VIII</span> Production</p><ol>
+<li><a href="lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07"><span class="dot" aria-hidden="true"></span><span class="num">22</span><span class="t">Safety and security</span></a></li>
+<li><a href="lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807"><span class="dot" aria-hidden="true"></span><span class="num">23</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#bc7307">
+<p class="map-part-name"><span class="roman">IX</span> The wider field</p><ol>
+<li><a href="lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304"><span class="dot" aria-hidden="true"></span><span class="num">24</span><span class="t">Classical AI and search</span></a></li>
+<li><a href="lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06"><span class="dot" aria-hidden="true"></span><span class="num">25</span><span class="t">Reinforcement learning</span></a></li>
+<li><a href="lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903"><span class="dot" aria-hidden="true"></span><span class="num">26</span><span class="t">Generative models</span></a></li>
+<li><a href="lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307"><span class="dot" aria-hidden="true"></span><span class="num">27</span><span class="t">Computer vision in depth</span></a></li>
+<li><a href="lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05"><span class="dot" aria-hidden="true"></span><span class="num">28</span><span class="t">Time series, recsys, graphs</span></a></li>
+<li><a href="lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005"><span class="dot" aria-hidden="true"></span><span class="num">29</span><span class="t">Training at scale</span></a></li>
+<li><a href="lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05"><span class="dot" aria-hidden="true"></span><span class="num">30</span><span class="t">Interpretability</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#ea3b48">
+<p class="map-part-name"><span class="roman">X</span> Mastery</p><ol>
+<li><a href="lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29"><span class="dot" aria-hidden="true"></span><span class="num">31</span><span class="t">AI system design</span></a></li>
+<li><a href="lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48"><span class="dot" aria-hidden="true"></span><span class="num">32</span><span class="t">Capstones and career</span></a></li>
 </ol></section>
 </nav>
+<div class="scrim" hidden></div>
 <main id="main" tabindex="-1">
-<div class="prose plain-page"><h1>Further resources</h1><p>A short, opinionated list. Each item earns its place; you do not need all of them. Start with the one that matches the part of the course you found hardest. Model names, prices and library APIs change quickly, so for anything product-specific prefer the official documentation over books.</p>
-<h2 id="books">Books<a class="headerlink" href="#books" title="Link to this section">#</a></h2>
-<table>
+<div class="prose plain-page">
+<h1>Further resources</h1>
+
+<p>A short, opinionated list. Each item earns its place; you do not need all of them. Start with the one that matches the part of the course you found hardest. Model names, prices and library APIs change quickly, so for anything product-specific prefer the official documentation over books. Part numbers are the ten parts of the course; part IX, the wider field, is where most of the newer entries sit.</p>
+<h2 id="books">Books<a class="headerlink" href="#books" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table>
 <thead>
 <tr>
 <th>Book</th>
@@ -92,15 +117,15 @@
 <tr>
 <td>Chip Huyen, <em>AI Engineering</em> (2025)</td>
 <td>Building applications on foundation models: evaluation, RAG, agents, inference</td>
-<td>VI to VIII</td>
+<td>VI to VIII, X</td>
 </tr>
 <tr>
 <td>Chip Huyen, <em>Designing Machine Learning Systems</em> (2022)</td>
 <td>Production ML: data, deployment, monitoring</td>
-<td>III, VII</td>
+<td>III, VIII</td>
 </tr>
 <tr>
-<td>Aurélien Géron, <em>Hands-On Machine Learning with Scikit-Learn, Keras and TensorFlow</em></td>
+<td>Aurélien Géron, <em>Hands-On Machine Learning with Scikit-Learn, Keras and TensorFlow</em> (3rd ed.)</td>
 <td>Practical classical ML and deep learning</td>
 <td>III, IV</td>
 </tr>
@@ -115,14 +140,29 @@
 <td>II</td>
 </tr>
 <tr>
+<td>Simon Prince, <em>Understanding Deep Learning</em> (<a href="https://udlbook.github.io/udlbook/">free online</a>)</td>
+<td>Modern deep learning with clear figures: transformers, diffusion, GANs and RL in one place</td>
+<td>IV, IX</td>
+</tr>
+<tr>
 <td>Sebastian Raschka, <em>Build a Large Language Model (From Scratch)</em></td>
 <td>Implementing a GPT and fine-tuning it</td>
-<td>V, VI</td>
+<td>V, VII</td>
+</tr>
+<tr>
+<td>Sebastian Raschka, <em>Build a Reasoning Model (From Scratch)</em></td>
+<td>Test-time scaling, reinforcement learning with verifiable rewards and evaluating reasoning, in plain PyTorch</td>
+<td>VI, VII</td>
 </tr>
 <tr>
 <td>Jay Alammar and Maarten Grootendorst, <em>Hands-On Large Language Models</em></td>
 <td>Visual, practical tour of LLM techniques</td>
-<td>V, VI</td>
+<td>V to VII</td>
+</tr>
+<tr>
+<td>Nathan Lambert, <em>Reinforcement Learning from Human Feedback</em> (<a href="https://rlhfbook.com">free online</a>)</td>
+<td>Post-training as practised: reward models, PPO and GRPO, DPO, data and evaluation</td>
+<td>V, VII</td>
 </tr>
 <tr>
 <td>Goodfellow, Bengio, Courville, <em>Deep Learning</em> (free online)</td>
@@ -134,30 +174,76 @@
 <td>NLP foundations, embeddings, transformers</td>
 <td>IV, V</td>
 </tr>
+<tr>
+<td>Russell and Norvig, <em>Artificial Intelligence: A Modern Approach</em> (4th ed.)</td>
+<td>Search, constraint satisfaction, logic, planning and probabilistic reasoning: the classical half of AI</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Sutton and Barto, <em>Reinforcement Learning: An Introduction</em> (2nd ed., <a href="http://incompleteideas.net/book/the-book-2nd.html">free online</a>)</td>
+<td>The reinforcement learning book; bandits to policy gradients</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Richard Szeliski, <em>Computer Vision: Algorithms and Applications</em> (2nd ed., <a href="https://szeliski.org/Book/">free online</a>)</td>
+<td>Vision beyond classifiers: geometry, features, segmentation, recognition</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Hyndman and Athanasopoulos, <em>Forecasting: Principles and Practice</em> (3rd ed., <a href="https://otexts.com/fpp3/">free online</a>)</td>
+<td>Forecasting done honestly: baselines, decomposition, ETS, ARIMA, evaluation</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>William Hamilton, <em>Graph Representation Learning</em> (<a href="https://www.cs.mcgill.ca/~wlh/grl_book/">free pre-print</a>)</td>
+<td>Node embeddings and graph neural networks, concisely</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Christoph Molnar, <em>Interpretable Machine Learning</em> (<a href="https://christophm.github.io/interpretable-ml-book/">free online</a>)</td>
+<td>Feature attribution, SHAP, counterfactuals and their limits</td>
+<td>IX</td>
+</tr>
+<tr>
+<td>Austin et al., <em>How to Scale Your Model</em> (<a href="https://jax-ml.github.io/scaling-book/">free online</a>)</td>
+<td>Rooflines, parallelism and inference arithmetic on TPUs and GPUs, with worked problems</td>
+<td>VII, IX</td>
+</tr>
+<tr>
+<td>Hugging Face, <em>The Ultra-Scale Playbook</em> (<a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook">free online</a>)</td>
+<td>Training on up to thousands of GPUs, with measurements: data, tensor and pipeline parallelism, ZeRO</td>
+<td>IX</td>
+</tr>
 </tbody>
-</table>
-<h2 id="courses-and-video-series">Courses and video series<a class="headerlink" href="#courses-and-video-series" title="Link to this section">#</a></h2>
+</table></div>
+<h2 id="courses-and-video-series">Courses and video series<a class="headerlink" href="#courses-and-video-series" aria-label="Link to this section">#</a></h2>
 <ul>
 <li><strong>Andrej Karpathy, <em>Neural Networks: Zero to Hero</em></strong> (YouTube): micrograd, makemore, building GPT and its tokenizer from scratch. The best complement to parts IV and V.</li>
 <li><strong>3Blue1Brown</strong>: <em>Essence of Linear Algebra</em>, <em>Essence of Calculus</em>, and the neural networks series including transformers and attention.</li>
 <li><strong>fast.ai, <em>Practical Deep Learning for Coders</em></strong>: top-down, code-first deep learning.</li>
 <li><strong>Andrew Ng, <em>Machine Learning Specialization</em></strong> (Coursera) and the <strong>DeepLearning.AI short courses</strong> on LLM topics (RAG, agents, evaluation, fine-tuning).</li>
-<li><strong>Hugging Face courses</strong>: the LLM course, the diffusion course, the agents course; hands-on with the libraries you will use.</li>
-<li><strong>Stanford CS224N</strong> (NLP with deep learning) and <strong>CS336</strong> (language modelling from scratch): lecture videos and assignments online, for going deep.</li>
+<li><strong>Hugging Face courses</strong>: the LLM course, the agents course, the MCP course, the diffusion course and the <em>Deep RL course</em> (part IX); hands-on with the libraries you will use.</li>
+<li><strong>Stanford CS224N</strong> (NLP with deep learning) and <strong>CS336</strong> (language modelling from scratch): lecture videos and assignments online, for going deep on parts V and VII.</li>
+<li><strong>Stanford CS231n</strong> (deep learning for computer vision): the standard route into part IX's vision lesson, with assignments.</li>
+<li><strong>David Silver's reinforcement learning lectures</strong> (UCL and DeepMind, YouTube): the lecture companion to Sutton and Barto.</li>
+<li><strong>Stanford CS224W</strong> (machine learning with graphs): for the graph half of lesson <a class="ref" href="lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a>.</li>
+<li><strong>ARENA</strong> (arena.education) and Neel Nanda's "getting started in mechanistic interpretability": exercise-driven material for lesson <a class="ref" href="lessons/30-interpretability.html" title="Lesson 30: Interpretability and explainability">30</a>.</li>
 </ul>
-<h2 id="documentation-worth-reading-end-to-end">Documentation worth reading end to end<a class="headerlink" href="#documentation-worth-reading-end-to-end" title="Link to this section">#</a></h2>
+<h2 id="documentation-worth-reading-end-to-end">Documentation worth reading end to end<a class="headerlink" href="#documentation-worth-reading-end-to-end" aria-label="Link to this section">#</a></h2>
 <ul>
 <li><a href="https://docs.claude.com/en/api/overview">Claude API documentation</a> and the <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview">prompt engineering guide</a></li>
+<li>Anthropic's guides to <a href="https://docs.claude.com/en/docs/build-with-claude/extended-thinking">extended thinking</a> (lesson <a class="ref" href="lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a>) and <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-caching">prompt caching</a> (lessons <a class="ref" href="lessons/10-llm-apis.html" title="Lesson 10: Working with LLM APIs">10</a>, <a class="ref" href="lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a>)</li>
 <li><a href="https://platform.openai.com/docs">OpenAI API documentation</a></li>
 <li><a href="https://pytorch.org/tutorials/">PyTorch tutorials</a></li>
 <li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn user guide</a></li>
 <li><a href="https://huggingface.co/docs">Hugging Face Transformers, PEFT and TRL documentation</a></li>
 <li><a href="https://modelcontextprotocol.io">Model Context Protocol</a></li>
-<li><a href="https://docs.vllm.ai">vLLM documentation</a></li>
+<li><a href="https://docs.vllm.ai">vLLM</a> and <a href="https://docs.sglang.ai">SGLang</a> documentation (lesson <a class="ref" href="lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a>)</li>
+<li><a href="https://gymnasium.farama.org">Gymnasium documentation</a> for reinforcement learning environments (lesson <a class="ref" href="lessons/25-reinforcement-learning.html" title="Lesson 25: Reinforcement learning">25</a>)</li>
 </ul>
-<h2 id="papers-in-reading-order">Papers, in reading order<a class="headerlink" href="#papers-in-reading-order" title="Link to this section">#</a></h2>
-<p>All are on arXiv; search for the title or the identifier.</p>
-<table>
+<h2 id="papers-in-reading-order">Papers, in reading order<a class="headerlink" href="#papers-in-reading-order" aria-label="Link to this section">#</a></h2>
+<p>All are on arXiv; search for the title or the identifier. Part IX papers are included so that you can read the original of every idea the course teaches.</p>
+<div class="table-wrap"><table>
 <thead>
 <tr>
 <th>Paper</th>
@@ -171,202 +257,354 @@
 <td>Efficient Estimation of Word Representations in Vector Space (word2vec)</td>
 <td>2013</td>
 <td>1301.3781</td>
-<td>07</td>
+<td><a class="ref" href="lessons/07-sequences-embeddings.html" title="Lesson 07: Text as numbers, sequences and embeddings">07</a></td>
 </tr>
 <tr>
-<td>Adam: A Method for Stochastic Optimization</td>
+<td>Playing Atari with Deep Reinforcement Learning (DQN)</td>
+<td>2013</td>
+<td>1312.5602</td>
+<td><a class="ref" href="lessons/25-reinforcement-learning.html" title="Lesson 25: Reinforcement learning">25</a></td>
+</tr>
+<tr>
+<td>Auto-Encoding Variational Bayes (VAE)</td>
+<td>2013</td>
+<td>1312.6114</td>
+<td><a class="ref" href="lessons/26-generative-models.html" title="Lesson 26: Generative models: autoencoders, VAEs, GANs, flows and diffusion">26</a></td>
+</tr>
+<tr>
+<td>Generative Adversarial Networks</td>
 <td>2014</td>
-<td>1412.6980</td>
-<td>05</td>
+<td>1406.2661</td>
+<td><a class="ref" href="lessons/26-generative-models.html" title="Lesson 26: Generative models: autoencoders, VAEs, GANs, flows and diffusion">26</a></td>
 </tr>
 <tr>
 <td>Neural Machine Translation by Jointly Learning to Align and Translate</td>
 <td>2014</td>
 <td>1409.0473</td>
-<td>07</td>
+<td><a class="ref" href="lessons/07-sequences-embeddings.html" title="Lesson 07: Text as numbers, sequences and embeddings">07</a></td>
+</tr>
+<tr>
+<td>Adam: A Method for Stochastic Optimization</td>
+<td>2014</td>
+<td>1412.6980</td>
+<td><a class="ref" href="lessons/05-neural-networks.html" title="Lesson 05: Neural networks from scratch">05</a></td>
+</tr>
+<tr>
+<td>You Only Look Once: Unified, Real-Time Object Detection</td>
+<td>2015</td>
+<td>1506.02640</td>
+<td><a class="ref" href="lessons/27-computer-vision.html" title="Lesson 27: Computer vision: detection, segmentation and beyond">27</a></td>
 </tr>
 <tr>
 <td>Deep Residual Learning for Image Recognition (ResNet)</td>
 <td>2015</td>
 <td>1512.03385</td>
-<td>05</td>
+<td><a class="ref" href="lessons/05-neural-networks.html" title="Lesson 05: Neural networks from scratch">05</a>, <a class="ref" href="lessons/27-computer-vision.html" title="Lesson 27: Computer vision: detection, segmentation and beyond">27</a></td>
+</tr>
+<tr>
+<td>Wide &amp; Deep Learning for Recommender Systems</td>
+<td>2016</td>
+<td>1606.07792</td>
+<td><a class="ref" href="lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a></td>
+</tr>
+<tr>
+<td>Semi-Supervised Classification with Graph Convolutional Networks</td>
+<td>2016</td>
+<td>1609.02907</td>
+<td><a class="ref" href="lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a></td>
+</tr>
+<tr>
+<td>A Unified Approach to Interpreting Model Predictions (SHAP)</td>
+<td>2017</td>
+<td>1705.07874</td>
+<td><a class="ref" href="lessons/30-interpretability.html" title="Lesson 30: Interpretability and explainability">30</a></td>
 </tr>
 <tr>
 <td>Attention Is All You Need</td>
 <td>2017</td>
 <td>1706.03762</td>
-<td>08</td>
+<td><a class="ref" href="lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a></td>
+</tr>
+<tr>
+<td>Proximal Policy Optimization Algorithms</td>
+<td>2017</td>
+<td>1707.06347</td>
+<td><a class="ref" href="lessons/25-reinforcement-learning.html" title="Lesson 25: Reinforcement learning">25</a>, <a class="ref" href="lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a></td>
+</tr>
+<tr>
+<td>Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm (AlphaZero)</td>
+<td>2017</td>
+<td>1712.01815</td>
+<td><a class="ref" href="lessons/24-classical-ai.html" title="Lesson 24: Search, planning and classical AI">24</a>, <a class="ref" href="lessons/25-reinforcement-learning.html" title="Lesson 25: Reinforcement learning">25</a></td>
 </tr>
 <tr>
 <td>BERT: Pre-training of Deep Bidirectional Transformers</td>
 <td>2018</td>
 <td>1810.04805</td>
-<td>08</td>
+<td><a class="ref" href="lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a></td>
 </tr>
 <tr>
 <td>Sentence-BERT</td>
 <td>2019</td>
 <td>1908.10084</td>
-<td>12</td>
+<td><a class="ref" href="lessons/13-embeddings-vector-search.html" title="Lesson 13: Embeddings and vector search">13</a></td>
+</tr>
+<tr>
+<td>Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism</td>
+<td>2019</td>
+<td>1909.08053</td>
+<td><a class="ref" href="lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a></td>
+</tr>
+<tr>
+<td>ZeRO: Memory Optimizations Toward Training Trillion Parameter Models</td>
+<td>2019</td>
+<td>1910.02054</td>
+<td><a class="ref" href="lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a></td>
 </tr>
 <tr>
 <td>Scaling Laws for Neural Language Models</td>
 <td>2020</td>
 <td>2001.08361</td>
-<td>09</td>
+<td><a class="ref" href="lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a></td>
 </tr>
 <tr>
 <td>Language Models are Few-Shot Learners (GPT-3)</td>
 <td>2020</td>
 <td>2005.14165</td>
-<td>09</td>
+<td><a class="ref" href="lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a></td>
 </tr>
 <tr>
 <td>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</td>
 <td>2020</td>
 <td>2005.11401</td>
-<td>13</td>
+<td><a class="ref" href="lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a></td>
 </tr>
 <tr>
 <td>Denoising Diffusion Probabilistic Models</td>
 <td>2020</td>
 <td>2006.11239</td>
-<td>19</td>
+<td><a class="ref" href="lessons/26-generative-models.html" title="Lesson 26: Generative models: autoencoders, VAEs, GANs, flows and diffusion">26</a>, <a class="ref" href="lessons/23-multimodal.html" title="Lesson 23: Multimodal AI: vision, documents, speech and image generation">23</a></td>
 </tr>
 <tr>
 <td>An Image is Worth 16x16 Words (ViT)</td>
 <td>2020</td>
 <td>2010.11929</td>
-<td>19</td>
+<td><a class="ref" href="lessons/27-computer-vision.html" title="Lesson 27: Computer vision: detection, segmentation and beyond">27</a>, <a class="ref" href="lessons/23-multimodal.html" title="Lesson 23: Multimodal AI: vision, documents, speech and image generation">23</a></td>
+</tr>
+<tr>
+<td>Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</td>
+<td>2021</td>
+<td>2101.03961</td>
+<td><a class="ref" href="lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a></td>
 </tr>
 <tr>
 <td>Learning Transferable Visual Models From Natural Language Supervision (CLIP)</td>
 <td>2021</td>
 <td>2103.00020</td>
-<td>19</td>
+<td><a class="ref" href="lessons/23-multimodal.html" title="Lesson 23: Multimodal AI: vision, documents, speech and image generation">23</a></td>
 </tr>
 <tr>
 <td>RoFormer: Rotary Position Embedding</td>
 <td>2021</td>
 <td>2104.09864</td>
-<td>08</td>
+<td><a class="ref" href="lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a></td>
 </tr>
 <tr>
 <td>LoRA: Low-Rank Adaptation of Large Language Models</td>
 <td>2021</td>
 <td>2106.09685</td>
-<td>16</td>
+<td><a class="ref" href="lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a></td>
 </tr>
 <tr>
 <td>High-Resolution Image Synthesis with Latent Diffusion Models</td>
 <td>2021</td>
 <td>2112.10752</td>
-<td>19</td>
+<td><a class="ref" href="lessons/26-generative-models.html" title="Lesson 26: Generative models: autoencoders, VAEs, GANs, flows and diffusion">26</a>, <a class="ref" href="lessons/23-multimodal.html" title="Lesson 23: Multimodal AI: vision, documents, speech and image generation">23</a></td>
 </tr>
 <tr>
 <td>Chain-of-Thought Prompting Elicits Reasoning</td>
 <td>2022</td>
 <td>2201.11903</td>
-<td>11</td>
+<td><a class="ref" href="lessons/11-prompt-engineering.html" title="Lesson 11: Prompt engineering">11</a>, <a class="ref" href="lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a></td>
 </tr>
 <tr>
 <td>Training Language Models to Follow Instructions with Human Feedback (InstructGPT)</td>
 <td>2022</td>
 <td>2203.02155</td>
-<td>09</td>
-</tr>
-<tr>
-<td>Training Compute-Optimal Large Language Models (Chinchilla)</td>
-<td>2022</td>
-<td>2203.15556</td>
-<td>09</td>
+<td><a class="ref" href="lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a></td>
 </tr>
 <tr>
 <td>Self-Consistency Improves Chain of Thought Reasoning</td>
 <td>2022</td>
 <td>2203.11171</td>
-<td>11</td>
+<td><a class="ref" href="lessons/11-prompt-engineering.html" title="Lesson 11: Prompt engineering">11</a>, <a class="ref" href="lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a></td>
+</tr>
+<tr>
+<td>Training Compute-Optimal Large Language Models (Chinchilla)</td>
+<td>2022</td>
+<td>2203.15556</td>
+<td><a class="ref" href="lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a></td>
+</tr>
+<tr>
+<td>Are Transformers Effective for Time Series Forecasting?</td>
+<td>2022</td>
+<td>2205.13504</td>
+<td><a class="ref" href="lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a></td>
 </tr>
 <tr>
 <td>FlashAttention</td>
 <td>2022</td>
 <td>2205.14135</td>
-<td>08, 17</td>
+<td><a class="ref" href="lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a>, <a class="ref" href="lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a></td>
+</tr>
+<tr>
+<td>Toy Models of Superposition</td>
+<td>2022</td>
+<td>2209.10652</td>
+<td><a class="ref" href="lessons/30-interpretability.html" title="Lesson 30: Interpretability and explainability">30</a></td>
+</tr>
+<tr>
+<td>Flow Matching for Generative Modeling</td>
+<td>2022</td>
+<td>2210.02747</td>
+<td><a class="ref" href="lessons/26-generative-models.html" title="Lesson 26: Generative models: autoencoders, VAEs, GANs, flows and diffusion">26</a></td>
 </tr>
 <tr>
 <td>ReAct: Synergizing Reasoning and Acting</td>
 <td>2022</td>
 <td>2210.03629</td>
-<td>14</td>
+<td><a class="ref" href="lessons/15-agents.html" title="Lesson 15: Agents, tool use and MCP">15</a></td>
 </tr>
 <tr>
-<td>Constitutional AI: Harmlessness from AI Feedback</td>
+<td>GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers</td>
 <td>2022</td>
-<td>2212.08073</td>
-<td>09</td>
+<td>2210.17323</td>
+<td><a class="ref" href="lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a></td>
+</tr>
+<tr>
+<td>Fast Inference from Transformers via Speculative Decoding</td>
+<td>2022</td>
+<td>2211.17192</td>
+<td><a class="ref" href="lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a></td>
 </tr>
 <tr>
 <td>Robust Speech Recognition via Large-Scale Weak Supervision (Whisper)</td>
 <td>2022</td>
 <td>2212.04356</td>
-<td>19</td>
+<td><a class="ref" href="lessons/23-multimodal.html" title="Lesson 23: Multimodal AI: vision, documents, speech and image generation">23</a></td>
+</tr>
+<tr>
+<td>Constitutional AI: Harmlessness from AI Feedback</td>
+<td>2022</td>
+<td>2212.08073</td>
+<td><a class="ref" href="lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a></td>
+</tr>
+<tr>
+<td>Self-Instruct: Aligning Language Models with Self-Generated Instructions</td>
+<td>2022</td>
+<td>2212.10560</td>
+<td><a class="ref" href="lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a></td>
 </tr>
 <tr>
 <td>Toolformer</td>
 <td>2023</td>
 <td>2302.04761</td>
-<td>14</td>
+<td><a class="ref" href="lessons/15-agents.html" title="Lesson 15: Agents, tool use and MCP">15</a></td>
 </tr>
 <tr>
 <td>Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection</td>
 <td>2023</td>
 <td>2302.12173</td>
-<td>18</td>
+<td><a class="ref" href="lessons/22-safety-security.html" title="Lesson 22: Safety, security and responsible AI">22</a></td>
 </tr>
 <tr>
-<td>Direct Preference Optimization</td>
+<td>Segment Anything</td>
 <td>2023</td>
-<td>2305.18290</td>
-<td>09, 16</td>
+<td>2304.02643</td>
+<td><a class="ref" href="lessons/27-computer-vision.html" title="Lesson 27: Computer vision: detection, segmentation and beyond">27</a></td>
 </tr>
 <tr>
 <td>QLoRA: Efficient Finetuning of Quantized LLMs</td>
 <td>2023</td>
 <td>2305.14314</td>
-<td>16</td>
+<td><a class="ref" href="lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a></td>
+</tr>
+<tr>
+<td>Direct Preference Optimization</td>
+<td>2023</td>
+<td>2305.18290</td>
+<td><a class="ref" href="lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a>, <a class="ref" href="lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a></td>
+</tr>
+<tr>
+<td>Let's Verify Step by Step</td>
+<td>2023</td>
+<td>2305.20050</td>
+<td><a class="ref" href="lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a></td>
 </tr>
 <tr>
 <td>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</td>
 <td>2023</td>
 <td>2306.05685</td>
-<td>15</td>
+<td><a class="ref" href="lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a></td>
 </tr>
 <tr>
 <td>Lost in the Middle: How Language Models Use Long Contexts</td>
 <td>2023</td>
 <td>2307.03172</td>
-<td>13</td>
+<td><a class="ref" href="lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a>, <a class="ref" href="lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a></td>
 </tr>
 <tr>
 <td>Efficient Memory Management for LLM Serving with PagedAttention (vLLM)</td>
 <td>2023</td>
 <td>2309.06180</td>
-<td>17</td>
+<td><a class="ref" href="lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a></td>
+</tr>
+<tr>
+<td>MemGPT: Towards LLMs as Operating Systems</td>
+<td>2023</td>
+<td>2310.08560</td>
+<td><a class="ref" href="lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a></td>
+</tr>
+<tr>
+<td>Mamba: Linear-Time Sequence Modeling with Selective State Spaces</td>
+<td>2023</td>
+<td>2312.00752</td>
+<td><a class="ref" href="lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a></td>
+</tr>
+<tr>
+<td>DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models (GRPO)</td>
+<td>2024</td>
+<td>2402.03300</td>
+<td><a class="ref" href="lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a></td>
+</tr>
+<tr>
+<td>Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters</td>
+<td>2024</td>
+<td>2408.03314</td>
+<td><a class="ref" href="lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a></td>
+</tr>
+<tr>
+<td>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</td>
+<td>2025</td>
+<td>2501.12948</td>
+<td><a class="ref" href="lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a></td>
 </tr>
 </tbody>
-</table>
-<h2 id="blogs-and-writing-by-practitioners">Blogs and writing by practitioners<a class="headerlink" href="#blogs-and-writing-by-practitioners" title="Link to this section">#</a></h2>
+</table></div>
+<h2 id="blogs-and-writing-by-practitioners">Blogs and writing by practitioners<a class="headerlink" href="#blogs-and-writing-by-practitioners" aria-label="Link to this section">#</a></h2>
 <ul>
-<li><strong>Anthropic engineering blog</strong>: "Building effective agents", "Introducing Contextual Retrieval" and posts on tool design and evaluation.</li>
-<li><strong>Lilian Weng</strong> (lilianweng.github.io): thorough surveys of agents, hallucination, diffusion and more.</li>
+<li><strong>Anthropic engineering blog</strong>: "Building effective agents", "Effective context engineering for AI agents", "Introducing Contextual Retrieval" and posts on tool design and evaluation.</li>
+<li><strong>Transformer Circuits</strong> (transformer-circuits.pub): Anthropic's interpretability research, from "Toy Models of Superposition" to the sparse-autoencoder and circuit-tracing work behind lesson <a class="ref" href="lessons/30-interpretability.html" title="Lesson 30: Interpretability and explainability">30</a>.</li>
+<li><strong>Lilian Weng</strong> (lilianweng.github.io): thorough surveys of agents, reinforcement learning, diffusion, hallucination and more.</li>
 <li><strong>Jay Alammar</strong>: illustrated explanations of transformers and LLMs.</li>
 <li><strong>Simon Willison</strong> (simonwillison.net): hands-on LLM tooling and prompt-injection security.</li>
 <li><strong>Eugene Yan</strong> (eugeneyan.com): patterns for building LLM products, evaluation, recommendation systems.</li>
 <li><strong>Hamel Husain</strong> (hamel.dev): evaluation and fine-tuning in practice.</li>
+<li><strong>Nathan Lambert, <em>Interconnects</em></strong> (interconnects.ai): post-training, reasoning models and open-model releases, read critically.</li>
 <li><strong>Sebastian Raschka</strong> (magazine.sebastianraschka.com): research summaries and implementation notes.</li>
 </ul>
-<h2 id="tools-you-will-keep-meeting">Tools you will keep meeting<a class="headerlink" href="#tools-you-will-keep-meeting" title="Link to this section">#</a></h2>
-<table>
+<h2 id="tools-you-will-keep-meeting">Tools you will keep meeting<a class="headerlink" href="#tools-you-will-keep-meeting" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table>
 <thead>
 <tr>
 <th>Area</th>
@@ -387,7 +625,7 @@
 <td>PyTorch, Hugging Face Transformers, Accelerate</td>
 </tr>
 <tr>
-<td>Fine-tuning</td>
+<td>Fine-tuning and post-training</td>
 <td>PEFT, TRL, bitsandbytes, Unsloth, Axolotl</td>
 </tr>
 <tr>
@@ -403,7 +641,7 @@
 <td>promptfoo, Inspect, DeepEval, RAGAS</td>
 </tr>
 <tr>
-<td>Serving</td>
+<td>Serving and inference</td>
 <td>vLLM, SGLang, Ollama, llama.cpp, TensorRT-LLM</td>
 </tr>
 <tr>
@@ -414,20 +652,61 @@
 <td>Apps and APIs</td>
 <td>FastAPI, Pydantic, Gradio, Streamlit, Docker</td>
 </tr>
+<tr>
+<td>Search, planning and RL</td>
+<td>networkx, OR-Tools, Gymnasium, Stable-Baselines3, CleanRL</td>
+</tr>
+<tr>
+<td>Vision and generative models</td>
+<td>torchvision, timm, OpenCV, Ultralytics, diffusers</td>
+</tr>
+<tr>
+<td>Time series, recommenders and graphs</td>
+<td>statsmodels, sktime, statsforecast, implicit, PyTorch Geometric</td>
+</tr>
+<tr>
+<td>Training at scale</td>
+<td>PyTorch FSDP, DeepSpeed, Megatron-LM, Nanotron, JAX</td>
+</tr>
+<tr>
+<td>Interpretability</td>
+<td>SHAP, Captum, TransformerLens, SAELens</td>
+</tr>
 </tbody>
-</table>
-<h2 id="datasets-for-practice">Datasets for practice<a class="headerlink" href="#datasets-for-practice" title="Link to this section">#</a></h2>
+</table></div>
+<h2 id="datasets-for-practice">Datasets for practice<a class="headerlink" href="#datasets-for-practice" aria-label="Link to this section">#</a></h2>
 <ul>
 <li><strong>scikit-learn built-ins</strong> (breast cancer, digits, diabetes) and <strong>OpenML</strong> for classical ML.</li>
-<li><strong>Fashion-MNIST</strong> and <strong>CIFAR-10</strong> for image classification.</li>
+<li><strong>Fashion-MNIST</strong> and <strong>CIFAR-10</strong> for image classification; <strong>Oxford-IIIT Pet</strong> and <strong>COCO</strong> for segmentation and detection.</li>
 <li><strong>Tiny Shakespeare</strong> and <strong>Project Gutenberg</strong> texts for language modelling.</li>
-<li><strong>Hugging Face Datasets</strong> hub for almost everything else, including instruction and preference datasets.</li>
-<li><strong>Public environmental data</strong> (air-quality networks, weather stations, satellite products) for time-series and anomaly-detection capstones.</li>
-</ul></div>
+<li><strong>Hugging Face Datasets</strong> hub for almost everything else, including instruction, preference and reasoning datasets.</li>
+<li><strong>Gymnasium environments</strong> (CartPole, LunarLander, the Atari games) for reinforcement learning.</li>
+<li><strong>MovieLens</strong> for recommenders, and <strong>Cora</strong> and the other datasets that ship with PyTorch Geometric for graphs.</li>
+<li><strong>Public environmental data</strong> (air-quality networks, weather stations, satellite products) and the <strong>M5 forecasting competition</strong> data for time series, forecasting and anomaly-detection capstones.</li>
+</ul>
+
+</div>
 </main>
 <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#books">Books</a></li><li><a href="#courses-and-video-series">Courses and video series</a></li><li><a href="#documentation-worth-reading-end-to-end">Documentation worth reading end to end</a></li><li><a href="#papers-in-reading-order">Papers, in reading order</a></li><li><a href="#blogs-and-writing-by-practitioners">Blogs and writing by practitioners</a></li><li><a href="#tools-you-will-keep-meeting">Tools you will keep meeting</a></li><li><a href="#datasets-for-practice">Datasets for practice</a></li></ul></aside>
 </div>
-<script src="assets/course-data.js"></script>
-<script src="assets/app.js"></script>
+<dialog class="settings" aria-labelledby="settings-title">
+<form method="dialog" class="settings-inner">
+<div class="settings-head"><h2 id="settings-title">Reading settings</h2><button class="icon-btn" value="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<fieldset><legend>Theme</legend><div class="seg-ctl" data-pref="theme"><button type="button" value="auto">Auto</button><button type="button" value="light">Light</button><button type="button" value="dark">Dark</button></div></fieldset>
+<fieldset><legend>Text size</legend><div class="seg-ctl" data-pref="size"><button type="button" value="s" aria-label="Small">A</button><button type="button" value="m" aria-label="Medium">A</button><button type="button" value="l" aria-label="Large">A</button><button type="button" value="xl" aria-label="Extra large">A</button></div></fieldset>
+<fieldset><legend>Typeface</legend><div class="seg-ctl" data-pref="font"><button type="button" value="serif">Literata</button><button type="button" value="sans">Atkinson Hyperlegible</button></div></fieldset>
+<fieldset class="sync"><legend>Progress on your other devices</legend>
+<p>Your ticks live in this browser. To carry them to your phone or computer, open this link there:</p>
+<div class="sync-row"><input class="sync-link" type="text" readonly aria-label="Sync link"><button type="button" class="btn-small sync-copy">Copy</button><button type="button" class="btn-small sync-share" hidden>Share</button></div>
+<p class="sync-note">Opening the link adds these ticks to the ones already there; nothing is removed.</p>
+</fieldset>
+<fieldset class="offline" hidden><legend>Offline reading</legend>
+<p class="offline-status">Lessons you open are saved for reading without a connection.</p>
+<button type="button" class="btn-small offline-all">Save every lesson for offline reading</button>
+</fieldset>
+</form>
+</dialog>
+<script src="assets/course-data.js?v=da7d24f3"></script>
+<script src="assets/app.js?v=da7d24f3"></script>
 </body>
 </html>

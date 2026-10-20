@@ -9,9 +9,12 @@ datasets
 diffusers
 faiss-cpu
 fastapi
+gymnasium
 httpx
+jupyterlab
 matplotlib
 mcp[cli]
+networkx
 numpy
 openai
 pandas
@@ -20,11 +23,12 @@ pillow
 pydantic
 python-dotenv
 scikit-learn
+scipy
 sentence-transformers
+statsmodels
 tiktoken
 torch
 torchvision
 transformers
 trl
 uvicorn[standard]
-jupyterlab

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LLM inference in depth | AI Engineering</title>
+<meta name="description" content="What happens between a prompt arriving and tokens streaming back: prefill and decode, the KV cache, batching, quantisation, speculative decoding and inference engines.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121a22" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="LLM inference in depth">
+<meta property="og:description" content="What happens between a prompt arriving and tokens streaming back: prefill and decode, the KV cache, batching, quantisation, speculative decoding and inference engines.">
+<meta property="og:type" content="website">
+<link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
+<script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
+</head>
+<body class="is-lesson" data-root="../" data-page="llm-inference">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-controls="course-map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
+<div class="search" role="search">
+<input id="search-input" type="search" placeholder="Search the course" autocomplete="off" aria-label="Search the course" enterkeyhint="search">
+<button class="icon-btn search-close" type="button" aria-label="Close search"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<div class="search-results" hidden></div>
+</div>
+<button class="icon-btn search-toggle" type="button" aria-label="Search the course"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button class="icon-btn settings-toggle" type="button" aria-label="Reading settings and progress sync" aria-haspopup="dialog"><span class="aa" aria-hidden="true">Aa</span></button>
+</header>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9" title="00 Welcome and your AI workbench" tabindex="-1"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3" title="01 Python for AI work" tabindex="-1"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb" title="02 The maths behind AI" tabindex="-1"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff" title="03 Machine learning fundamentals" tabindex="-1"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff" title="04 Classical machine learning" tabindex="-1"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe" title="05 Neural networks from scratch" tabindex="-1"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0" title="06 Deep learning with PyTorch" tabindex="-1"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8" title="07 Text as numbers, sequences and embeddings" tabindex="-1"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8" title="08 Attention and the transformer" tabindex="-1"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb" title="09 How large language models are built" tabindex="-1"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1" title="10 Working with LLM APIs" tabindex="-1"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7" title="11 Prompt engineering" tabindex="-1"></a><a class="seg" href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e" title="12 Reasoning models and test-time compute" tabindex="-1"></a><a class="seg" href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94" title="13 Embeddings and vector search" tabindex="-1"></a><a class="seg" href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a" title="14 Retrieval-augmented generation (RAG)" tabindex="-1"></a><a class="seg" href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e" title="15 Agents, tool use and MCP" tabindex="-1"></a><a class="seg" href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70" title="16 Context engineering and memory" tabindex="-1"></a><a class="seg" href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a" title="17 Evaluating LLM systems" tabindex="-1"></a><a class="seg" href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232" title="18 Fine-tuning language models" tabindex="-1"></a><a class="seg" href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05" title="19 Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging" tabindex="-1"></a><a class="seg is-current" href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701" title="20 LLM inference in depth" tabindex="-1"></a><a class="seg" href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200" title="21 Deployment, serving and LLMOps" tabindex="-1"></a><a class="seg" href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07" title="22 Safety, security and responsible AI" tabindex="-1"></a><a class="seg" href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807" title="23 Multimodal AI: vision, documents, speech and image generation" tabindex="-1"></a><a class="seg" href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304" title="24 Search, planning and classical AI" tabindex="-1"></a><a class="seg" href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06" title="25 Reinforcement learning" tabindex="-1"></a><a class="seg" href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903" title="26 Generative models: autoencoders, VAEs, GANs, flows and diffusion" tabindex="-1"></a><a class="seg" href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307" title="27 Computer vision: detection, segmentation and beyond" tabindex="-1"></a><a class="seg" href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05" title="28 Time series, recommender systems and graphs" tabindex="-1"></a><a class="seg" href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005" title="29 Training at scale: GPUs, parallelism and efficient architectures" tabindex="-1"></a><a class="seg" href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05" title="30 Interpretability and explainability" tabindex="-1"></a><a class="seg" href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29" title="31 Designing AI systems" tabindex="-1"></a><a class="seg" href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48" title="32 Capstone projects and your AI engineering career" tabindex="-1"></a><span class="read-progress"></span></div>
+<div class="layout">
+<nav class="course-map" id="course-map" aria-label="Course map">
+<ul class="map-pages"><li><a href="../index.html">Course home</a></li><li><a href="../schedule.html">Daily schedule</a></li><li><a href="../glossary.html">Glossary</a></li><li><a href="../resources.html">Further resources</a></li></ul>
+<section class="map-part" style="--pc:#a45ae9">
+<p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#8368fb">
+<p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#5877ff">
+<p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#0487f0">
+<p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#0b94bb">
+<p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#0b9b8a">
+<p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Reasoning models</span></a></li>
+<li><a href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Context engineering</span></a></li>
+<li><a href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Evaluation</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#479e05">
+<p class="map-part-name"><span class="roman">VII</span> Fine-tuning and inference</p><ol>
+<li><a href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Post-training in depth</span></a></li>
+<li><a href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">LLM inference</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#8b8c07">
+<p class="map-part-name"><span class="roman">VIII</span> Production</p><ol>
+<li><a href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07"><span class="dot" aria-hidden="true"></span><span class="num">22</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807"><span class="dot" aria-hidden="true"></span><span class="num">23</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#bc7307">
+<p class="map-part-name"><span class="roman">IX</span> The wider field</p><ol>
+<li><a href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304"><span class="dot" aria-hidden="true"></span><span class="num">24</span><span class="t">Classical AI and search</span></a></li>
+<li><a href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06"><span class="dot" aria-hidden="true"></span><span class="num">25</span><span class="t">Reinforcement learning</span></a></li>
+<li><a href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903"><span class="dot" aria-hidden="true"></span><span class="num">26</span><span class="t">Generative models</span></a></li>
+<li><a href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307"><span class="dot" aria-hidden="true"></span><span class="num">27</span><span class="t">Computer vision in depth</span></a></li>
+<li><a href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05"><span class="dot" aria-hidden="true"></span><span class="num">28</span><span class="t">Time series, recsys, graphs</span></a></li>
+<li><a href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005"><span class="dot" aria-hidden="true"></span><span class="num">29</span><span class="t">Training at scale</span></a></li>
+<li><a href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05"><span class="dot" aria-hidden="true"></span><span class="num">30</span><span class="t">Interpretability</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#ea3b48">
+<p class="map-part-name"><span class="roman">X</span> Mastery</p><ol>
+<li><a href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29"><span class="dot" aria-hidden="true"></span><span class="num">31</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48"><span class="dot" aria-hidden="true"></span><span class="num">32</span><span class="t">Capstones and career</span></a></li>
+</ol></section>
+</nav>
+<div class="scrim" hidden></div>
+<main id="main" tabindex="-1">
+<article class="lesson" data-lesson="llm-inference" style="--lc:#699701;--lct:#4d7002;--lctd:#a1d060">
+<header class="lesson-head">
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part VII, Fine-tuning and inference <span class="wl">588 nm</span></p>
+<h1><span class="lesson-num">20</span> LLM inference in depth</h1>
+<p class="lesson-summary">What happens between a prompt arriving and tokens streaming back: prefill and decode, the KV cache, batching, quantisation, speculative decoding and inference engines.</p>
+<p class="lesson-meta"><span>1 sessions</span><span>about 5 min of reading</span><span>0 code examples</span><span>0 hands-on exercises</span></p>
+
+<p class="prereq"><strong>Before you start:</strong> <a href="../lessons/08-transformers.html">08 Attention and transformers</a>, <a href="../lessons/09-how-llms-are-built.html">09 How LLMs are built</a></p>
+<div class="study-plan">
+<p class="plan-title">Study plan: 1 sessions of about an hour</p>
+<ol class="sessions"><li><label><input type="checkbox" data-session="llm-inference:0"><span>Read the outline and the related lessons</span></label></li></ol>
+<p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
+</div>
+<aside class="handson" aria-label="Hands-on notebook">
+<p class="handson-title"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Hands-on at your computer</p>
+<p>Read here on any screen. When a <span class="chip">At your computer</span> exercise comes up, open <code>notebooks/20-llm-inference.ipynb</code> in JupyterLab or VS Code and run the cells under the same heading.</p>
+<p class="handson-runs"><strong>Runs on:</strong> Any computer (CPU). The full notebook is coming with the full lesson.</p>
+<p class="handson-links"><a href="https://colab.research.google.com/github/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/20-llm-inference.ipynb" rel="noopener">Open in Colab</a><a href="https://github.com/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/20-llm-inference.ipynb" rel="noopener">View on GitHub</a><a href="../notebooks/20-llm-inference.ipynb" download>Download notebook</a><a href="../notebooks/solutions/20-llm-inference-solutions.ipynb" download>Solutions</a></p>
+</aside>
+<p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
+</header>
+<div class="prose">
+<h2 id="this-lesson-is-being-written">This lesson is being written<a class="headerlink" href="#this-lesson-is-being-written" aria-label="Link to this section">#</a></h2>
+<p>The full lesson, with code, hands-on exercises and a notebook, is on its way. Here is what it will cover, so you know where it fits in the course.</p>
+<ul>
+<li>Prefill versus decode, and the metrics that matter: time to first token, inter-token latency, throughput</li>
+<li>KV cache memory maths, and how grouped-query attention changes it</li>
+<li>Continuous batching, PagedAttention and prefix caching</li>
+<li>Quantisation in depth: int8 and int4, group-wise scales, GPTQ and AWQ, GGUF</li>
+<li>Speculative decoding, sampling and constrained decoding; choosing an inference engine</li>
+</ul>
+<p>Until then, the closest material is in lesson <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a>, lesson <a class="ref" href="../lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a>, lesson <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a>, lesson <a class="ref" href="../lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a>.</p>
+</div>
+<footer class="lesson-foot">
+
+<button type="button" class="complete-btn" data-complete="llm-inference" data-sessions="1">Mark all sessions done</button>
+<nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/19-advanced-fine-tuning.html"><span>Previous</span>19 Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging</a><a class="next" href="../lessons/21-deployment-llmops.html"><span>Next</span>21 Deployment, serving and LLMOps</a></nav>
+</footer>
+</article>
+</main>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#this-lesson-is-being-written">This lesson is being written</a></li></ul></aside>
+</div>
+<nav class="lesson-bar" aria-label="Lesson">
+<a class="lb-btn" href="../lessons/19-advanced-fine-tuning.html" aria-label="Previous lesson: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+<button type="button" class="lb-toc" aria-expanded="false" aria-controls="toc-sheet"><span class="lb-where">20 · <span class="lb-section">LLM inference</span></span><span class="lb-pct" aria-hidden="true"><span></span></span></button>
+<a class="lb-btn" href="../lessons/21-deployment-llmops.html" aria-label="Next lesson: Deployment, serving and LLMOps"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+</nav>
+<div class="toc-sheet" id="toc-sheet" hidden><div class="toc-sheet-inner"><aside class="toc-sheet-list" aria-label="Contents"><p class="toc-title">Contents</p><ul><li><a href="#this-lesson-is-being-written">This lesson is being written</a></li></ul></aside></div></div>
+<dialog class="settings" aria-labelledby="settings-title">
+<form method="dialog" class="settings-inner">
+<div class="settings-head"><h2 id="settings-title">Reading settings</h2><button class="icon-btn" value="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<fieldset><legend>Theme</legend><div class="seg-ctl" data-pref="theme"><button type="button" value="auto">Auto</button><button type="button" value="light">Light</button><button type="button" value="dark">Dark</button></div></fieldset>
+<fieldset><legend>Text size</legend><div class="seg-ctl" data-pref="size"><button type="button" value="s" aria-label="Small">A</button><button type="button" value="m" aria-label="Medium">A</button><button type="button" value="l" aria-label="Large">A</button><button type="button" value="xl" aria-label="Extra large">A</button></div></fieldset>
+<fieldset><legend>Typeface</legend><div class="seg-ctl" data-pref="font"><button type="button" value="serif">Literata</button><button type="button" value="sans">Atkinson Hyperlegible</button></div></fieldset>
+<fieldset class="sync"><legend>Progress on your other devices</legend>
+<p>Your ticks live in this browser. To carry them to your phone or computer, open this link there:</p>
+<div class="sync-row"><input class="sync-link" type="text" readonly aria-label="Sync link"><button type="button" class="btn-small sync-copy">Copy</button><button type="button" class="btn-small sync-share" hidden>Share</button></div>
+<p class="sync-note">Opening the link adds these ticks to the ones already there; nothing is removed.</p>
+</fieldset>
+<fieldset class="offline" hidden><legend>Offline reading</legend>
+<p class="offline-status">Lessons you open are saved for reading without a connection.</p>
+<button type="button" class="btn-small offline-all">Save every lesson for offline reading</button>
+</fieldset>
+</form>
+</dialog>
+<script src="../assets/course-data.js?v=da7d24f3"></script>
+<script src="../assets/app.js?v=da7d24f3"></script>
+</body>
+</html>

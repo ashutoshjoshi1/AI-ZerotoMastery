@@ -2,101 +2,133 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Python for AI work | AI Engineering</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<meta name="description" content="The Python you actually need for AI, then NumPy for fast array maths and pandas plus Matplotlib for loading, cleaning and plotting real data.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121a22" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Python for AI work">
+<meta property="og:description" content="The Python you actually need for AI, then NumPy for fast array maths and pandas plus Matplotlib for loading, cleaning and plotting real data.">
+<meta property="og:type" content="website">
+<link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css">
-<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
+<script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
 <body class="is-lesson" data-root="../" data-page="python-for-ai">
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
-<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-controls="course-map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
 <a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
 <div class="search" role="search">
-<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<input id="search-input" type="search" placeholder="Search the course" autocomplete="off" aria-label="Search the course" enterkeyhint="search">
+<button class="icon-btn search-close" type="button" aria-label="Close search"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <div class="search-results" hidden></div>
 </div>
-<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+<button class="icon-btn search-toggle" type="button" aria-label="Search the course"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button class="icon-btn settings-toggle" type="button" aria-label="Reading settings and progress sync" aria-haspopup="dialog"><span class="aa" aria-hidden="true">Aa</span></button>
 </header>
-<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg is-current" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9" title="00 Welcome and your AI workbench" tabindex="-1"></a><a class="seg is-current" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3" title="01 Python for AI work" tabindex="-1"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb" title="02 The maths behind AI" tabindex="-1"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff" title="03 Machine learning fundamentals" tabindex="-1"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff" title="04 Classical machine learning" tabindex="-1"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe" title="05 Neural networks from scratch" tabindex="-1"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0" title="06 Deep learning with PyTorch" tabindex="-1"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8" title="07 Text as numbers, sequences and embeddings" tabindex="-1"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8" title="08 Attention and the transformer" tabindex="-1"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb" title="09 How large language models are built" tabindex="-1"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1" title="10 Working with LLM APIs" tabindex="-1"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7" title="11 Prompt engineering" tabindex="-1"></a><a class="seg" href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e" title="12 Reasoning models and test-time compute" tabindex="-1"></a><a class="seg" href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94" title="13 Embeddings and vector search" tabindex="-1"></a><a class="seg" href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a" title="14 Retrieval-augmented generation (RAG)" tabindex="-1"></a><a class="seg" href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e" title="15 Agents, tool use and MCP" tabindex="-1"></a><a class="seg" href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70" title="16 Context engineering and memory" tabindex="-1"></a><a class="seg" href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a" title="17 Evaluating LLM systems" tabindex="-1"></a><a class="seg" href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232" title="18 Fine-tuning language models" tabindex="-1"></a><a class="seg" href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05" title="19 Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging" tabindex="-1"></a><a class="seg" href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701" title="20 LLM inference in depth" tabindex="-1"></a><a class="seg" href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200" title="21 Deployment, serving and LLMOps" tabindex="-1"></a><a class="seg" href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07" title="22 Safety, security and responsible AI" tabindex="-1"></a><a class="seg" href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807" title="23 Multimodal AI: vision, documents, speech and image generation" tabindex="-1"></a><a class="seg" href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304" title="24 Search, planning and classical AI" tabindex="-1"></a><a class="seg" href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06" title="25 Reinforcement learning" tabindex="-1"></a><a class="seg" href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903" title="26 Generative models: autoencoders, VAEs, GANs, flows and diffusion" tabindex="-1"></a><a class="seg" href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307" title="27 Computer vision: detection, segmentation and beyond" tabindex="-1"></a><a class="seg" href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05" title="28 Time series, recommender systems and graphs" tabindex="-1"></a><a class="seg" href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005" title="29 Training at scale: GPUs, parallelism and efficient architectures" tabindex="-1"></a><a class="seg" href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05" title="30 Interpretability and explainability" tabindex="-1"></a><a class="seg" href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29" title="31 Designing AI systems" tabindex="-1"></a><a class="seg" href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48" title="32 Capstone projects and your AI engineering career" tabindex="-1"></a><span class="read-progress"></span></div>
 <div class="layout">
-<nav class="course-map" aria-label="Course map">
-<ul class="map-pages">
-<li><a href="../index.html">Course home</a></li>
-<li><a href="../schedule.html">Daily schedule</a></li>
-<li><a href="../glossary.html">Glossary</a></li>
-<li><a href="../resources.html">Further resources</a></li>
-</ul>
-<section class="map-part" style="--pc:#ab19c8">
+<nav class="course-map" id="course-map" aria-label="Course map">
+<ul class="map-pages"><li><a href="../index.html">Course home</a></li><li><a href="../schedule.html">Daily schedule</a></li><li><a href="../glossary.html">Glossary</a></li><li><a href="../resources.html">Further resources</a></li></ul>
+<section class="map-part" style="--pc:#a45ae9">
 <p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
-<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#6d1ce3">
+<section class="map-part" style="--pc:#8368fb">
 <p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
-<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
-<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1c44e3">
+<section class="map-part" style="--pc:#5877ff">
 <p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
-<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
-<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1ce3c5">
+<section class="map-part" style="--pc:#0487f0">
 <p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
-<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
-<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
-<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#65e31c">
+<section class="map-part" style="--pc:#0b94bb">
 <p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
-<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
-<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#e37e1c">
+<section class="map-part" style="--pc:#0b9b8a">
 <p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
-<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
-<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
-<li><a href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
-<li><a href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
-<li><a href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
-<li><a href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
-<li><a href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Reasoning models</span></a></li>
+<li><a href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Context engineering</span></a></li>
+<li><a href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Evaluation</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#d41a1a">
-<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
-<li><a href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
-<li><a href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
-<li><a href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+<section class="map-part" style="--pc:#479e05">
+<p class="map-part-name"><span class="roman">VII</span> Fine-tuning and inference</p><ol>
+<li><a href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Post-training in depth</span></a></li>
+<li><a href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">LLM inference</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#b21616">
-<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
-<li><a href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
-<li><a href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+<section class="map-part" style="--pc:#8b8c07">
+<p class="map-part-name"><span class="roman">VIII</span> Production</p><ol>
+<li><a href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07"><span class="dot" aria-hidden="true"></span><span class="num">22</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807"><span class="dot" aria-hidden="true"></span><span class="num">23</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#bc7307">
+<p class="map-part-name"><span class="roman">IX</span> The wider field</p><ol>
+<li><a href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304"><span class="dot" aria-hidden="true"></span><span class="num">24</span><span class="t">Classical AI and search</span></a></li>
+<li><a href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06"><span class="dot" aria-hidden="true"></span><span class="num">25</span><span class="t">Reinforcement learning</span></a></li>
+<li><a href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903"><span class="dot" aria-hidden="true"></span><span class="num">26</span><span class="t">Generative models</span></a></li>
+<li><a href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307"><span class="dot" aria-hidden="true"></span><span class="num">27</span><span class="t">Computer vision in depth</span></a></li>
+<li><a href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05"><span class="dot" aria-hidden="true"></span><span class="num">28</span><span class="t">Time series, recsys, graphs</span></a></li>
+<li><a href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005"><span class="dot" aria-hidden="true"></span><span class="num">29</span><span class="t">Training at scale</span></a></li>
+<li><a href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05"><span class="dot" aria-hidden="true"></span><span class="num">30</span><span class="t">Interpretability</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#ea3b48">
+<p class="map-part-name"><span class="roman">X</span> Mastery</p><ol>
+<li><a href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29"><span class="dot" aria-hidden="true"></span><span class="num">31</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48"><span class="dot" aria-hidden="true"></span><span class="num">32</span><span class="t">Capstones and career</span></a></li>
 </ol></section>
 </nav>
+<div class="scrim" hidden></div>
 <main id="main" tabindex="-1">
-<article class="lesson" data-lesson="python-for-ai" style="--lc:#7919c8;--lct:#5d1895;--lctd:#b87bea">
+<article class="lesson" data-lesson="python-for-ai" style="--lc:#9561f3;--lct:#7140c0;--lctd:#c4aeff">
 <header class="lesson-head">
-<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part II, Foundations <span class="wl">407 nm</span></p>
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part II, Foundations <span class="wl">409 nm</span></p>
 <h1><span class="lesson-num">01</span> Python for AI work</h1>
 <p class="lesson-summary">The Python you actually need for AI, then NumPy for fast array maths and pandas plus Matplotlib for loading, cleaning and plotting real data.</p>
+<p class="lesson-meta"><span>3 sessions</span><span>about 25 min of reading</span><span>16 code examples</span><span>2 hands-on exercises</span></p>
+
+
 <div class="study-plan">
 <p class="plan-title">Study plan: 3 sessions of about an hour</p>
 <ol class="sessions"><li><label><input type="checkbox" data-session="python-for-ai:0"><span>Python essentials for AI code: data structures, functions, classes, typing, generators</span></label></li><li><label><input type="checkbox" data-session="python-for-ai:1"><span>NumPy: arrays, shapes, broadcasting and vectorised maths</span></label></li><li><label><input type="checkbox" data-session="python-for-ai:2"><span>pandas and Matplotlib: clean, explore and plot a week of sensor data</span></label></li></ol>
-<p class="plan-note">Tick a session when you finish it. Progress is saved in this browser only.</p>
-<p class="plan-notebook">Code for this lesson: <a href="../notebooks/01-python-for-ai.ipynb" download>notebooks/01-python-for-ai.ipynb</a>, with worked solutions in <code>notebooks/solutions/</code>.</p>
+<p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
+<aside class="handson" aria-label="Hands-on notebook">
+<p class="handson-title"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Hands-on at your computer</p>
+<p>Read here on any screen. When a <span class="chip">At your computer</span> exercise comes up, open <code>notebooks/01-python-for-ai.ipynb</code> in JupyterLab or VS Code and run the cells under the same heading.</p>
+<p class="handson-runs"><strong>Runs on:</strong> Any computer (CPU).</p>
+<p class="handson-links"><a href="https://colab.research.google.com/github/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/01-python-for-ai.ipynb" rel="noopener">Open in Colab</a><a href="https://github.com/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/01-python-for-ai.ipynb" rel="noopener">View on GitHub</a><a href="../notebooks/01-python-for-ai.ipynb" download>Download notebook</a><a href="../notebooks/solutions/01-python-for-ai-solutions.ipynb" download>Solutions</a></p>
+</aside>
+<p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
-<h2 id="why-python-and-which-parts-of-it">Why Python, and which parts of it<a class="headerlink" href="#why-python-and-which-parts-of-it" title="Link to this section">#</a></h2>
+<h2 id="why-python-and-which-parts-of-it">Why Python, and which parts of it<a class="headerlink" href="#why-python-and-which-parts-of-it" aria-label="Link to this section">#</a></h2>
 <p>Python won AI because it is pleasant to write and because the heavy lifting happens in fast compiled libraries underneath it: NumPy, PyTorch and friends are thin Python skins over C, C++ and CUDA. Your job is to describe <em>what</em> to compute in Python and let those libraries do it quickly.</p>
 <p>This lesson assumes you can already write a loop and a function in some language. If Python is new, work through the official <a href="https://docs.python.org/3/tutorial/">Python tutorial</a> sections 3 to 9 first, then come back.</p>
-<h2 id="python-essentials-for-ai-code">Python essentials for AI code<a class="headerlink" href="#python-essentials-for-ai-code" title="Link to this section">#</a></h2>
-<h3 id="data-structures-you-will-use-daily">Data structures you will use daily<a class="headerlink" href="#data-structures-you-will-use-daily" title="Link to this section">#</a></h3>
-<div class="highlight"><pre><span></span><code><span class="c1"># lists: ordered, mutable. Batches of examples, histories of messages.</span>
+<h2 id="python-essentials-for-ai-code">Python essentials for AI code<a class="headerlink" href="#python-essentials-for-ai-code" aria-label="Link to this section">#</a></h2>
+<h3 id="data-structures-you-will-use-daily">Data structures you will use daily<a class="headerlink" href="#data-structures-you-will-use-daily" aria-label="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="c1"># lists: ordered, mutable. Batches of examples, histories of messages.</span>
 <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Hi&quot;</span><span class="p">}]</span>
 <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello!&quot;</span><span class="p">})</span>
 
@@ -111,18 +143,16 @@
 <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="s2">&quot;the cat sat on the mat&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
     <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seen</span><span class="p">))</span>                        <span class="c1"># 5</span>
-</code></pre></div>
-<h3 id="comprehensions">Comprehensions<a class="headerlink" href="#comprehensions" title="Link to this section">#</a></h3>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seen</span><span class="p">))</span>                        <span class="c1"># 5</span></code></pre></div>
+<h3 id="comprehensions">Comprehensions<a class="headerlink" href="#comprehensions" aria-label="Link to this section">#</a></h3>
 <p>Comprehensions build collections in one readable line. You will see them everywhere in data-preparation code.</p>
-<div class="highlight"><pre><span></span><code><span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">,</span> <span class="s2">&quot;is&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">]]</span>            <span class="c1"># [9, 2, 3]</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">,</span> <span class="s2">&quot;is&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">]]</span>            <span class="c1"># [9, 2, 3]</span>
 <span class="n">vocab</span> <span class="o">=</span> <span class="p">{</span><span class="n">word</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">seen</span><span class="p">))}</span>            <span class="c1"># word -&gt; id</span>
 <span class="n">long_words</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">seen</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">]</span>                        <span class="c1"># filter</span>
-<span class="n">pairs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>                <span class="c1"># nested loops</span>
-</code></pre></div>
-<h3 id="functions-with-type-hints-and-defaults">Functions with type hints and defaults<a class="headerlink" href="#functions-with-type-hints-and-defaults" title="Link to this section">#</a></h3>
+<span class="n">pairs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>                <span class="c1"># nested loops</span></code></pre></div>
+<h3 id="functions-with-type-hints-and-defaults">Functions with type hints and defaults<a class="headerlink" href="#functions-with-type-hints-and-defaults" aria-label="Link to this section">#</a></h3>
 <p>Type hints do not change how Python runs, but they make code self-documenting, let your editor catch mistakes, and they are how libraries such as Pydantic and FastAPI (which you will use in parts VI and VII) know what data to expect.</p>
-<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">chunk_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">overlap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">def</span><span class="w"> </span><span class="nf">chunk_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">overlap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Split text into overlapping chunks of roughly `size` characters.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">overlap</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;overlap must be smaller than size&quot;</span><span class="p">)</span>
@@ -130,12 +160,11 @@
     <span class="k">return</span> <span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">size</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">step</span><span class="p">)]</span>
 
 <span class="n">chunks</span> <span class="o">=</span> <span class="n">chunk_text</span><span class="p">(</span><span class="s2">&quot;lorem ipsum &quot;</span> <span class="o">*</span> <span class="mi">200</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></code></pre></div>
 <p>You will write a better chunker in the RAG lesson. This one is already useful.</p>
-<h3 id="classes-and-dataclasses">Classes and dataclasses<a class="headerlink" href="#classes-and-dataclasses" title="Link to this section">#</a></h3>
+<h3 id="classes-and-dataclasses">Classes and dataclasses<a class="headerlink" href="#classes-and-dataclasses" aria-label="Link to this section">#</a></h3>
 <p>Models, datasets and agents are naturally objects: some state plus methods that act on it. For plain data containers, <code>dataclass</code> writes the boilerplate for you.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Document</span><span class="p">:</span>
@@ -148,15 +177,14 @@
 
 <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;manual-3&quot;</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Calibrate the spectrometer before each campaign.&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>            <span class="c1"># Document(id=&#39;manual-3&#39;, text=&#39;Calibrate ...&#39;, metadata={})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">preview</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">preview</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">The mutable default trap</p>
 <p><code>def f(x, cache={})</code> creates <strong>one</strong> dictionary when the function is defined and shares it across every call. Use <code>None</code> as the default and create the object inside, or <code>field(default_factory=dict)</code> in a dataclass.</p>
 </div>
-<h3 id="generators-data-that-does-not-fit-in-memory">Generators: data that does not fit in memory<a class="headerlink" href="#generators-data-that-does-not-fit-in-memory" title="Link to this section">#</a></h3>
+<h3 id="generators-data-that-does-not-fit-in-memory">Generators: data that does not fit in memory<a class="headerlink" href="#generators-data-that-does-not-fit-in-memory" aria-label="Link to this section">#</a></h3>
 <p>A generator produces values one at a time with <code>yield</code>. Training data and log files are often too large to load at once; generators let you stream them.</p>
-<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_jsonl</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">def</span><span class="w"> </span><span class="nf">read_jsonl</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
@@ -173,12 +201,11 @@
     <span class="k">if</span> <span class="n">batch</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">batch</span>
 
-<span class="c1"># for batch in batched(read_jsonl(&quot;train.jsonl&quot;), 32): ...</span>
-</code></pre></div>
+<span class="c1"># for batch in batched(read_jsonl(&quot;train.jsonl&quot;), 32): ...</span></code></pre></div>
 <p>Python 3.12 also ships <code>itertools.batched</code>, which does the same thing.</p>
-<h3 id="errors-and-retries">Errors and retries<a class="headerlink" href="#errors-and-retries" title="Link to this section">#</a></h3>
+<h3 id="errors-and-retries">Errors and retries<a class="headerlink" href="#errors-and-retries" aria-label="Link to this section">#</a></h3>
 <p>Calls to model APIs fail: networks drop, rate limits bite. Handle the errors you expect and let unexpected ones surface.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">time</span><span class="o">,</span><span class="w"> </span><span class="nn">random</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">time</span><span class="o">,</span><span class="w"> </span><span class="nn">random</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">with_retries</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">attempts</span><span class="p">):</span>
@@ -189,12 +216,11 @@
                 <span class="k">raise</span>
             <span class="n">wait</span> <span class="o">=</span> <span class="n">base</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">i</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>   <span class="c1"># exponential backoff with jitter</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;attempt </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> failed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">); retrying in </span><span class="si">{</span><span class="n">wait</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="numpy-thinking-in-arrays">NumPy: thinking in arrays<a class="headerlink" href="#numpy-thinking-in-arrays" title="Link to this section">#</a></h2>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait</span><span class="p">)</span></code></pre></div>
+<h2 id="numpy-thinking-in-arrays">NumPy: thinking in arrays<a class="headerlink" href="#numpy-thinking-in-arrays" aria-label="Link to this section">#</a></h2>
 <p>Everything in machine learning is an array of numbers: an image is a 3-D array of pixel intensities, a batch of sentences is a 2-D array of token ids, a model's weights are a pile of matrices. NumPy's <code>ndarray</code> is the shared language, and PyTorch tensors behave almost identically, so time spent here pays off twice.</p>
-<h3 id="creating-arrays-and-reading-shapes">Creating arrays and reading shapes<a class="headerlink" href="#creating-arrays-and-reading-shapes" title="Link to this section">#</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<h3 id="creating-arrays-and-reading-shapes">Creating arrays and reading shapes<a class="headerlink" href="#creating-arrays-and-reading-shapes" aria-label="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">])</span>          <span class="c1"># shape (3,)</span>
 <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>        <span class="c1"># shape (3, 4): 3 rows, 4 columns</span>
@@ -205,15 +231,14 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">M</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="n">M</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>        <span class="c1"># (3, 4) 2 int64</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>                         <span class="c1"># row 1, column 2 -&gt; 6</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">M</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>                         <span class="c1"># first column -&gt; [0 4 8]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">M</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">])</span>                        <span class="c1"># boolean mask -&gt; [ 6  7  8  9 10 11]</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">M</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">])</span>                        <span class="c1"># boolean mask -&gt; [ 6  7  8  9 10 11]</span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Shapes are your best debugging tool</p>
 <p>When something breaks in ML code, print the shapes first. Most bugs are a tensor with shape <code>(32, 1)</code> where you expected <code>(32,)</code>, or rows and columns swapped. Get in the habit of writing the expected shape as a comment next to each line.</p>
 </div>
-<h3 id="vectorisation-stop-writing-loops-over-numbers">Vectorisation: stop writing loops over numbers<a class="headerlink" href="#vectorisation-stop-writing-loops-over-numbers" title="Link to this section">#</a></h3>
+<h3 id="vectorisation-stop-writing-loops-over-numbers">Vectorisation: stop writing loops over numbers<a class="headerlink" href="#vectorisation-stop-writing-loops-over-numbers" aria-label="Link to this section">#</a></h3>
 <p>A Python <code>for</code> loop over a million numbers runs at Python speed. The same operation written as array maths runs in compiled code, often 50 to 200 times faster.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1_000_000</span><span class="p">)</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
@@ -225,19 +250,17 @@
 <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
 <span class="n">total_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>              <span class="c1"># or x @ x</span>
 <span class="n">vec_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loop </span><span class="si">{</span><span class="n">loop_time</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s, vectorised </span><span class="si">{</span><span class="n">vec_time</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="broadcasting">Broadcasting<a class="headerlink" href="#broadcasting" title="Link to this section">#</a></h3>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loop </span><span class="si">{</span><span class="n">loop_time</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s, vectorised </span><span class="si">{</span><span class="n">vec_time</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span></code></pre></div>
+<h3 id="broadcasting">Broadcasting<a class="headerlink" href="#broadcasting" aria-label="Link to this section">#</a></h3>
 <p>Broadcasting lets NumPy combine arrays of different shapes without copying data. The rule: compare shapes from the right; two dimensions are compatible if they are equal or one of them is 1.</p>
-<div class="highlight"><pre><span></span><code><span class="n">X</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>          <span class="c1"># (100, 5)</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">X</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>          <span class="c1"># (100, 5)</span>
 <span class="n">mu</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>                    <span class="c1"># (5,)  mean of each column</span>
 <span class="n">sigma</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>                  <span class="c1"># (5,)</span>
 <span class="n">X_std</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span>               <span class="c1"># (100, 5) - (5,) -&gt; broadcast across rows</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">X_std</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>     <span class="c1"># ~0 for every column</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">X_std</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>      <span class="c1"># ~1 for every column</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="n">X_std</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>      <span class="c1"># ~1 for every column</span></code></pre></div>
 <p>That three-line standardisation is something you will do before training almost every classical model.</p>
-<figure>
+<figure class="fig">
 <svg class="diagram" viewBox="0 0 620 150" role="img" aria-label="Broadcasting a row vector across a matrix">
 <text x="10" y="20" class="muted">X  shape (4, 3)</text>
 <g transform="translate(10,30)">
@@ -265,23 +288,23 @@
 <figcaption>Broadcasting stretches the size-1 (or missing) dimensions to match, without actually copying memory.</figcaption>
 </figure>
 
-<h3 id="axis-reductions-and-matrix-multiplication">Axis, reductions and matrix multiplication<a class="headerlink" href="#axis-reductions-and-matrix-multiplication" title="Link to this section">#</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>         <span class="c1"># [[0 1 2], [3 4 5]]</span>
+<h3 id="axis-reductions-and-matrix-multiplication">Axis, reductions and matrix multiplication<a class="headerlink" href="#axis-reductions-and-matrix-multiplication" aria-label="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>         <span class="c1"># [[0 1 2], [3 4 5]]</span>
 <span class="n">M</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>                                <span class="c1"># 15        everything</span>
 <span class="n">M</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>                          <span class="c1"># [3 5 7]   collapse rows, one value per column</span>
 <span class="n">M</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>                          <span class="c1"># [3 12]    collapse columns, one value per row</span>
 
 <span class="n">W</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">out</span> <span class="o">=</span> <span class="n">M</span> <span class="o">@</span> <span class="n">W</span>                            <span class="c1"># (2, 3) @ (3, 4) -&gt; (2, 4)</span>
-</code></pre></div>
+<span class="n">out</span> <span class="o">=</span> <span class="n">M</span> <span class="o">@</span> <span class="n">W</span>                            <span class="c1"># (2, 3) @ (3, 4) -&gt; (2, 4)</span></code></pre></div>
 <p>The <code>@</code> operator is matrix multiplication. The inner dimensions must match, and they disappear: <code>(a, b) @ (b, c)</code> gives <code>(a, c)</code>. A neural network layer is essentially <code>X @ W + b</code>, so you will write this a lot.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: vectorise a distance computation</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>01-python-for-ai.ipynb</code>, cell “Hands-on: vectorise a distance computation”</p>
 <p>You have 1,000 query vectors <code>Q</code> of shape <code>(1000, 64)</code> and 5,000 database vectors <code>D</code> of shape <code>(5000, 64)</code>. Compute the matrix of Euclidean distances, shape <code>(1000, 5000)</code>, <strong>without any Python loops</strong>. Then find, for each query, the index of its nearest database vector. Hint: expand <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">∥</mo><mi>q</mi><mo>−</mo><mi>d</mi><msup><mo stretchy="false">∥</mo><mn>2</mn></msup><mo>=</mo><mo stretchy="false">∥</mo><mi>q</mi><msup><mo stretchy="false">∥</mo><mn>2</mn></msup><mo>−</mo><mn>2</mn><mtext> </mtext><mi>q</mi><mo>⋅</mo><mi>d</mi><mo>+</mo><mo stretchy="false">∥</mo><mi>d</mi><msup><mo stretchy="false">∥</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\lVert q - d\rVert^2 = \lVert q\rVert^2 - 2\,q\cdot d + \lVert d\rVert^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">∥</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mclose"><span class="mclose">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mopen">∥</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mclose"><span class="mclose">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">d</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mopen">∥</span><span class="mord mathnormal">d</span><span class="mclose"><span class="mclose">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span>.</p>
 </div>
 <details class="solution">
 <summary>Show a solution</summary>
-<p><div class="highlight"><pre><span></span><code><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<p><div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">Q</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">64</span><span class="p">))</span>
 <span class="n">D</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">64</span><span class="p">))</span>
 
@@ -290,15 +313,14 @@
 <span class="n">sq</span> <span class="o">=</span> <span class="n">q2</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">D</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">d2</span>                    <span class="c1"># (1000, 5000) via broadcasting</span>
 <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>             <span class="c1"># clip tiny negatives from rounding</span>
 <span class="n">nearest</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>                 <span class="c1"># (1000,)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">nearest</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">nearest</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span></code></pre></div>
 This is the core of nearest-neighbour search, which you will meet again in the embeddings and RAG lessons. <code>keepdims=True</code> keeps <code>q2</code> as a column so it broadcasts across columns.</p>
 </details>
-<h2 id="pandas-and-matplotlib-real-data-is-messy">pandas and Matplotlib: real data is messy<a class="headerlink" href="#pandas-and-matplotlib-real-data-is-messy" title="Link to this section">#</a></h2>
+<h2 id="pandas-and-matplotlib-real-data-is-messy">pandas and Matplotlib: real data is messy<a class="headerlink" href="#pandas-and-matplotlib-real-data-is-messy" aria-label="Link to this section">#</a></h2>
 <p>NumPy handles numbers; pandas handles <em>tables</em>: named columns of mixed types, timestamps, missing values, group-bys and joins. Matplotlib draws the pictures. Together they are how you get to know a dataset before you model it, and skipping that step is the most common beginner mistake in ML.</p>
-<h3 id="a-week-of-sensor-data">A week of sensor data<a class="headerlink" href="#a-week-of-sensor-data" title="Link to this section">#</a></h3>
+<h3 id="a-week-of-sensor-data">A week of sensor data<a class="headerlink" href="#a-week-of-sensor-data" aria-label="Link to this section">#</a></h3>
 <p>To keep the course offline, we generate a realistic dataset: a week of five-minute readings from an air-quality station, with a daily temperature cycle, morning and evening NO₂ peaks from traffic, some missing values and a few faulty spikes.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
@@ -314,17 +336,15 @@ This is the core of nearest-neighbour search, which you will meet again in the e
 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">gaps</span><span class="p">,</span> <span class="s2">&quot;no2_ppb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
 <span class="n">spikes</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>     <span class="c1"># simulate faulty readings</span>
 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">spikes</span><span class="p">,</span> <span class="s2">&quot;temp_c&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="o">-</span><span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;sensor.csv&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="look-before-you-model">Look before you model<a class="headerlink" href="#look-before-you-model" title="Link to this section">#</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;sensor.csv&quot;</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">])</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;sensor.csv&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code></pre></div>
+<h3 id="look-before-you-model">Look before you model<a class="headerlink" href="#look-before-you-model" aria-label="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;sensor.csv&quot;</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">])</span>
 <span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>                      <span class="c1"># column types and non-null counts</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>  <span class="c1"># min / max reveal the spikes: temp max is ~54 °C</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>         <span class="c1"># 60 missing NO2 values</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>         <span class="c1"># 60 missing NO2 values</span></code></pre></div>
 <p><code>describe()</code> is the fastest sanity check there is. A summer temperature of 54 °C or −10 °C is not weather; it is a broken sensor.</p>
-<h3 id="clean-outliers-gaps-resampling">Clean: outliers, gaps, resampling<a class="headerlink" href="#clean-outliers-gaps-resampling" title="Link to this section">#</a></h3>
-<div class="highlight"><pre><span></span><code><span class="c1"># 1. Flag outliers as points far from a rolling median (robust to the spikes themselves)</span>
+<h3 id="clean-outliers-gaps-resampling">Clean: outliers, gaps, resampling<a class="headerlink" href="#clean-outliers-gaps-resampling" aria-label="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="c1"># 1. Flag outliers as points far from a rolling median (robust to the spikes themselves)</span>
 <span class="n">med</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;temp_c&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
 <span class="n">outlier</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;temp_c&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">med</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">5</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;outliers:&quot;</span><span class="p">,</span> <span class="n">outlier</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>                     <span class="c1"># 8</span>
@@ -338,10 +358,9 @@ This is the core of nearest-neighbour search, which you will meet again in the e
 
 <span class="c1"># 4. Group by hour of day to see the daily cycle</span>
 <span class="n">profile</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">hour</span><span class="p">)[</span><span class="s2">&quot;no2_ppb&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">idxmax</span><span class="p">())</span>                               <span class="c1"># 8: the morning peak</span>
-</code></pre></div>
-<h3 id="plot">Plot<a class="headerlink" href="#plot" title="Link to this section">#</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">idxmax</span><span class="p">())</span>                               <span class="c1"># 8: the morning peak</span></code></pre></div>
+<h3 id="plot">Plot<a class="headerlink" href="#plot" aria-label="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">hourly</span><span class="p">[</span><span class="s2">&quot;temp_c&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;tab:red&quot;</span><span class="p">)</span>
@@ -350,11 +369,11 @@ This is the core of nearest-neighbour search, which you will meet again in the e
 <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Hour of day&quot;</span><span class="p">)</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Mean NO₂ (ppb)&quot;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</code></pre></div>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></code></pre></div>
 <p>The lower panel should show two humps, at 08:00 and 18:00. You have just recovered the structure we hid in the data, which is exactly what exploratory analysis is for.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: extend the analysis</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>01-python-for-ai.ipynb</code>, cell “Hands-on: extend the analysis”</p>
 <p>Using the cleaned data:</p>
 <ol>
 <li>Add a column <code>is_weekend</code> (the week starts on a Monday) and compare the mean NO₂ on weekdays versus weekends. In our synthetic data there is no difference; in real data there would be. Why?</li>
@@ -364,7 +383,7 @@ This is the core of nearest-neighbour search, which you will meet again in the e
 </div>
 <details class="solution">
 <summary>Show a solution</summary>
-<p><div class="highlight"><pre><span></span><code><span class="n">df</span><span class="p">[</span><span class="s2">&quot;is_weekend&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">dayofweek</span> <span class="o">&gt;=</span> <span class="mi">5</span>
+<p><div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">df</span><span class="p">[</span><span class="s2">&quot;is_weekend&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">dayofweek</span> <span class="o">&gt;=</span> <span class="mi">5</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;is_weekend&quot;</span><span class="p">)[</span><span class="s2">&quot;no2_ppb&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
 <span class="c1"># No difference here, because our generator never used the day of week.</span>
 <span class="c1"># Real traffic drops at weekends, so real NO2 would too.</span>
@@ -374,60 +393,34 @@ This is the core of nearest-neighbour search, which you will meet again in the e
 <span class="n">day</span><span class="p">[</span><span class="s2">&quot;no2_ppb&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="s2">&quot;1h&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;1 h rolling mean&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;no2_ppb&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s2">&quot;1h&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">nlargest</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;no2_ppb&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s2">&quot;1h&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">nlargest</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span></code></pre></div>
 The weekend question is the important one: a model can only learn patterns that are in its data. Synthetic or unrepresentative data quietly limits what any model can know.</p>
 </details>
-<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" title="Link to this section">#</a></h2>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" aria-label="Link to this section">#</a></h2>
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why is vectorised NumPy code so much faster than a Python loop over the same numbers?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">NumPy uses multiple threads for everything</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">The arithmetic runs in compiled code over contiguous memory instead of the Python interpreter, one element at a time</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Python loops are limited to 1,000 iterations per second</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">NumPy approximates the result</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">NumPy uses multiple threads for everything</button></li><li><button type="button" class="quiz-opt" data-correct="1">The arithmetic runs in compiled code over contiguous memory instead of the Python interpreter, one element at a time</button></li><li><button type="button" class="quiz-opt" data-correct="0">Python loops are limited to 1,000 iterations per second</button></li><li><button type="button" class="quiz-opt" data-correct="0">NumPy approximates the result</button></li></ol>
 <p class="quiz-expl" hidden>The interpreter overhead per element disappears. Some operations also use SIMD instructions and multithreaded BLAS libraries.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> X has shape (64, 10) and b has shape (10,). What is the shape of X + b?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="1">(64, 10)</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">(10, 64)</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">(64,)</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">An error is raised</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">(64, 10)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(10, 64)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(64,)</button></li><li><button type="button" class="quiz-opt" data-correct="0">An error is raised</button></li></ol>
 <p class="quiz-expl" hidden>Comparing from the right, 10 matches 10, and the missing leading dimension of b is broadcast across the 64 rows.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> A has shape (8, 3) and B has shape (3, 5). What is the shape of A @ B?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">(3, 3)</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">(8, 3, 5)</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">(8, 5)</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">(5, 8)</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">(3, 3)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(8, 3, 5)</button></li><li><button type="button" class="quiz-opt" data-correct="1">(8, 5)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(5, 8)</button></li></ol>
 <p class="quiz-expl" hidden>The inner dimensions (3 and 3) must match and disappear.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why did we flag outliers using a rolling median rather than a rolling mean?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">Medians are faster to compute</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">A median is barely moved by a few extreme spikes, so the spikes stand out against it</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">pandas does not support rolling means</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Means only work on integers</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Medians are faster to compute</button></li><li><button type="button" class="quiz-opt" data-correct="1">A median is barely moved by a few extreme spikes, so the spikes stand out against it</button></li><li><button type="button" class="quiz-opt" data-correct="0">pandas does not support rolling means</button></li><li><button type="button" class="quiz-opt" data-correct="0">Means only work on integers</button></li></ol>
 <p class="quiz-expl" hidden>A single 30-degree spike drags a rolling mean towards itself, making the spike look smaller. The median ignores it.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> What is wrong with <code>def add_item(x, items=[])</code>?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">Lists cannot be default arguments</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">The same list object is shared across every call, so items pile up between calls</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">It needs a type hint</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Nothing; this is the recommended style</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Lists cannot be default arguments</button></li><li><button type="button" class="quiz-opt" data-correct="1">The same list object is shared across every call, so items pile up between calls</button></li><li><button type="button" class="quiz-opt" data-correct="0">It needs a type hint</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nothing; this is the recommended style</button></li></ol>
 <p class="quiz-expl" hidden>Default values are evaluated once, when the function is defined. Use <code>items=None</code> and create a new list inside.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -440,7 +433,7 @@ The weekend question is the important one: a model can only learn patterns that 
 <li>Type hints, dataclasses and generators make AI code clearer and let it scale beyond memory.</li>
 </ul>
 </div>
-<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" title="Link to this section">#</a></h3>
+<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" aria-label="Link to this section">#</a></h3>
 <ul>
 <li><a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy: the absolute basics for beginners</a></li>
 <li><a href="https://pandas.pydata.org/docs/user_guide/10min.html">pandas: 10 minutes to pandas</a></li>
@@ -448,6 +441,7 @@ The weekend question is the important one: a model can only learn patterns that 
 </ul>
 </div>
 <footer class="lesson-foot">
+
 <button type="button" class="complete-btn" data-complete="python-for-ai" data-sessions="3">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/00-welcome.html"><span>Previous</span>00 Welcome and your AI workbench</a><a class="next" href="../lessons/02-math-for-ai.html"><span>Next</span>02 The maths behind AI</a></nav>
 </footer>
@@ -455,7 +449,30 @@ The weekend question is the important one: a model can only learn patterns that 
 </main>
 <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#why-python-and-which-parts-of-it">Why Python, and which parts of it</a></li><li><a href="#python-essentials-for-ai-code">Python essentials for AI code</a><ul><li><a href="#data-structures-you-will-use-daily">Data structures you will use daily</a></li><li><a href="#comprehensions">Comprehensions</a></li><li><a href="#functions-with-type-hints-and-defaults">Functions with type hints and defaults</a></li><li><a href="#classes-and-dataclasses">Classes and dataclasses</a></li><li><a href="#generators-data-that-does-not-fit-in-memory">Generators: data that does not fit in memory</a></li><li><a href="#errors-and-retries">Errors and retries</a></li></ul></li><li><a href="#numpy-thinking-in-arrays">NumPy: thinking in arrays</a><ul><li><a href="#creating-arrays-and-reading-shapes">Creating arrays and reading shapes</a></li><li><a href="#vectorisation-stop-writing-loops-over-numbers">Vectorisation: stop writing loops over numbers</a></li><li><a href="#broadcasting">Broadcasting</a></li><li><a href="#axis-reductions-and-matrix-multiplication">Axis, reductions and matrix multiplication</a></li></ul></li><li><a href="#pandas-and-matplotlib-real-data-is-messy">pandas and Matplotlib: real data is messy</a><ul><li><a href="#a-week-of-sensor-data">A week of sensor data</a></li><li><a href="#look-before-you-model">Look before you model</a></li><li><a href="#clean-outliers-gaps-resampling">Clean: outliers, gaps, resampling</a></li><li><a href="#plot">Plot</a></li></ul></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
 </div>
-<script src="../assets/course-data.js"></script>
-<script src="../assets/app.js"></script>
+<nav class="lesson-bar" aria-label="Lesson">
+<a class="lb-btn" href="../lessons/00-welcome.html" aria-label="Previous lesson: Welcome and your AI workbench"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+<button type="button" class="lb-toc" aria-expanded="false" aria-controls="toc-sheet"><span class="lb-where">01 · <span class="lb-section">Python for AI</span></span><span class="lb-pct" aria-hidden="true"><span></span></span></button>
+<a class="lb-btn" href="../lessons/02-math-for-ai.html" aria-label="Next lesson: The maths behind AI"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+</nav>
+<div class="toc-sheet" id="toc-sheet" hidden><div class="toc-sheet-inner"><aside class="toc-sheet-list" aria-label="Contents"><p class="toc-title">Contents</p><ul><li><a href="#why-python-and-which-parts-of-it">Why Python, and which parts of it</a></li><li><a href="#python-essentials-for-ai-code">Python essentials for AI code</a><ul><li><a href="#data-structures-you-will-use-daily">Data structures you will use daily</a></li><li><a href="#comprehensions">Comprehensions</a></li><li><a href="#functions-with-type-hints-and-defaults">Functions with type hints and defaults</a></li><li><a href="#classes-and-dataclasses">Classes and dataclasses</a></li><li><a href="#generators-data-that-does-not-fit-in-memory">Generators: data that does not fit in memory</a></li><li><a href="#errors-and-retries">Errors and retries</a></li></ul></li><li><a href="#numpy-thinking-in-arrays">NumPy: thinking in arrays</a><ul><li><a href="#creating-arrays-and-reading-shapes">Creating arrays and reading shapes</a></li><li><a href="#vectorisation-stop-writing-loops-over-numbers">Vectorisation: stop writing loops over numbers</a></li><li><a href="#broadcasting">Broadcasting</a></li><li><a href="#axis-reductions-and-matrix-multiplication">Axis, reductions and matrix multiplication</a></li></ul></li><li><a href="#pandas-and-matplotlib-real-data-is-messy">pandas and Matplotlib: real data is messy</a><ul><li><a href="#a-week-of-sensor-data">A week of sensor data</a></li><li><a href="#look-before-you-model">Look before you model</a></li><li><a href="#clean-outliers-gaps-resampling">Clean: outliers, gaps, resampling</a></li><li><a href="#plot">Plot</a></li></ul></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside></div></div>
+<dialog class="settings" aria-labelledby="settings-title">
+<form method="dialog" class="settings-inner">
+<div class="settings-head"><h2 id="settings-title">Reading settings</h2><button class="icon-btn" value="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<fieldset><legend>Theme</legend><div class="seg-ctl" data-pref="theme"><button type="button" value="auto">Auto</button><button type="button" value="light">Light</button><button type="button" value="dark">Dark</button></div></fieldset>
+<fieldset><legend>Text size</legend><div class="seg-ctl" data-pref="size"><button type="button" value="s" aria-label="Small">A</button><button type="button" value="m" aria-label="Medium">A</button><button type="button" value="l" aria-label="Large">A</button><button type="button" value="xl" aria-label="Extra large">A</button></div></fieldset>
+<fieldset><legend>Typeface</legend><div class="seg-ctl" data-pref="font"><button type="button" value="serif">Literata</button><button type="button" value="sans">Atkinson Hyperlegible</button></div></fieldset>
+<fieldset class="sync"><legend>Progress on your other devices</legend>
+<p>Your ticks live in this browser. To carry them to your phone or computer, open this link there:</p>
+<div class="sync-row"><input class="sync-link" type="text" readonly aria-label="Sync link"><button type="button" class="btn-small sync-copy">Copy</button><button type="button" class="btn-small sync-share" hidden>Share</button></div>
+<p class="sync-note">Opening the link adds these ticks to the ones already there; nothing is removed.</p>
+</fieldset>
+<fieldset class="offline" hidden><legend>Offline reading</legend>
+<p class="offline-status">Lessons you open are saved for reading without a connection.</p>
+<button type="button" class="btn-small offline-all">Save every lesson for offline reading</button>
+</fieldset>
+</form>
+</dialog>
+<script src="../assets/course-data.js?v=da7d24f3"></script>
+<script src="../assets/app.js?v=da7d24f3"></script>
 </body>
 </html>

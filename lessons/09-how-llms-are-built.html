@@ -2,102 +2,134 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>How large language models are built | AI Engineering</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<meta name="description" content="The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121a22" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="How large language models are built">
+<meta property="og:description" content="The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.">
+<meta property="og:type" content="website">
+<link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css">
-<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
+<script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
 <body class="is-lesson" data-root="../" data-page="how-llms-are-built">
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
-<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-controls="course-map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
 <a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
 <div class="search" role="search">
-<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<input id="search-input" type="search" placeholder="Search the course" autocomplete="off" aria-label="Search the course" enterkeyhint="search">
+<button class="icon-btn search-close" type="button" aria-label="Close search"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <div class="search-results" hidden></div>
 </div>
-<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+<button class="icon-btn search-toggle" type="button" aria-label="Search the course"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button class="icon-btn settings-toggle" type="button" aria-label="Reading settings and progress sync" aria-haspopup="dialog"><span class="aa" aria-hidden="true">Aa</span></button>
 </header>
-<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg is-current" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9" title="00 Welcome and your AI workbench" tabindex="-1"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3" title="01 Python for AI work" tabindex="-1"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb" title="02 The maths behind AI" tabindex="-1"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff" title="03 Machine learning fundamentals" tabindex="-1"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff" title="04 Classical machine learning" tabindex="-1"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe" title="05 Neural networks from scratch" tabindex="-1"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0" title="06 Deep learning with PyTorch" tabindex="-1"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8" title="07 Text as numbers, sequences and embeddings" tabindex="-1"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8" title="08 Attention and the transformer" tabindex="-1"></a><a class="seg is-current" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb" title="09 How large language models are built" tabindex="-1"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1" title="10 Working with LLM APIs" tabindex="-1"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7" title="11 Prompt engineering" tabindex="-1"></a><a class="seg" href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e" title="12 Reasoning models and test-time compute" tabindex="-1"></a><a class="seg" href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94" title="13 Embeddings and vector search" tabindex="-1"></a><a class="seg" href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a" title="14 Retrieval-augmented generation (RAG)" tabindex="-1"></a><a class="seg" href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e" title="15 Agents, tool use and MCP" tabindex="-1"></a><a class="seg" href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70" title="16 Context engineering and memory" tabindex="-1"></a><a class="seg" href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a" title="17 Evaluating LLM systems" tabindex="-1"></a><a class="seg" href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232" title="18 Fine-tuning language models" tabindex="-1"></a><a class="seg" href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05" title="19 Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging" tabindex="-1"></a><a class="seg" href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701" title="20 LLM inference in depth" tabindex="-1"></a><a class="seg" href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200" title="21 Deployment, serving and LLMOps" tabindex="-1"></a><a class="seg" href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07" title="22 Safety, security and responsible AI" tabindex="-1"></a><a class="seg" href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807" title="23 Multimodal AI: vision, documents, speech and image generation" tabindex="-1"></a><a class="seg" href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304" title="24 Search, planning and classical AI" tabindex="-1"></a><a class="seg" href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06" title="25 Reinforcement learning" tabindex="-1"></a><a class="seg" href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903" title="26 Generative models: autoencoders, VAEs, GANs, flows and diffusion" tabindex="-1"></a><a class="seg" href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307" title="27 Computer vision: detection, segmentation and beyond" tabindex="-1"></a><a class="seg" href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05" title="28 Time series, recommender systems and graphs" tabindex="-1"></a><a class="seg" href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005" title="29 Training at scale: GPUs, parallelism and efficient architectures" tabindex="-1"></a><a class="seg" href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05" title="30 Interpretability and explainability" tabindex="-1"></a><a class="seg" href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29" title="31 Designing AI systems" tabindex="-1"></a><a class="seg" href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48" title="32 Capstone projects and your AI engineering career" tabindex="-1"></a><span class="read-progress"></span></div>
 <div class="layout">
-<nav class="course-map" aria-label="Course map">
-<ul class="map-pages">
-<li><a href="../index.html">Course home</a></li>
-<li><a href="../schedule.html">Daily schedule</a></li>
-<li><a href="../glossary.html">Glossary</a></li>
-<li><a href="../resources.html">Further resources</a></li>
-</ul>
-<section class="map-part" style="--pc:#ab19c8">
+<nav class="course-map" id="course-map" aria-label="Course map">
+<ul class="map-pages"><li><a href="../index.html">Course home</a></li><li><a href="../schedule.html">Daily schedule</a></li><li><a href="../glossary.html">Glossary</a></li><li><a href="../resources.html">Further resources</a></li></ul>
+<section class="map-part" style="--pc:#a45ae9">
 <p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
-<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#6d1ce3">
+<section class="map-part" style="--pc:#8368fb">
 <p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
-<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
-<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1c44e3">
+<section class="map-part" style="--pc:#5877ff">
 <p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
-<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
-<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1ce3c5">
+<section class="map-part" style="--pc:#0487f0">
 <p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
-<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
-<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
-<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#65e31c">
+<section class="map-part" style="--pc:#0b94bb">
 <p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
-<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
-<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#e37e1c">
+<section class="map-part" style="--pc:#0b9b8a">
 <p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
-<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
-<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
-<li><a href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
-<li><a href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
-<li><a href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
-<li><a href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
-<li><a href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Reasoning models</span></a></li>
+<li><a href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Context engineering</span></a></li>
+<li><a href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Evaluation</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#d41a1a">
-<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
-<li><a href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
-<li><a href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
-<li><a href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+<section class="map-part" style="--pc:#479e05">
+<p class="map-part-name"><span class="roman">VII</span> Fine-tuning and inference</p><ol>
+<li><a href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Post-training in depth</span></a></li>
+<li><a href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">LLM inference</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#b21616">
-<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
-<li><a href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
-<li><a href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+<section class="map-part" style="--pc:#8b8c07">
+<p class="map-part-name"><span class="roman">VIII</span> Production</p><ol>
+<li><a href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07"><span class="dot" aria-hidden="true"></span><span class="num">22</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807"><span class="dot" aria-hidden="true"></span><span class="num">23</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#bc7307">
+<p class="map-part-name"><span class="roman">IX</span> The wider field</p><ol>
+<li><a href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304"><span class="dot" aria-hidden="true"></span><span class="num">24</span><span class="t">Classical AI and search</span></a></li>
+<li><a href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06"><span class="dot" aria-hidden="true"></span><span class="num">25</span><span class="t">Reinforcement learning</span></a></li>
+<li><a href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903"><span class="dot" aria-hidden="true"></span><span class="num">26</span><span class="t">Generative models</span></a></li>
+<li><a href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307"><span class="dot" aria-hidden="true"></span><span class="num">27</span><span class="t">Computer vision in depth</span></a></li>
+<li><a href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05"><span class="dot" aria-hidden="true"></span><span class="num">28</span><span class="t">Time series, recsys, graphs</span></a></li>
+<li><a href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005"><span class="dot" aria-hidden="true"></span><span class="num">29</span><span class="t">Training at scale</span></a></li>
+<li><a href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05"><span class="dot" aria-hidden="true"></span><span class="num">30</span><span class="t">Interpretability</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#ea3b48">
+<p class="map-part-name"><span class="roman">X</span> Mastery</p><ol>
+<li><a href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29"><span class="dot" aria-hidden="true"></span><span class="num">31</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48"><span class="dot" aria-hidden="true"></span><span class="num">32</span><span class="t">Capstones and career</span></a></li>
 </ol></section>
 </nav>
+<div class="scrim" hidden></div>
 <main id="main" tabindex="-1">
-<article class="lesson" data-lesson="how-llms-are-built" style="--lc:#7de31c;--lct:#559518;--lctd:#b1ea7b">
+<article class="lesson" data-lesson="how-llms-are-built" style="--lc:#0b94bb;--lct:#046e8c;--lctd:#43cfff">
 <header class="lesson-head">
-<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part V, Transformers and LLMs <span class="wl">544 nm</span></p>
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part V, Transformers and LLMs <span class="wl">484 nm</span></p>
 <h1><span class="lesson-num">09</span> How large language models are built</h1>
 <p class="lesson-summary">The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.</p>
+<p class="lesson-meta"><span>4 sessions</span><span>about 20 min of reading</span><span>4 code examples</span><span>1 hands-on exercise</span></p>
+
+
 <div class="study-plan">
 <p class="plan-title">Study plan: 4 sessions of about an hour</p>
 <ol class="sessions"><li><label><input type="checkbox" data-session="how-llms-are-built:0"><span>Tokenization: implement byte-pair encoding and see its quirks</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:1"><span>Pretraining: data, objective, compute and scaling laws</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:2"><span>Post-training: instruction tuning, RLHF, DPO, reasoning models</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:3"><span>Decoding, context windows, hallucination, and the model landscape</span></label></li></ol>
-<p class="plan-note">Tick a session when you finish it. Progress is saved in this browser only.</p>
-<p class="plan-notebook">Code for this lesson: <a href="../notebooks/09-how-llms-are-built.ipynb" download>notebooks/09-how-llms-are-built.ipynb</a>, with worked solutions in <code>notebooks/solutions/</code>.</p>
+<p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
+<aside class="handson" aria-label="Hands-on notebook">
+<p class="handson-title"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Hands-on at your computer</p>
+<p>Read here on any screen. When a <span class="chip">At your computer</span> exercise comes up, open <code>notebooks/09-how-llms-are-built.ipynb</code> in JupyterLab or VS Code and run the cells under the same heading.</p>
+<p class="handson-runs"><strong>Runs on:</strong> Any computer (CPU).</p>
+<p class="handson-links"><a href="https://colab.research.google.com/github/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/09-how-llms-are-built.ipynb" rel="noopener">Open in Colab</a><a href="https://github.com/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/09-how-llms-are-built.ipynb" rel="noopener">View on GitHub</a><a href="../notebooks/09-how-llms-are-built.ipynb" download>Download notebook</a><a href="../notebooks/solutions/09-how-llms-are-built-solutions.ipynb" download>Solutions</a></p>
+</aside>
+<p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
-<h2 id="from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model<a class="headerlink" href="#from-tinygpt-to-a-frontier-model" title="Link to this section">#</a></h2>
-<p>Your TinyGPT from lesson 08 has the same architecture as a frontier LLM, give or take some refinements. The differences are a proper tokenizer, about a million times more parameters, roughly a hundred million times more training data, and a long post-training phase that turns a text predictor into a helpful assistant. This lesson walks through each stage, because each one explains behaviour you will run into as an engineer: odd failures on spelling and arithmetic, the cost of long prompts, why temperature matters, and why models can be confidently wrong.</p>
-<h2 id="tokenization">Tokenization<a class="headerlink" href="#tokenization" title="Link to this section">#</a></h2>
+<h2 id="from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model<a class="headerlink" href="#from-tinygpt-to-a-frontier-model" aria-label="Link to this section">#</a></h2>
+<p>Your TinyGPT from lesson <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a> has the same architecture as a frontier LLM, give or take some refinements. The differences are a proper tokenizer, about a million times more parameters, roughly a hundred million times more training data, and a long post-training phase that turns a text predictor into a helpful assistant. This lesson walks through each stage, because each one explains behaviour you will run into as an engineer: odd failures on spelling and arithmetic, the cost of long prompts, why temperature matters, and why models can be confidently wrong.</p>
+<h2 id="tokenization">Tokenization<a class="headerlink" href="#tokenization" aria-label="Link to this section">#</a></h2>
 <p>Characters make sequences long (attention is quadratic in length); whole words make the vocabulary enormous and cannot handle new words. Modern LLMs use <strong>subword tokens</strong>: frequent words get a single token, rare words are split into pieces, and anything at all can fall back to raw bytes. Vocabularies are typically 32,000 to 260,000 tokens. In English, one token is roughly four characters, or about three-quarters of a word.</p>
-<h3 id="byte-pair-encoding-implemented">Byte-pair encoding, implemented<a class="headerlink" href="#byte-pair-encoding-implemented" title="Link to this section">#</a></h3>
+<h3 id="byte-pair-encoding-implemented">Byte-pair encoding, implemented<a class="headerlink" href="#byte-pair-encoding-implemented" aria-label="Link to this section">#</a></h3>
 <p>BPE starts from the 256 possible byte values and repeatedly merges the most frequent adjacent pair into a new token. Real tokenizers first split text into word-like chunks with a regular expression, so merges never cross word boundaries.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
 
 <span class="n">PAT</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot; ?[A-Za-z]+| ?\d+| ?[^\sA-Za-z\d]+|\s+&quot;</span><span class="p">)</span>   <span class="c1"># pre-split into word-like chunks</span>
@@ -145,14 +177,12 @@
     <span class="k">return</span> <span class="n">out</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">decode</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">vocab</span><span class="p">):</span>
-    <span class="k">return</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">vocab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">)</span>
-</code></pre></div>
+    <span class="k">return</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">vocab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">)</span></code></pre></div>
 <p>Train it on a paragraph about tokenizers (repeated a few times) with a 400-token vocabulary, then look at what it does:</p>
-<div class="highlight"><pre><span></span><code>&#39;The tokenizer splits words.&#39;   27 bytes -&gt;  6 tokens: &#39;T&#39; &#39;he&#39; &#39; tokenizer&#39; &#39; splits&#39; &#39; words&#39; &#39;.&#39;
+<div class="highlight" data-lang="text"><div class="code-head"><span class="code-label">Text</span></div><pre><code>&#39;The tokenizer splits words.&#39;   27 bytes -&gt;  6 tokens: &#39;T&#39; &#39;he&#39; &#39; tokenizer&#39; &#39; splits&#39; &#39; words&#39; &#39;.&#39;
 &#39;remodelling&#39;                   11 bytes -&gt;  4 tokens: &#39;re&#39; &#39;model&#39; &#39;l&#39; &#39;ing&#39;
 &#39;Tokenization of 3.14159&#39;       23 bytes -&gt; 18 tokens: &#39;T&#39; &#39;o&#39; &#39;k&#39; &#39;en&#39; &#39;i&#39; &#39;z&#39; &#39;at&#39; &#39;i&#39; &#39;on&#39; &#39; of&#39; ...
-&#39;naïve 🚀&#39;                      11 bytes -&gt; 11 tokens: raw bytes for ï and the emoji
-</code></pre></div>
+&#39;naïve 🚀&#39;                      11 bytes -&gt; 11 tokens: raw bytes for ï and the emoji</code></pre></div>
 <p>Even this toy shows the real behaviours:</p>
 <ul>
 <li><strong>Frequent words are one token; rare ones fragment.</strong> " tokenizer" was common in training text, "Tokenization" with a capital T was not, so it shatters into letters.</li>
@@ -164,46 +194,44 @@
 <p class="admonition-title">Tokens are the unit of everything</p>
 <p>APIs charge per token, context windows are measured in tokens, and latency scales with tokens generated. Use the provider's token counter (or <code>tiktoken</code> for OpenAI-style tokenizers, or a Hugging Face tokenizer for open models) when you estimate costs. Never estimate from word counts in production.</p>
 </div>
-<h2 id="pretraining">Pretraining<a class="headerlink" href="#pretraining" title="Link to this section">#</a></h2>
-<h3 id="the-objective">The objective<a class="headerlink" href="#the-objective" title="Link to this section">#</a></h3>
+<h2 id="pretraining">Pretraining<a class="headerlink" href="#pretraining" aria-label="Link to this section">#</a></h2>
+<h3 id="the-objective">The objective<a class="headerlink" href="#the-objective" aria-label="Link to this section">#</a></h3>
 <p>Exactly what TinyGPT did: minimise cross-entropy on the next token, averaged over every position of every sequence. No labels, no task definitions. To predict the next token of a physics textbook, a chemistry paper, a Python repository and a legal contract, a model has to absorb grammar, facts, reasoning patterns and coding conventions. Capabilities emerge as a by-product of compression.</p>
-<h3 id="the-data">The data<a class="headerlink" href="#the-data" title="Link to this section">#</a></h3>
+<h3 id="the-data">The data<a class="headerlink" href="#the-data" aria-label="Link to this section">#</a></h3>
 <p>Pretraining corpora are trillions of tokens. Meta reported training Llama 3 on over 15 trillion tokens, for example. Sources are mostly filtered web crawls (such as Common Crawl), plus code, books, scientific papers, encyclopaedias, and increasingly synthetic data generated by other models. Most of the work is in <strong>curation</strong>: removing duplicates, spam and boilerplate, filtering for quality (often with classifiers trained to spot educational text), removing personal information, balancing languages and domains, and deciding the mixture. Data quality is now widely regarded as one of the biggest levers on model quality.</p>
-<h3 id="compute-and-scaling-laws">Compute and scaling laws<a class="headerlink" href="#compute-and-scaling-laws" title="Link to this section">#</a></h3>
+<h3 id="compute-and-scaling-laws">Compute and scaling laws<a class="headerlink" href="#compute-and-scaling-laws" aria-label="Link to this section">#</a></h3>
 <p>A useful rule of thumb: training a dense transformer with <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi></mrow><annotation encoding="application/x-tex">N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span> parameters on <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi></mrow><annotation encoding="application/x-tex">D</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span></span></span></span> tokens costs about</p>
-<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>C</mi><mo>≈</mo><mn>6</mn><mi>N</mi><mi>D</mi><mtext> floating-point operations</mtext></mrow><annotation encoding="application/x-tex">
-C \approx 6ND \ \text{floating-point operations}
-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">6</span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span><span class="mspace"> </span><span class="mord text"><span class="mord">floating-point operations</span></span></span></span></span></span></div>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>C</mi><mo>≈</mo><mn>6</mn><mi>N</mi><mi>D</mi><mtext> floating-point operations</mtext></mrow><annotation encoding="application/x-tex">C \approx 6ND \ \text{floating-point operations}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">6</span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span><span class="mspace"> </span><span class="mord text"><span class="mord">floating-point operations</span></span></span></span></span></span></div>
 <p>(two for the forward pass and four for the backward pass, per parameter per token). A 70-billion-parameter model on 15 trillion tokens is about <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>6.3</mn><mo>×</mo><mn>1</mn><msup><mn>0</mn><mn>24</mn></msup></mrow><annotation encoding="application/x-tex">6.3\times10^{24}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">6.3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord">1</span><span class="mord"><span class="mord">0</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">24</span></span></span></span></span></span></span></span></span></span></span></span> FLOPs: thousands of GPUs for months.</p>
 <p>In 2020, Kaplan and colleagues found that loss falls as a smooth <strong>power law</strong> in parameters, data and compute, over many orders of magnitude. That predictability is why labs can plan huge training runs from small experiments. In 2022 the Chinchilla paper refined the recipe: for a fixed compute budget, the loss-optimal split is roughly <strong>20 training tokens per parameter</strong>, so many earlier models were too big for their data. Today most models are trained on far more tokens than that ratio suggests, because a smaller model trained longer is cheaper to <em>serve</em>, and serving costs dominate over a model's lifetime.</p>
-<h3 id="architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards<a class="headerlink" href="#architecture-refinements-you-will-see-in-model-cards" title="Link to this section">#</a></h3>
+<h3 id="architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards<a class="headerlink" href="#architecture-refinements-you-will-see-in-model-cards" aria-label="Link to this section">#</a></h3>
 <ul>
 <li><strong>RMSNorm</strong> instead of LayerNorm, applied before each sub-layer (pre-norm).</li>
 <li><strong>SwiGLU</strong> MLPs instead of a plain GELU MLP.</li>
-<li><strong>RoPE</strong> positions and <strong>grouped-query attention</strong> (lesson 08).</li>
+<li><strong>RoPE</strong> positions and <strong>grouped-query attention</strong> (lesson <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a>).</li>
 <li><strong>Mixture of experts (MoE)</strong>: each MLP is replaced by many "expert" MLPs and a small router that sends each token to only a few of them. Total parameters can be huge while the compute per token stays modest. Several leading open models use MoE.</li>
 </ul>
-<h2 id="post-training-from-predictor-to-assistant">Post-training: from predictor to assistant<a class="headerlink" href="#post-training-from-predictor-to-assistant" title="Link to this section">#</a></h2>
+<h2 id="post-training-from-predictor-to-assistant">Post-training: from predictor to assistant<a class="headerlink" href="#post-training-from-predictor-to-assistant" aria-label="Link to this section">#</a></h2>
 <p>A freshly pretrained <strong>base model</strong> continues text. Ask it "What is the capital of France?" and it may continue with "What is the capital of Germany?", because lists of quiz questions are common on the web. Post-training turns it into something that follows instructions, holds a conversation, refuses harmful requests and uses tools.</p>
-<h3 id="1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)<a class="headerlink" href="#1-supervised-fine-tuning-sft" title="Link to this section">#</a></h3>
+<h3 id="1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)<a class="headerlink" href="#1-supervised-fine-tuning-sft" aria-label="Link to this section">#</a></h3>
 <p>Train further, with the same next-token loss, on curated examples of the desired behaviour: prompts paired with high-quality responses, written by people or generated and filtered. Usually tens of thousands to millions of examples, formatted with a <strong>chat template</strong> that marks system, user and assistant turns with special tokens. SFT teaches the format and the style of being helpful.</p>
-<h3 id="2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF<a class="headerlink" href="#2-learning-from-preferences-rlhf" title="Link to this section">#</a></h3>
-<p>It is easier for people to <em>compare</em> two responses than to write a perfect one. <strong>Reinforcement learning from human feedback</strong> collects many comparisons ("A is better than B"), trains a <strong>reward model</strong> to predict which response people prefer, then optimises the LLM with reinforcement learning (classically PPO) to produce responses the reward model scores highly. A <strong>KL penalty</strong> (lesson 02) keeps the model close to its SFT starting point, so it cannot drift into weird text that happens to fool the reward model. InstructGPT (2022) showed that a small RLHF-tuned model could be preferred over a much larger base model.</p>
-<h3 id="3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)<a class="headerlink" href="#3-direct-preference-optimisation-dpo" title="Link to this section">#</a></h3>
-<p>DPO (2023) skips the separate reward model and the RL loop. It turns preference pairs directly into a classification-style loss that raises the likelihood of preferred responses relative to rejected ones, again anchored to a reference model. It is simpler and more stable, and widely used for open models. You will run it in lesson 16.</p>
-<h3 id="4-ai-feedback-and-principles">4. AI feedback and principles<a class="headerlink" href="#4-ai-feedback-and-principles" title="Link to this section">#</a></h3>
+<h3 id="2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF<a class="headerlink" href="#2-learning-from-preferences-rlhf" aria-label="Link to this section">#</a></h3>
+<p>It is easier for people to <em>compare</em> two responses than to write a perfect one. <strong>Reinforcement learning from human feedback</strong> collects many comparisons ("A is better than B"), trains a <strong>reward model</strong> to predict which response people prefer, then optimises the LLM with reinforcement learning (classically PPO) to produce responses the reward model scores highly. A <strong>KL penalty</strong> (lesson <a class="ref" href="../lessons/02-math-for-ai.html" title="Lesson 02: The maths behind AI">02</a>) keeps the model close to its SFT starting point, so it cannot drift into weird text that happens to fool the reward model. InstructGPT (2022) showed that a small RLHF-tuned model could be preferred over a much larger base model.</p>
+<h3 id="3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)<a class="headerlink" href="#3-direct-preference-optimisation-dpo" aria-label="Link to this section">#</a></h3>
+<p>DPO (2023) skips the separate reward model and the RL loop. It turns preference pairs directly into a classification-style loss that raises the likelihood of preferred responses relative to rejected ones, again anchored to a reference model. It is simpler and more stable, and widely used for open models. You will run it in lesson <a class="ref" href="../lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a>.</p>
+<h3 id="4-ai-feedback-and-principles">4. AI feedback and principles<a class="headerlink" href="#4-ai-feedback-and-principles" aria-label="Link to this section">#</a></h3>
 <p>Human labelling is slow and costly. <strong>RLAIF</strong> uses a model to judge responses, often against a written set of principles. Anthropic's Constitutional AI is the best-known example: a model critiques and revises its own outputs according to a constitution of principles, and AI-generated preferences train the final model.</p>
-<h3 id="5-reasoning-models">5. Reasoning models<a class="headerlink" href="#5-reasoning-models" title="Link to this section">#</a></h3>
+<h3 id="5-reasoning-models">5. Reasoning models<a class="headerlink" href="#5-reasoning-models" aria-label="Link to this section">#</a></h3>
 <p>A more recent shift: train models with reinforcement learning on problems whose answers can be <strong>checked automatically</strong> (maths with known answers, code with unit tests), rewarding correct final answers. Models learn to produce long chains of intermediate reasoning, to try approaches, notice mistakes and backtrack. At inference time these models spend extra tokens "thinking" before answering, and accuracy on hard problems improves as they are allowed to think longer. This <strong>test-time compute</strong> is a second scaling axis next to model size. As an engineer you will see it as a setting (a thinking or reasoning budget) that trades latency and cost for accuracy.</p>
-<h2 id="decoding-turning-distributions-into-text">Decoding: turning distributions into text<a class="headerlink" href="#decoding-turning-distributions-into-text" title="Link to this section">#</a></h2>
+<h2 id="decoding-turning-distributions-into-text">Decoding: turning distributions into text<a class="headerlink" href="#decoding-turning-distributions-into-text" aria-label="Link to this section">#</a></h2>
 <p>At each step the model outputs a probability for every token in its vocabulary. How you pick from that distribution changes the output a lot.</p>
 <ul>
 <li><strong>Greedy</strong>: always take the most likely token. Deterministic, but prone to dull, repetitive text.</li>
-<li><strong>Temperature</strong>: divide logits by <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi></mrow><annotation encoding="application/x-tex">T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span> before softmax (you explored this in lesson 02). Below 1 sharpens, above 1 flattens.</li>
+<li><strong>Temperature</strong>: divide logits by <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi></mrow><annotation encoding="application/x-tex">T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span> before softmax (you explored this in lesson <a class="ref" href="../lessons/02-math-for-ai.html" title="Lesson 02: The maths behind AI">02</a>). Below 1 sharpens, above 1 flattens.</li>
 <li><strong>Top-k</strong>: sample only among the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> most likely tokens.</li>
 <li><strong>Top-p (nucleus)</strong>: sample from the smallest set of tokens whose probabilities add up to <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">p</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span>, so the candidate set adapts to how confident the model is.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">softmax</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
@@ -224,17 +252,16 @@ C \approx 6ND \ \text{floating-point operations}
 <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="p">(</span><span class="n">logits</span><span class="p">))</span>                    <span class="c1"># full distribution [0.549 0.333 0.074 0.033 0.01 ]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>           <span class="c1"># [0.622 0.378 0.    0.    0.   ]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">top_p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">))</span>         <span class="c1"># [0.574 0.348 0.078 0.    0.   ]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>   <span class="c1"># [0.993 0.007 0.    0.    0.   ]  nearly greedy</span>
-</code></pre></div>
+<span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>   <span class="c1"># [0.993 0.007 0.    0.    0.   ]  nearly greedy</span></code></pre></div>
 <p><strong>Practical defaults.</strong> For extraction, classification, code and anything with one right answer, use low temperature (0 to 0.3). For brainstorming and creative writing, use higher (0.7 to 1.0). Change one of temperature or top-p, not both at once. Note that temperature 0 is not a guarantee of identical outputs from a hosted API; batching and floating-point effects on GPUs can still introduce small differences.</p>
-<h3 id="context-windows">Context windows<a class="headerlink" href="#context-windows" title="Link to this section">#</a></h3>
+<h3 id="context-windows">Context windows<a class="headerlink" href="#context-windows" aria-label="Link to this section">#</a></h3>
 <p>The context window is the maximum number of tokens (prompt plus output) the model can attend to. It grew from 2,048 tokens for GPT-3 to hundreds of thousands or more for current models. Three caveats matter in practice:</p>
 <ul>
-<li><strong>Cost and latency scale with input length.</strong> Every request pays for its whole prompt, every time (prompt caching, lesson 10, helps).</li>
+<li><strong>Cost and latency scale with input length.</strong> Every request pays for its whole prompt, every time (prompt caching, lesson <a class="ref" href="../lessons/10-llm-apis.html" title="Lesson 10: Working with LLM APIs">10</a>, helps).</li>
 <li><strong>Use of long context is uneven.</strong> Models often retrieve information placed at the start or end of a long prompt more reliably than information buried in the middle ("lost in the middle"). Test this for your use case rather than assuming.</li>
 <li><strong>Output length is limited separately</strong>, by a maximum output token setting.</li>
 </ul>
-<h2 id="why-models-make-things-up">Why models make things up<a class="headerlink" href="#why-models-make-things-up" title="Link to this section">#</a></h2>
+<h2 id="why-models-make-things-up">Why models make things up<a class="headerlink" href="#why-models-make-things-up" aria-label="Link to this section">#</a></h2>
 <p>LLMs are trained to produce plausible continuations. When the training data contained an answer and the model learned it well, plausible and true coincide. When it did not, the model can still produce something fluent and confident. This is <strong>hallucination</strong> (or confabulation). Contributing causes:</p>
 <ul>
 <li>The objective rewards plausibility, not truth, and pretraining text rarely says "I don't know".</li>
@@ -242,9 +269,9 @@ C \approx 6ND \ \text{floating-point operations}
 <li>Rare facts (a specific paper's page numbers, an obscure API's parameters, a person's exact biography) are weakly learned.</li>
 <li>Long reasoning chains compound small errors.</li>
 </ul>
-<p>Post-training reduces it substantially, but no model eliminates it. Engineering mitigations, which fill much of part VI: give the model the facts (retrieval, lesson 13), ask for citations and check them, let it use tools for lookups and arithmetic (lesson 14), allow and reward "I don't know", and measure it with evaluations (lesson 15).</p>
-<h2 id="the-model-landscape">The model landscape<a class="headerlink" href="#the-model-landscape" title="Link to this section">#</a></h2>
-<table>
+<p>Post-training reduces it substantially, but no model eliminates it. Engineering mitigations, which fill much of part VI: give the model the facts (retrieval, lesson <a class="ref" href="../lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a>), ask for citations and check them, let it use tools for lookups and arithmetic (lesson <a class="ref" href="../lessons/15-agents.html" title="Lesson 15: Agents, tool use and MCP">15</a>), allow and reward "I don't know", and measure it with evaluations (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>).</p>
+<h2 id="the-model-landscape">The model landscape<a class="headerlink" href="#the-model-landscape" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table>
 <thead>
 <tr>
 <th></th>
@@ -279,10 +306,11 @@ C \approx 6ND \ \text{floating-point operations}
 <td>Mostly fixed hardware cost; cheap at high volume</td>
 </tr>
 </tbody>
-</table>
-<p>Most real systems mix them: a frontier model for hard reasoning, a small open model for high-volume classification, an embedding model for search. Model names and rankings change every few months, so build systems where the model is a configuration value, and keep an evaluation set (lesson 15) to tell you objectively when to switch.</p>
+</table></div>
+<p>Most real systems mix them: a frontier model for hard reasoning, a small open model for high-volume classification, an embedding model for search. Model names and rankings change every few months, so build systems where the model is a configuration value, and keep an evaluation set (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>) to tell you objectively when to switch.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: tokenizers in the wild</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>09-how-llms-are-built.ipynb</code>, cell “Hands-on: tokenizers in the wild”</p>
 <p>Install <code>tiktoken</code> (<code>uv add tiktoken</code>) and load <code>tiktoken.get_encoding("cl100k_base")</code>, a real production tokenizer.</p>
 <ol>
 <li>Tokenize an English sentence, the same sentence translated into another language you know, a line of Python, and a long number. Compare token counts per character.</li>
@@ -292,7 +320,7 @@ C \approx 6ND \ \text{floating-point operations}
 </div>
 <details class="solution">
 <summary>Show what you should find</summary>
-<p><div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">tiktoken</span>
+<p><div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">tiktoken</span>
 <span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;cl100k_base&quot;</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;The instrument was calibrated yesterday.&quot;</span><span class="p">,</span>
           <span class="s2">&quot;Das Instrument wurde gestern kalibriert.&quot;</span><span class="p">,</span>
@@ -301,62 +329,36 @@ C \approx 6ND \ \text{floating-point operations}
     <span class="n">ids</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ids</span><span class="p">),</span> <span class="p">[</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">([</span><span class="n">t</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">])</span>
 <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;strawberry&quot;</span><span class="p">,</span> <span class="s2">&quot; strawberry&quot;</span><span class="p">,</span> <span class="s2">&quot;Strawberry&quot;</span><span class="p">]:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="p">[</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">([</span><span class="n">t</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">s</span><span class="p">)])</span>
-</code></pre></div>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="p">[</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">([</span><span class="n">t</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">s</span><span class="p">)])</span></code></pre></div>
 1. English is the most token-efficient; other languages usually need more tokens per character, so they cost more and fit less into the context window. Long numbers are split into chunks of a few digits.
 2. A leading space and capitalisation produce different token sequences: " strawberry" and "strawberry" are distinct tokens or splits. The model sees a few opaque ids, not ten letters, so counting the r's requires knowledge it never directly observes.
 3. Without pre-splitting, frequent multi-word phrases (including the trailing space and the next word) merge into single tokens. The vocabulary fills with phrase fragments that generalise poorly, and the same word gets different tokens depending on its neighbours.</p>
 </details>
-<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" title="Link to this section">#</a></h2>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" aria-label="Link to this section">#</a></h2>
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why do LLMs often struggle to count the letters in a word?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">They are trained only on numbers</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">They see tokens, multi-character chunks, rather than individual letters</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Their context window is too short</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Letter counting is disabled during post-training</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They are trained only on numbers</button></li><li><button type="button" class="quiz-opt" data-correct="1">They see tokens, multi-character chunks, rather than individual letters</button></li><li><button type="button" class="quiz-opt" data-correct="0">Their context window is too short</button></li><li><button type="button" class="quiz-opt" data-correct="0">Letter counting is disabled during post-training</button></li></ol>
 <p class="quiz-expl" hidden>The model has to infer spelling from tokens it never sees broken into characters.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> Roughly how many FLOPs does it take to train a 7-billion-parameter model on 140 billion tokens, using C ≈ 6ND?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">5.9 × 10^12</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">5.9 × 10^21</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">9.8 × 10^20</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">6 × 10^9</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">5.9 × 10^12</button></li><li><button type="button" class="quiz-opt" data-correct="1">5.9 × 10^21</button></li><li><button type="button" class="quiz-opt" data-correct="0">9.8 × 10^20</button></li><li><button type="button" class="quiz-opt" data-correct="0">6 × 10^9</button></li></ol>
 <p class="quiz-expl" hidden>6 × 7e9 × 1.4e11 ≈ 5.9e21. That is the Chinchilla-style budget of 20 tokens per parameter.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> What is the role of the KL penalty in RLHF?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">It speeds up training</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">It keeps the tuned model close to its starting point so it cannot drift into exploiting the reward model</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">It removes the need for human preferences</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">It makes the model's outputs shorter</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It speeds up training</button></li><li><button type="button" class="quiz-opt" data-correct="1">It keeps the tuned model close to its starting point so it cannot drift into exploiting the reward model</button></li><li><button type="button" class="quiz-opt" data-correct="0">It removes the need for human preferences</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes the model's outputs shorter</button></li></ol>
 <p class="quiz-expl" hidden>Without it the policy can find degenerate outputs that score highly on an imperfect reward model.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> You need a model to extract invoice fields into JSON reliably. Which decoding setting fits best?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="1">Low temperature, such as 0 to 0.2</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Temperature 1.5 for variety</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">High top-k with high temperature</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">It makes no difference</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Low temperature, such as 0 to 0.2</button></li><li><button type="button" class="quiz-opt" data-correct="0">Temperature 1.5 for variety</button></li><li><button type="button" class="quiz-opt" data-correct="0">High top-k with high temperature</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes no difference</button></li></ol>
 <p class="quiz-expl" hidden>Tasks with one right answer want the most likely tokens, not creative variation.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> What distinguishes reasoning models from standard chat models?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">They have larger context windows</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">They are trained with RL on checkable problems to produce long reasoning before answering, and improve with more thinking tokens</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">They do not use transformers</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">They cannot hallucinate</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They have larger context windows</button></li><li><button type="button" class="quiz-opt" data-correct="1">They are trained with RL on checkable problems to produce long reasoning before answering, and improve with more thinking tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">They do not use transformers</button></li><li><button type="button" class="quiz-opt" data-correct="0">They cannot hallucinate</button></li></ol>
 <p class="quiz-expl" hidden>Test-time compute is a second scaling axis: more thinking, at higher latency and cost, for better accuracy on hard problems.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -370,7 +372,7 @@ C \approx 6ND \ \text{floating-point operations}
 <li>Hallucination follows from the objective. Mitigate it with retrieval, tools, citations, abstention and evaluation.</li>
 </ul>
 </div>
-<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" title="Link to this section">#</a></h3>
+<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" aria-label="Link to this section">#</a></h3>
 <ul>
 <li>Andrej Karpathy, "Let's build the GPT Tokenizer" and "Deep Dive into LLMs like ChatGPT" (videos)</li>
 <li>Hoffmann et al., "Training Compute-Optimal Large Language Models" (Chinchilla, arXiv 2203.15556)</li>
@@ -381,6 +383,7 @@ C \approx 6ND \ \text{floating-point operations}
 </ul>
 </div>
 <footer class="lesson-foot">
+
 <button type="button" class="complete-btn" data-complete="how-llms-are-built" data-sessions="4">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/08-transformers.html"><span>Previous</span>08 Attention and the transformer</a><a class="next" href="../lessons/10-llm-apis.html"><span>Next</span>10 Working with LLM APIs</a></nav>
 </footer>
@@ -388,7 +391,30 @@ C \approx 6ND \ \text{floating-point operations}
 </main>
 <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model</a></li><li><a href="#tokenization">Tokenization</a><ul><li><a href="#byte-pair-encoding-implemented">Byte-pair encoding, implemented</a></li></ul></li><li><a href="#pretraining">Pretraining</a><ul><li><a href="#the-objective">The objective</a></li><li><a href="#the-data">The data</a></li><li><a href="#compute-and-scaling-laws">Compute and scaling laws</a></li><li><a href="#architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards</a></li></ul></li><li><a href="#post-training-from-predictor-to-assistant">Post-training: from predictor to assistant</a><ul><li><a href="#1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)</a></li><li><a href="#2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF</a></li><li><a href="#3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)</a></li><li><a href="#4-ai-feedback-and-principles">4. AI feedback and principles</a></li><li><a href="#5-reasoning-models">5. Reasoning models</a></li></ul></li><li><a href="#decoding-turning-distributions-into-text">Decoding: turning distributions into text</a><ul><li><a href="#context-windows">Context windows</a></li></ul></li><li><a href="#why-models-make-things-up">Why models make things up</a></li><li><a href="#the-model-landscape">The model landscape</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
 </div>
-<script src="../assets/course-data.js"></script>
-<script src="../assets/app.js"></script>
+<nav class="lesson-bar" aria-label="Lesson">
+<a class="lb-btn" href="../lessons/08-transformers.html" aria-label="Previous lesson: Attention and the transformer"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+<button type="button" class="lb-toc" aria-expanded="false" aria-controls="toc-sheet"><span class="lb-where">09 · <span class="lb-section">How LLMs are built</span></span><span class="lb-pct" aria-hidden="true"><span></span></span></button>
+<a class="lb-btn" href="../lessons/10-llm-apis.html" aria-label="Next lesson: Working with LLM APIs"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+</nav>
+<div class="toc-sheet" id="toc-sheet" hidden><div class="toc-sheet-inner"><aside class="toc-sheet-list" aria-label="Contents"><p class="toc-title">Contents</p><ul><li><a href="#from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model</a></li><li><a href="#tokenization">Tokenization</a><ul><li><a href="#byte-pair-encoding-implemented">Byte-pair encoding, implemented</a></li></ul></li><li><a href="#pretraining">Pretraining</a><ul><li><a href="#the-objective">The objective</a></li><li><a href="#the-data">The data</a></li><li><a href="#compute-and-scaling-laws">Compute and scaling laws</a></li><li><a href="#architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards</a></li></ul></li><li><a href="#post-training-from-predictor-to-assistant">Post-training: from predictor to assistant</a><ul><li><a href="#1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)</a></li><li><a href="#2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF</a></li><li><a href="#3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)</a></li><li><a href="#4-ai-feedback-and-principles">4. AI feedback and principles</a></li><li><a href="#5-reasoning-models">5. Reasoning models</a></li></ul></li><li><a href="#decoding-turning-distributions-into-text">Decoding: turning distributions into text</a><ul><li><a href="#context-windows">Context windows</a></li></ul></li><li><a href="#why-models-make-things-up">Why models make things up</a></li><li><a href="#the-model-landscape">The model landscape</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside></div></div>
+<dialog class="settings" aria-labelledby="settings-title">
+<form method="dialog" class="settings-inner">
+<div class="settings-head"><h2 id="settings-title">Reading settings</h2><button class="icon-btn" value="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<fieldset><legend>Theme</legend><div class="seg-ctl" data-pref="theme"><button type="button" value="auto">Auto</button><button type="button" value="light">Light</button><button type="button" value="dark">Dark</button></div></fieldset>
+<fieldset><legend>Text size</legend><div class="seg-ctl" data-pref="size"><button type="button" value="s" aria-label="Small">A</button><button type="button" value="m" aria-label="Medium">A</button><button type="button" value="l" aria-label="Large">A</button><button type="button" value="xl" aria-label="Extra large">A</button></div></fieldset>
+<fieldset><legend>Typeface</legend><div class="seg-ctl" data-pref="font"><button type="button" value="serif">Literata</button><button type="button" value="sans">Atkinson Hyperlegible</button></div></fieldset>
+<fieldset class="sync"><legend>Progress on your other devices</legend>
+<p>Your ticks live in this browser. To carry them to your phone or computer, open this link there:</p>
+<div class="sync-row"><input class="sync-link" type="text" readonly aria-label="Sync link"><button type="button" class="btn-small sync-copy">Copy</button><button type="button" class="btn-small sync-share" hidden>Share</button></div>
+<p class="sync-note">Opening the link adds these ticks to the ones already there; nothing is removed.</p>
+</fieldset>
+<fieldset class="offline" hidden><legend>Offline reading</legend>
+<p class="offline-status">Lessons you open are saved for reading without a connection.</p>
+<button type="button" class="btn-small offline-all">Save every lesson for offline reading</button>
+</fieldset>
+</form>
+</dialog>
+<script src="../assets/course-data.js?v=da7d24f3"></script>
+<script src="../assets/app.js?v=da7d24f3"></script>
 </body>
 </html>

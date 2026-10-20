@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capstone projects and your AI engineering career | AI Engineering</title>
+<meta name="description" content="Prove your skills by building one end-to-end system from seven capstone specifications with rubrics, then turn the work into a portfolio, prepare for interviews with worked questions, and plan your next ninety days.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121a22" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Capstone projects and your AI engineering career">
+<meta property="og:description" content="Prove your skills by building one end-to-end system from seven capstone specifications with rubrics, then turn the work into a portfolio, prepare for interviews with worked questions, and plan your next ninety days.">
+<meta property="og:type" content="website">
+<link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
+<script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
+</head>
+<body class="is-lesson" data-root="../" data-page="capstones-career">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-controls="course-map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
+<div class="search" role="search">
+<input id="search-input" type="search" placeholder="Search the course" autocomplete="off" aria-label="Search the course" enterkeyhint="search">
+<button class="icon-btn search-close" type="button" aria-label="Close search"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<div class="search-results" hidden></div>
+</div>
+<button class="icon-btn search-toggle" type="button" aria-label="Search the course"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button class="icon-btn settings-toggle" type="button" aria-label="Reading settings and progress sync" aria-haspopup="dialog"><span class="aa" aria-hidden="true">Aa</span></button>
+</header>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9" title="00 Welcome and your AI workbench" tabindex="-1"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3" title="01 Python for AI work" tabindex="-1"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb" title="02 The maths behind AI" tabindex="-1"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff" title="03 Machine learning fundamentals" tabindex="-1"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff" title="04 Classical machine learning" tabindex="-1"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe" title="05 Neural networks from scratch" tabindex="-1"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0" title="06 Deep learning with PyTorch" tabindex="-1"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8" title="07 Text as numbers, sequences and embeddings" tabindex="-1"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8" title="08 Attention and the transformer" tabindex="-1"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb" title="09 How large language models are built" tabindex="-1"></a><a class="seg" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1" title="10 Working with LLM APIs" tabindex="-1"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7" title="11 Prompt engineering" tabindex="-1"></a><a class="seg" href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e" title="12 Reasoning models and test-time compute" tabindex="-1"></a><a class="seg" href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94" title="13 Embeddings and vector search" tabindex="-1"></a><a class="seg" href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a" title="14 Retrieval-augmented generation (RAG)" tabindex="-1"></a><a class="seg" href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e" title="15 Agents, tool use and MCP" tabindex="-1"></a><a class="seg" href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70" title="16 Context engineering and memory" tabindex="-1"></a><a class="seg" href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a" title="17 Evaluating LLM systems" tabindex="-1"></a><a class="seg" href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232" title="18 Fine-tuning language models" tabindex="-1"></a><a class="seg" href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05" title="19 Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging" tabindex="-1"></a><a class="seg" href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701" title="20 LLM inference in depth" tabindex="-1"></a><a class="seg" href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200" title="21 Deployment, serving and LLMOps" tabindex="-1"></a><a class="seg" href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07" title="22 Safety, security and responsible AI" tabindex="-1"></a><a class="seg" href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807" title="23 Multimodal AI: vision, documents, speech and image generation" tabindex="-1"></a><a class="seg" href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304" title="24 Search, planning and classical AI" tabindex="-1"></a><a class="seg" href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06" title="25 Reinforcement learning" tabindex="-1"></a><a class="seg" href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903" title="26 Generative models: autoencoders, VAEs, GANs, flows and diffusion" tabindex="-1"></a><a class="seg" href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307" title="27 Computer vision: detection, segmentation and beyond" tabindex="-1"></a><a class="seg" href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05" title="28 Time series, recommender systems and graphs" tabindex="-1"></a><a class="seg" href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005" title="29 Training at scale: GPUs, parallelism and efficient architectures" tabindex="-1"></a><a class="seg" href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05" title="30 Interpretability and explainability" tabindex="-1"></a><a class="seg" href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29" title="31 Designing AI systems" tabindex="-1"></a><a class="seg is-current" href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48" title="32 Capstone projects and your AI engineering career" tabindex="-1"></a><span class="read-progress"></span></div>
+<div class="layout">
+<nav class="course-map" id="course-map" aria-label="Course map">
+<ul class="map-pages"><li><a href="../index.html">Course home</a></li><li><a href="../schedule.html">Daily schedule</a></li><li><a href="../glossary.html">Glossary</a></li><li><a href="../resources.html">Further resources</a></li></ul>
+<section class="map-part" style="--pc:#a45ae9">
+<p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#8368fb">
+<p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#5877ff">
+<p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#0487f0">
+<p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#0b94bb">
+<p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#0b9b8a">
+<p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Reasoning models</span></a></li>
+<li><a href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Context engineering</span></a></li>
+<li><a href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Evaluation</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#479e05">
+<p class="map-part-name"><span class="roman">VII</span> Fine-tuning and inference</p><ol>
+<li><a href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Post-training in depth</span></a></li>
+<li><a href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">LLM inference</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#8b8c07">
+<p class="map-part-name"><span class="roman">VIII</span> Production</p><ol>
+<li><a href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07"><span class="dot" aria-hidden="true"></span><span class="num">22</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807"><span class="dot" aria-hidden="true"></span><span class="num">23</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#bc7307">
+<p class="map-part-name"><span class="roman">IX</span> The wider field</p><ol>
+<li><a href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304"><span class="dot" aria-hidden="true"></span><span class="num">24</span><span class="t">Classical AI and search</span></a></li>
+<li><a href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06"><span class="dot" aria-hidden="true"></span><span class="num">25</span><span class="t">Reinforcement learning</span></a></li>
+<li><a href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903"><span class="dot" aria-hidden="true"></span><span class="num">26</span><span class="t">Generative models</span></a></li>
+<li><a href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307"><span class="dot" aria-hidden="true"></span><span class="num">27</span><span class="t">Computer vision in depth</span></a></li>
+<li><a href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05"><span class="dot" aria-hidden="true"></span><span class="num">28</span><span class="t">Time series, recsys, graphs</span></a></li>
+<li><a href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005"><span class="dot" aria-hidden="true"></span><span class="num">29</span><span class="t">Training at scale</span></a></li>
+<li><a href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05"><span class="dot" aria-hidden="true"></span><span class="num">30</span><span class="t">Interpretability</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#ea3b48">
+<p class="map-part-name"><span class="roman">X</span> Mastery</p><ol>
+<li><a href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29"><span class="dot" aria-hidden="true"></span><span class="num">31</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">32</span><span class="t">Capstones and career</span></a></li>
+</ol></section>
+</nav>
+<div class="scrim" hidden></div>
+<main id="main" tabindex="-1">
+<article class="lesson" data-lesson="capstones-career" style="--lc:#ea3b48;--lct:#b7162d;--lctd:#ffa09c">
+<header class="lesson-head">
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part X, Mastery <span class="wl">700 nm</span></p>
+<h1><span class="lesson-num">32</span> Capstone projects and your AI engineering career</h1>
+<p class="lesson-summary">Prove your skills by building one end-to-end system from seven capstone specifications with rubrics, then turn the work into a portfolio, prepare for interviews with worked questions, and plan your next ninety days.</p>
+<p class="lesson-meta"><span>6 sessions</span><span>about 30 min of reading</span><span>6 code examples</span><span>6 hands-on exercises</span></p>
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Scope a capstone to one user and one job, and write its evaluation set before its code</li><li>Build a traced walking skeleton of an AI system and improve it one measured change at a time, with a decision log</li><li>Harden and deploy a capstone with attack tests, limits, a container and a cost and latency dashboard</li><li>Write a results-first technical write-up that a stranger can follow and reproduce</li><li>Answer the recurring AI engineering interview questions on fundamentals, LLM systems, inference and the wider field, and design a system aloud in trade-offs</li><li>Choose a career direction that fits your background and plan the next ninety days of building, learning and publishing</li></ul></section>
+<p class="prereq"><strong>Before you start:</strong> <a href="../lessons/31-system-design.html">31 AI system design</a>, <a href="../lessons/17-evaluation.html">17 Evaluation</a>, <a href="../lessons/21-deployment-llmops.html">21 Deployment and LLMOps</a></p>
+<div class="study-plan">
+<p class="plan-title">Study plan: 6 sessions of about an hour</p>
+<ol class="sessions"><li><label><input type="checkbox" data-session="capstones-career:0"><span>Choose and scope a capstone; set up the repository and the evaluation set first</span></label></li><li><label><input type="checkbox" data-session="capstones-career:1"><span>Build the walking skeleton: the core pipeline end to end, traced from day one</span></label></li><li><label><input type="checkbox" data-session="capstones-career:2"><span>Evaluate, harden and deploy: measured improvements, attack tests, a container and a dashboard</span></label></li><li><label><input type="checkbox" data-session="capstones-career:3"><span>Write it up: README, demo video and a technical write-up</span></label></li><li><label><input type="checkbox" data-session="capstones-career:4"><span>Interview preparation: concepts, coding and system design</span></label></li><li><label><input type="checkbox" data-session="capstones-career:5"><span>Career paths, continuous learning and your next ninety days</span></label></li></ol>
+<p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
+</div>
+<aside class="handson" aria-label="Hands-on notebook">
+<p class="handson-title"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Hands-on at your computer</p>
+<p>Read here on any screen. When a <span class="chip">At your computer</span> exercise comes up, open <code>notebooks/32-capstones-career.ipynb</code> in JupyterLab or VS Code and run the cells under the same heading.</p>
+<p class="handson-runs"><strong>Runs on:</strong> Any computer (CPU) for this workbook. The capstones themselves may need an API key or a GPU, as each specification says.</p>
+<p class="handson-links"><a href="https://colab.research.google.com/github/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/32-capstones-career.ipynb" rel="noopener">Open in Colab</a><a href="https://github.com/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/32-capstones-career.ipynb" rel="noopener">View on GitHub</a><a href="../notebooks/32-capstones-career.ipynb" download>Download notebook</a><a href="../notebooks/solutions/32-capstones-career-solutions.ipynb" download>Solutions</a></p>
+</aside>
+<p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
+</header>
+<div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 6</span>Choose and scope a capstone; set up the repository and the evaluation set first</p>
+<h2 id="why-a-capstone">Why a capstone<a class="headerlink" href="#why-a-capstone" aria-label="Link to this section">#</a></h2>
+<p>Courses build knowledge; projects build skill and evidence. One well-executed, end-to-end project, with an evaluation set, measured results and an honest write-up, says more to an employer or a team lead than a dozen certificates. It also exposes the gaps you did not know you had, which is the point.</p>
+<p>The six sessions of this lesson are a minimum. A good capstone takes two to six weeks of hour-a-day work. Let it.</p>
+<h2 id="how-to-run-your-capstone">How to run your capstone<a class="headerlink" href="#how-to-run-your-capstone" aria-label="Link to this section">#</a></h2>
+<ol>
+<li><strong>Scope narrowly.</strong> One user, one job, done well. "An assistant for everything about our instruments" fails; "answers calibration-procedure questions for model X from the service manual, with page citations" succeeds.</li>
+<li><strong>Evaluation set first.</strong> Before writing the system, write 30 to 50 test cases with expected outcomes (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>). This defines "done".</li>
+<li><strong>Walking skeleton.</strong> Get the crudest end-to-end version working in the first session, then improve the weakest stage, measuring each change.</li>
+<li><strong>Keep a decision log.</strong> For each significant choice, write what you chose, the alternatives and the evidence. This becomes the most impressive part of your write-up.</li>
+<li><strong>Finish.</strong> Deployed, documented and measured beats ambitious and half-built.</li>
+</ol>
+<h2 id="the-seven-capstones">The seven capstones<a class="headerlink" href="#the-seven-capstones" aria-label="Link to this section">#</a></h2>
+<p>Pick one. Each has a core specification, stretch goals and a rubric. Together they exercise everything in the course, including the wider field of part IX; if you do more than one later, choose ones that cover different parts.</p>
+<h3 id="capstone-a-technical-documentation-assistant-rag">Capstone A: technical documentation assistant (RAG)<a class="headerlink" href="#capstone-a-technical-documentation-assistant-rag" aria-label="Link to this section">#</a></h3>
+<p><strong>Build</strong> a question-answering assistant over a real document collection of at least 300 pages (manuals, standards, a project's documentation, public technical reports).</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>Parsing that handles the collection's real formats, including at least tables or scans (lessons <a class="ref" href="../lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a>, <a class="ref" href="../lessons/23-multimodal.html" title="Lesson 23: Multimodal AI: vision, documents, speech and image generation">23</a>).</li>
+<li>Hybrid retrieval with reranking; metadata filters (document type or product).</li>
+<li>Answers with inline citations to document and page or section; explicit "not in the documents" behaviour.</li>
+<li>An evaluation set of at least 60 questions (including 10 unanswerable), with retrieval and answer metrics reported for at least three configurations.</li>
+<li>A streaming API (FastAPI) and a minimal web or command-line interface; request tracing.</li>
+</ul>
+<p><strong>Stretch goals</strong>: contextual retrieval; conversational follow-ups with query rewriting and a conversation state kept under a token budget (lesson <a class="ref" href="../lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a>); an agentic mode for multi-part questions with a cost comparison; offline mode with a quantised local model (lesson <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a>).</p>
+<h3 id="capstone-b-operations-agent-with-mcp-tools">Capstone B: operations agent with MCP tools<a class="headerlink" href="#capstone-b-operations-agent-with-mcp-tools" aria-label="Link to this section">#</a></h3>
+<p><strong>Build</strong> an agent that helps operate something real or realistically simulated: a fleet of devices, a home lab, a cloud project, a data pipeline.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>An MCP server exposing at least four tools (mostly read-only) and one resource (lesson <a class="ref" href="../lessons/15-agents.html" title="Lesson 15: Agents, tool use and MCP">15</a>).</li>
+<li>At least one consequential tool protected by human approval showing the exact action.</li>
+<li>Step and cost limits; complete traces of every run.</li>
+<li>An evaluation of at least 25 tasks with checkable outcomes, reporting success rate, average steps, cost and latency.</li>
+<li>An attack set of at least 8 prompt-injection and misuse cases, with results before and after your defences (lesson <a class="ref" href="../lessons/22-safety-security.html" title="Lesson 22: Safety, security and responsible AI">22</a>).</li>
+</ul>
+<p><strong>Stretch goals</strong>: a planner that writes and updates an explicit plan; a reasoning model for the hardest tasks, routed by difficulty, with a cost comparison (lesson <a class="ref" href="../lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a>); long-term memory of past incidents via retrieval (lesson <a class="ref" href="../lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a>); a comparison with a fixed workflow for the most common tasks.</p>
+<h3 id="capstone-c-anomaly-detection-with-narrative-reports">Capstone C: anomaly detection with narrative reports<a class="headerlink" href="#capstone-c-anomaly-detection-with-narrative-reports" aria-label="Link to this section">#</a></h3>
+<p><strong>Build</strong> a pipeline over time-series data (your own sensor data, public air-quality or weather station data, server metrics) that detects anomalies and explains them.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>Data cleaning and feature engineering (lesson <a class="ref" href="../lessons/01-python-for-ai.html" title="Lesson 01: Python for AI work">01</a>) with documented choices.</li>
+<li>At least two detection methods (rules plus a statistical or ML detector) evaluated against labelled or injected anomalies with precision and recall (lesson <a class="ref" href="../lessons/04-classical-ml.html" title="Lesson 04: Classical machine learning">04</a>).</li>
+<li>An LLM step that turns each detection into a structured report (likely cause, evidence, confidence, recommended action), grounded in the data and any available logs.</li>
+<li>A judged evaluation of report quality on a sample, with a rubric.</li>
+<li>A daily scheduled run producing a readable summary.</li>
+</ul>
+<p><strong>Stretch goals</strong>: a chat interface for follow-up questions using tools over the data; a forecasting model whose residuals become a third detector (lesson <a class="ref" href="../lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a>); a feedback loop where confirmed or dismissed alerts improve thresholds.</p>
+<h3 id="capstone-d-distil-a-small-model-for-a-structured-task">Capstone D: distil a small model for a structured task<a class="headerlink" href="#capstone-d-distil-a-small-model-for-a-structured-task" aria-label="Link to this section">#</a></h3>
+<p><strong>Build</strong> a fine-tuned small open model that performs a narrow extraction or classification task nearly as well as a frontier model at a fraction of the cost.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A task with a strict output schema and a held-out evaluation set of at least 100 human-checked examples.</li>
+<li>A training set of at least 500 examples (distilled from a large model, reviewed by sampling).</li>
+<li>LoRA or QLoRA fine-tuning of a model of 3 billion parameters or fewer, with training and validation curves (lesson <a class="ref" href="../lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a>).</li>
+<li>Comparison of four systems on the eval set: small model prompted, small model fine-tuned, large model prompted, and a routed combination; report accuracy per field, latency and cost per thousand requests.</li>
+<li>Deployment of the fine-tuned model behind an OpenAI-compatible server (vLLM, Ollama or llama.cpp).</li>
+</ul>
+<p><strong>Stretch goals</strong>: quantise to 4-bit and measure the quality change (lesson <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a>); a preference-tuning round (DPO or a GRPO-style method) on pairs from your error analysis (lesson <a class="ref" href="../lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a>); run it on a CPU-only machine.</p>
+<h3 id="capstone-e-evaluation-and-observability-for-an-llm-feature">Capstone E: evaluation and observability for an LLM feature<a class="headerlink" href="#capstone-e-evaluation-and-observability-for-an-llm-feature" aria-label="Link to this section">#</a></h3>
+<p><strong>Build</strong> the evaluation and monitoring layer for an existing LLM feature: one from earlier in the course, an open-source project, or one at work (with permission).</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A golden dataset of at least 100 cases with slices, sourced from real or realistic usage (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>).</li>
+<li>Code graders plus at least two LLM-judge graders, each calibrated against at least 40 human grades with agreement reported.</li>
+<li>A harness producing per-slice reports with confidence intervals and fixed/broken case lists between two versions.</li>
+<li>CI integration that blocks a change on per-slice thresholds.</li>
+<li>A tracing setup and a dashboard of cost, latency percentiles and judged quality on sampled traffic (lesson <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a>).</li>
+</ul>
+<p><strong>Stretch goals</strong>: an online feedback loop that turns low-rated traces into candidate eval cases; drift detection on input topics; a red-team suite run nightly.</p>
+<h3 id="capstone-f-a-fast-cheap-inference-service-for-a-small-model">Capstone F: a fast, cheap inference service for a small model<a class="headerlink" href="#capstone-f-a-fast-cheap-inference-service-for-a-small-model" aria-label="Link to this section">#</a></h3>
+<p><strong>Build</strong> a serving system for a small open model (3 billion parameters or fewer; the one you fine-tuned in Capstone D is ideal) that is as fast and cheap as you can make it without losing measured quality, with an evaluation report that explains every number.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A quality eval set of at least 100 cases for the task the model serves, scored by code graders or a calibrated judge (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>), run against every configuration below.</li>
+<li>A load-testing harness that replays realistic traffic at several concurrency levels and reports time to first token, p50 and p95 latency, output tokens per second and requests per second (lessons <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a>, <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a>).</li>
+<li>At least three serving configurations compared on quality, latency, throughput and cost per million tokens: for example 16-bit versus 8-bit versus 4-bit weights, or with and without continuous batching and prefix caching.</li>
+<li>One decoding optimisation beyond batching, measured: speculative decoding with a small draft model (report acceptance rate and speed-up), or prefix caching for shared prompts (report hit rate and the change in time to first token).</li>
+<li>An evaluation report: one table of configurations against quality, latency, throughput and cost, the GPU or CPU memory arithmetic that explains the numbers, and a recommendation.</li>
+<li>Containerised deployment with health checks, metrics and a dashboard.</li>
+</ul>
+<p><strong>Stretch goals</strong>: distil or fine-tune the model to the task first (Capstone D); compare against a hosted API on cost and quality at your real volume, including prompt caching; serve on CPU with llama.cpp and compare; autoscaling under bursty load.</p>
+<h3 id="capstone-g-a-recommender-with-offline-and-online-evaluation">Capstone G: a recommender with offline and online evaluation<a class="headerlink" href="#capstone-g-a-recommender-with-offline-and-online-evaluation" aria-label="Link to this section">#</a></h3>
+<p><strong>Build</strong> a recommender over a real or public interaction dataset (MovieLens, a bookshop's orders, your own listening history, an open e-commerce dataset) that serves recommendations through an API and measures itself both offline and online.</p>
+<p><strong>Core requirements</strong></p>
+<ul>
+<li>A data pipeline with a time-based split (train on earlier interactions, evaluate on later ones) and documented handling of new users and new items (lesson <a class="ref" href="../lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a>).</li>
+<li>At least three recommenders compared: a popularity baseline, a collaborative-filtering model (matrix factorisation or item-to-item), and one more (a two-tower model, gradient boosting on features, or a graph method), reporting recall@k, NDCG@k and catalogue coverage (lessons <a class="ref" href="../lessons/04-classical-ml.html" title="Lesson 04: Classical machine learning">04</a>, <a class="ref" href="../lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a>).</li>
+<li>An API that serves top-k recommendations with p95 latency under 100 ms, using precomputed candidates and an approximate-nearest-neighbour index for embedding models (lesson <a class="ref" href="../lessons/13-embeddings-vector-search.html" title="Lesson 13: Embeddings and vector search">13</a>).</li>
+<li>An online evaluation design: an A/B test or interleaving with a primary metric, guardrail metrics, a sample-size estimate and an exposure log; run it with willing users or a simulated user model, and report it honestly (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>).</li>
+<li>An analysis of feedback loops and fairness: popularity bias, exposure of new items, and what a user with no history sees.</li>
+</ul>
+<p><strong>Stretch goals</strong>: LLM-written explanations for each recommendation; natural-language search over the catalogue with embeddings; a session-based model; a bandit for exploration (lesson <a class="ref" href="../lessons/25-reinforcement-learning.html" title="Lesson 25: Reinforcement learning">25</a>).</p>
+<p><strong>Other wider-field variants.</strong> If your domain is images, adapt Capstone C's structure into a visual inspection pipeline: a trained classifier or detector on your own labelled images, a precision-recall analysis at the operating threshold, drift monitoring, and an LLM summary of the defect log (lesson <a class="ref" href="../lessons/27-computer-vision.html" title="Lesson 27: Computer vision: detection, segmentation and beyond">27</a>). If it is control, train an RL policy in a simulator with a measured comparison against a hand-written controller (lesson <a class="ref" href="../lessons/25-reinforcement-learning.html" title="Lesson 25: Reinforcement learning">25</a>). Keep the same rubric.</p>
+<h3 id="rubric-applies-to-every-capstone">Rubric (applies to every capstone)<a class="headerlink" href="#rubric-applies-to-every-capstone" aria-label="Link to this section">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Developing</th>
+<th>Solid</th>
+<th>Excellent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Problem framing</td>
+<td>Vague goal</td>
+<td>Clear user, task and success criteria</td>
+<td>Criteria tied to the real cost of errors; scope deliberately narrow</td>
+</tr>
+<tr>
+<td>Evaluation</td>
+<td>A few manual checks</td>
+<td>Eval set with metrics, run on each change</td>
+<td>Sliced, statistically sound, judges calibrated, failures analysed</td>
+</tr>
+<tr>
+<td>Engineering</td>
+<td>Notebook only</td>
+<td>Clean repository, tests, reproducible setup</td>
+<td>Typed, tested, traced, containerised, configurable models</td>
+</tr>
+<tr>
+<td>Iteration</td>
+<td>One version</td>
+<td>Several measured improvements</td>
+<td>Decision log showing hypotheses, experiments and evidence</td>
+</tr>
+<tr>
+<td>Safety and cost</td>
+<td>Not considered</td>
+<td>Main risks addressed; cost estimated</td>
+<td>Attack tests, least privilege, cost per request measured and optimised</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td>Code only</td>
+<td>README with setup and results</td>
+<td>Write-up a stranger can follow, with honest limitations and next steps</td>
+</tr>
+</tbody>
+</table></div>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: scope your capstone</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>32-capstones-career.ipynb</code>, cell “Hands-on: scope your capstone”</p>
+<p>Write a one-page project brief before writing any code:</p>
+<ol>
+<li>One sentence: who it is for and what it does.</li>
+<li>Three measurable success criteria.</li>
+<li>Your data sources and how you will build the eval set.</li>
+<li>The simplest architecture that could work, as a sketch.</li>
+<li>The three riskiest assumptions, and how you will test each in the first week.</li>
+<li>What you will deliberately <strong>not</strong> build.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show an example brief (Capstone A)</summary>
+<p><strong>Who and what</strong>: answers calibration and maintenance questions for one instrument model from its 420-page service manual and 60 service bulletins, with page citations, for field technicians.</p>
+<p><strong>Success criteria</strong>: (1) correct page in the top 6 retrieved for at least 90% of 60 answerable test questions; (2) faithful, correctly cited answers for at least 85% as judged by a calibrated judge; (3) says "not in the documents" for at least 9 of 10 unanswerable questions; median time to first token under 2 seconds.</p>
+<p><strong>Data and eval</strong>: the PDF manual and bulletins; 40 questions from two experienced technicians plus 20 reviewed synthetic questions and 10 unanswerable ones; gold page numbers recorded for each.</p>
+<p><strong>Architecture</strong>: Docling parsing, section-level chunks with title and section path, BM25 plus embeddings with RRF, cross-encoder reranking to 6, a mid-tier model with the grounded prompt, FastAPI streaming, JSON-line traces.</p>
+<p><strong>Riskiest assumptions</strong>: tables of torque values parse correctly (test 10 tables on day one); technicians phrase questions very differently from the manual (collect real questions early); bulletins that supersede manual sections can be detected (check metadata).</p>
+<p><strong>Not building</strong>: user accounts, a mobile app, multi-manual support, fine-tuning.</p>
+</details>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="capstones-career:0"><span>Done with session 1: Choose and scope a capstone; set up the repository and the evaluation set first</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 6</span>Build the walking skeleton: the core pipeline end to end, traced from day one</p></div>
+<h2 id="build-the-walking-skeleton">Build the walking skeleton<a class="headerlink" href="#build-the-walking-skeleton" aria-label="Link to this section">#</a></h2>
+<p>The goal of this session is one request going through every stage of your system and coming out the other end with a trace, however bad the answer. A <strong>walking skeleton</strong> is deliberately crude: keyword lookup instead of retrieval, a template instead of a model call, a fixed threshold instead of a trained detector. What matters is that every stage exists and every run is measured.</p>
+<p>Set the repository up so that change stays cheap, as lesson <a class="ref" href="../lessons/31-system-design.html" title="Lesson 31: Designing AI systems">31</a> argued:</p>
+<ul>
+<li><strong>One entry point</strong>: a <code>pipeline(input)</code> function (or class) that calls each stage in turn. Everything else, including the API and the eval harness, calls it.</li>
+<li><strong>Configuration in one place</strong>: model names, thresholds, top-k values and prompts live in a settings file or module, never inline, so an experiment is a one-line change (lesson <a class="ref" href="../lessons/10-llm-apis.html" title="Lesson 10: Working with LLM APIs">10</a>).</li>
+<li><strong>Traces from day one</strong>: each run writes one JSON line with the input, each stage's output, timing and cost. You will debug from these, and they become eval cases (lesson <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a>).</li>
+<li><strong>Deterministic where possible</strong>: fixed seeds, temperature zero for graded calls, pinned package versions.</li>
+</ul>
+<p>A minimal harness ties the pipeline to the eval cases you wrote in session 1. It is a dozen lines, and you will run it hundreds of times:</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_eval</span><span class="p">(</span><span class="n">pipeline</span><span class="p">,</span> <span class="n">grade</span><span class="p">,</span> <span class="n">cases</span><span class="p">,</span> <span class="n">trace_path</span><span class="o">=</span><span class="s2">&quot;traces.jsonl&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run every case through the pipeline, trace it, return the pass rate.&quot;&quot;&quot;</span>
+    <span class="n">passed</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">trace_path</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">:</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="n">case</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">])</span>
+            <span class="n">ok</span> <span class="o">=</span> <span class="n">grade</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;expected&quot;</span><span class="p">])</span>
+            <span class="n">passed</span> <span class="o">+=</span> <span class="n">ok</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">case</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">],</span>
+                                <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">,</span> <span class="s2">&quot;passed&quot;</span><span class="p">:</span> <span class="n">ok</span><span class="p">,</span>
+                                <span class="s2">&quot;seconds&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)})</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">passed</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">cases</span><span class="p">)</span></code></pre></div>
+<p>Then the loop that fills the rest of the session, and the next two weeks: run the harness, open the ten worst traces, find the stage that failed most often, improve only that stage, run again, and write one line in the decision log.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a traced walking skeleton</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>32-capstones-career.ipynb</code>, cell “Hands-on: a traced walking skeleton”</p>
+<p>Build the skeleton for your capstone in the notebook, with placeholders where the real components will go.</p>
+<ol>
+<li>Write at least ten eval cases in the format below and save them as <code>eval_cases.jsonl</code>. Include two that should be refused or abstained on.</li>
+<li>Write <code>pipeline(text)</code> with every stage present as a function, using the simplest logic you can: keyword matching for retrieval, a fixed template for generation, rules for detection. Every stage returns something that goes into the result dictionary.</li>
+<li>Write <code>grade(result, expected)</code>, a code grader that returns 1 or 0.</li>
+<li>Run <code>run_eval</code> and read <code>traces.jsonl</code>.</li>
+</ol>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">cases</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;q-001&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;Replace with a real question&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;expected&quot;</span><span class="p">:</span> <span class="s2">&quot;what a correct answer must contain&quot;</span><span class="p">,</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;lookup&quot;</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;q-002&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;A question your data cannot answer&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;expected&quot;</span><span class="p">:</span> <span class="s2">&quot;NOT_IN_DOCS&quot;</span><span class="p">,</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;unanswerable&quot;</span><span class="p">]},</span>
+<span class="p">]</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;eval_cases.jsonl&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cases</span><span class="p">),</span> <span class="s2">&quot;cases written&quot;</span><span class="p">)</span></code></pre></div>
+<p>You are done when every stage appears in every trace line and the harness prints a pass rate, however low.</p>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>The solutions notebook builds a skeleton for Capstone A over a six-paragraph toy corpus: <code>retrieve</code> scores paragraphs by the number of query words they contain, <code>generate</code> returns the best paragraph with its id as the citation or <code>NOT_IN_DOCS</code> when no word matches, and <code>grade</code> checks that the expected phrase is in the answer. It prints:</p>
+<div class="highlight" data-lang="text"><div class="code-head"><span class="code-label">Text</span></div><pre><code>10 cases written
+pass rate: 0.7
+worst traces: q-006 q-009 q-010</code></pre></div>
+<p>Opening the failed traces shows two kinds of failure, both in retrieval: a paraphrased question picks the wrong paragraph, and the two unanswerable questions are never refused, because counting raw words (including "the") always finds some paragraph to return. That is the first entry in the decision log, and the first thing to improve in session 3.</p>
+</details>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="capstones-career:1"><span>Done with session 2: Build the walking skeleton: the core pipeline end to end, traced from day one</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 6</span>Evaluate, harden and deploy: measured improvements, attack tests, a container and a dashboard</p></div>
+<h2 id="evaluate-harden-and-deploy">Evaluate, harden and deploy<a class="headerlink" href="#evaluate-harden-and-deploy" aria-label="Link to this section">#</a></h2>
+<p>With the skeleton running, the next sessions are an improvement loop. Three habits separate projects that converge from projects that wander.</p>
+<h3 id="one-change-at-a-time-with-an-interval">One change at a time, with an interval<a class="headerlink" href="#one-change-at-a-time-with-an-interval" aria-label="Link to this section">#</a></h3>
+<p>Change one stage, rerun the whole eval set, and compare. Two pass rates are not enough: with 50 cases, a change of three cases is noise. Use the paired bootstrap from lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a> to put an interval on the difference, and list the cases that were fixed and broken, because a change that fixes eight and breaks six has taught you something about two kinds of input.</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">paired_bootstrap</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean change and a 95% interval for the change in pass rate between two</span>
+<span class="sd">    runs on the same cases.&quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">)))</span>
+    <span class="n">diffs</span> <span class="o">=</span> <span class="n">after</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">before</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">after</span> <span class="o">-</span> <span class="n">before</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">diffs</span><span class="p">,</span> <span class="p">[</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">97.5</span><span class="p">])</span></code></pre></div>
+<h3 id="harden">Harden<a class="headerlink" href="#harden" aria-label="Link to this section">#</a></h3>
+<p>Before anyone else uses it: an attack set of injection and misuse cases run like any other eval (lesson <a class="ref" href="../lessons/22-safety-security.html" title="Lesson 22: Safety, security and responsible AI">22</a>); step, token and cost limits on every loop; input validation and a defined failure behaviour for every stage (what the user sees when retrieval returns nothing or the model times out); and least privilege for every tool and credential.</p>
+<h3 id="deploy">Deploy<a class="headerlink" href="#deploy" aria-label="Link to this section">#</a></h3>
+<p>Deployed means a stranger can try it: a container, a streaming API with health checks, metrics for cost and latency percentiles, and a dashboard you can screenshot for the write-up (lesson <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a>). If you serve a model yourself, this is where the levers of lesson <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a> pay off: quantise, batch, cache the shared prefix, and measure again. Cost per request is measured from traces, not estimated.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: one measured improvement</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>32-capstones-career.ipynb</code>, cell “Hands-on: one measured improvement”</p>
+<ol>
+<li>Make one real change to the weakest stage of your skeleton (for Capstone A, replace keyword counting with ranking by the fraction of query words matched, or with embeddings from lesson <a class="ref" href="../lessons/13-embeddings-vector-search.html" title="Lesson 13: Embeddings and vector search">13</a>).</li>
+<li>Run the harness again into a second trace file.</li>
+<li>From the two trace files, list the fixed and broken case ids and compute <code>paired_bootstrap</code> on the per-case results.</li>
+<li>Write the decision-log row: date, decision, alternatives, evidence (the interval), result.</li>
+</ol>
+<p>You are done when you have a decision-log row with an interval in it, and can say whether the change is real or noise.</p>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>The solutions notebook ranks paragraphs by the fraction of query words matched after lower-casing, stripping punctuation and dropping stopwords, and abstains when even the best paragraph matches less than half of them. Reading both trace files back and comparing per case prints:</p>
+<div class="highlight" data-lang="text"><div class="code-head"><span class="code-label">Text</span></div><pre><code>before 0.7  after 0.8
+fixed: [&#39;q-009&#39;, &#39;q-010&#39;]  broke: [&#39;q-005&#39;]
+change +0.10  95% interval [-0.2, 0.4]</code></pre></div>
+<p>The change fixed both unanswerable cases (the skeleton now abstains) and broke one paraphrase, because "installing" no longer matches "install" once whole words are compared. That is exactly what the fixed and broken lists are for: the next decision-log row is about stemming or embeddings, not about the overall number. With ten cases the interval spans zero, so the decision-log row should say that the evidence is thin and that the honest next step is more cases, not a bigger model.</p>
+</details>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="capstones-career:2"><span>Done with session 3: Evaluate, harden and deploy: measured improvements, attack tests, a container and a dashboard</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 6</span>Write it up: README, demo video and a technical write-up</p></div>
+<h2 id="write-it-up">Write it up<a class="headerlink" href="#write-it-up" aria-label="Link to this section">#</a></h2>
+<p>Your write-up is what most people will see. Structure it like a short engineering report:</p>
+<ol>
+<li><strong>The problem</strong> in two sentences, and a 60-second demo video or animated GIF at the top.</li>
+<li><strong>Results first</strong>: a table of your final metrics against the baseline, with intervals.</li>
+<li><strong>Architecture</strong>: one diagram and a paragraph per component.</li>
+<li><strong>What I tried</strong>: the decision log, condensed. Include things that did not work and why; this is often the most impressive part.</li>
+<li><strong>Limitations and next steps</strong>, honestly.</li>
+<li><strong>How to run it</strong>: setup in under five commands.</li>
+</ol>
+<p>Publish the repository, and consider a blog post. Clear writing about a real project is one of the strongest signals of an engineer who can work on a team. If an AI assistant helps you draft it, keep your own voice and check every number against your traces; reviewers notice prose that claims more than the results table shows.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a results-first README</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>32-capstones-career.ipynb</code>, cell “Hands-on: a results-first README”</p>
+<p>Draft the first screen of your README, the part a reader sees without scrolling:</p>
+<ol>
+<li>The problem in two sentences, naming the user.</li>
+<li>A results table: baseline versus final on your two or three headline metrics, with the interval or sample size, plus cost per thousand requests and p50 latency.</li>
+<li>Three bullet points of "what I tried", each with the evidence and including one thing that did not work.</li>
+<li>The five commands to run it.</li>
+</ol>
+<p>You are done when a colleague who has never seen the project can say in one minute what it does, how well, and how to try it.</p>
+</div>
+<details class="solution">
+<summary>Show an example first screen (Capstone F)</summary>
+<p><strong>Problem</strong>: a 3B model extracts structured fields from maintenance tickets for a fleet of 200 instruments. Technicians need results in under a second, and the team wants to serve it on one small GPU.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Field accuracy (n=120)</th>
+<th>p50 / p95 latency</th>
+<th>Cost per 1,000 requests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hosted API (baseline)</td>
+<td>0.93</td>
+<td>1.4 s / 2.9 s</td>
+<td>measured, in the report</td>
+</tr>
+<tr>
+<td>Self-hosted 16-bit, no batching</td>
+<td>0.91</td>
+<td>0.9 s / 3.1 s</td>
+<td>measured</td>
+</tr>
+<tr>
+<td>Self-hosted 4-bit, batched, prefix cache</td>
+<td>0.90</td>
+<td>0.4 s / 0.8 s</td>
+<td>measured</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>What I tried</strong>: 4-bit weights cost one point of accuracy and halved memory (interval on the difference included zero, so treated as a tie); speculative decoding with a 0.5B draft gave a 1.6 times decode speed-up at an acceptance rate of about 70%, but fell to no gain on short outputs, so it is off by default; constrained JSON decoding removed every schema error but added 15% to latency.</p>
+<p><strong>Run it</strong>: clone, <code>docker compose up</code>, <code>make eval</code>, <code>make load-test</code>, open the dashboard. The real README has the measured costs in the table; never publish a results table with placeholders.</p>
+</details>
+<div class="session-break" id="session-5"><label class="sb-done"><input type="checkbox" data-session="capstones-career:3"><span>Done with session 4: Write it up: README, demo video and a technical write-up</span></label><p class="sb-next"><span class="sb-kicker">Session 5 of 6</span>Interview preparation: concepts, coding and system design</p></div>
+<h2 id="interview-preparation">Interview preparation<a class="headerlink" href="#interview-preparation" aria-label="Link to this section">#</a></h2>
+<p>AI engineering interviews typically combine coding, ML and LLM fundamentals, system design and a discussion of your projects. The concept questions below come up repeatedly. Answer each aloud in under two minutes before opening the suggested answer.</p>
+<details class="note">
+<summary>Explain the bias-variance trade-off and how you diagnose it.</summary>
+<p>Bias is error from overly simple assumptions (underfitting: high training and validation error); variance is error from sensitivity to the particular training data (overfitting: low training error, high validation error). Diagnose by comparing training and validation error; fix underfitting with more capacity or better features, overfitting with more data, regularisation, simpler models or early stopping (lesson <a class="ref" href="../lessons/03-ml-fundamentals.html" title="Lesson 03: Machine learning fundamentals">03</a>).</p>
+</details>
+<details class="note">
+<summary>Walk through scaled dot-product attention. Why divide by √d_k?</summary>
+<p>Each token's query is dotted with every key, scaled, softmaxed into weights, and used to average the values: softmax(QKᵀ/√d_k)V. Dot products of random d-dimensional vectors have standard deviation √d, so without scaling large dimensions push softmax into saturation and gradients vanish (lesson <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a>).</p>
+</details>
+<details class="note">
+<summary>What is the KV cache, and why does it matter for serving?</summary>
+<p>During generation, keys and values of previous tokens are stored so each step only computes the new token's projections. It makes generation efficient but consumes memory proportional to layers × KV heads × head dimension × context length × concurrent sequences, which often limits how many users a GPU can serve; paged allocation and grouped-query attention exist to shrink it (lessons <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a> and <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a>).</p>
+</details>
+<details class="note">
+<summary>How do quantisation, batching and speculative decoding make serving cheaper?</summary>
+<p>Decoding one token reads every weight once, so it is bound by memory bandwidth, not arithmetic. Quantisation stores weights in 8 or 4 bits, cutting memory and the bytes read per token, at a small and measurable quality cost. Continuous batching serves many sequences per weight read, raising throughput without hurting each request much. Speculative decoding lets a small draft model propose several tokens that the large model verifies in one parallel pass, producing the same distribution faster when the acceptance rate is high (lesson <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a>).</p>
+</details>
+<details class="note">
+<summary>When would you use a reasoning model, and what does it cost?</summary>
+<p>Reasoning models spend extra tokens thinking before they answer, which helps on multi-step problems: maths, code, planning, diagnosis across several pieces of evidence. The cost is latency and output tokens, controlled by a thinking budget. They are not better at everything, so route only the hard cases to them, evaluate on your own set, and keep extraction and lookup on a standard model (lesson <a class="ref" href="../lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a>).</p>
+</details>
+<details class="note">
+<summary>What is context engineering, and how does memory work in an agent?</summary>
+<p>Context engineering is deciding what enters the model's window on each turn: instructions, tools, retrieved documents, recent history and memory, within a token budget. Long conversations are compacted into rolling summaries; durable facts go to an external memory store and are retrieved when relevant rather than carried forever; stable prefixes are ordered first so that prompt caching applies (lesson <a class="ref" href="../lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a>).</p>
+</details>
+<details class="note">
+<summary>How would you reduce hallucinations in a customer-facing assistant?</summary>
+<p>Ground answers in retrieved sources with citations; instruct and allow abstention; use structured outputs and tools for facts and arithmetic; lower temperature for factual tasks; add a faithfulness check step for high-risk answers; evaluate faithfulness and abstention on a golden set and monitor them in production (lessons <a class="ref" href="../lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a> and <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>).</p>
+</details>
+<details class="note">
+<summary>RAG versus fine-tuning versus long context: how do you choose?</summary>
+<p>RAG for knowledge that is large, changing, access-controlled or needs citations. Fine-tuning for behaviour, format, style, or making a small model do a narrow task cheaply. Long context with caching for small, stable collections where simplicity matters. Often combined (lessons <a class="ref" href="../lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a>, <a class="ref" href="../lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a> and <a class="ref" href="../lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a>).</p>
+</details>
+<details class="note">
+<summary>Explain LoRA. Why does it work, and what does it save?</summary>
+<p>Freeze the pretrained weights and learn a low-rank update BA (rank r much smaller than the layer dimensions), scaled by α/r, with B initialised to zero. Weight updates during fine-tuning have low intrinsic rank, so this captures most of the benefit while training under 1% of the parameters, cutting optimiser memory dramatically and producing small swappable adapters; QLoRA also stores the base model in 4-bit (lesson <a class="ref" href="../lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a>).</p>
+</details>
+<details class="note">
+<summary>How do you evaluate an LLM feature when outputs are open-ended?</summary>
+<p>A golden dataset from real usage with hard and negative cases; code graders for anything rule-based; LLM judges on specific criteria with clear rubrics, structured verdicts, order swapping for pairwise comparisons, and calibration against human grades; per-slice reporting with confidence intervals and fixed/broken case analysis; online signals in production (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>).</p>
+</details>
+<details class="note">
+<summary>What is prompt injection and how do you defend against it?</summary>
+<p>Instructions embedded in content the model reads (direct from users, or indirect via documents, web pages, tool results) that try to override the system's instructions. No complete fix exists, so defend in depth: separate and label untrusted content, but above all limit impact with least-privilege tools, human approval for consequential actions, output filtering, safe rendering and avoiding agents that combine untrusted input, private data and external communication (lesson <a class="ref" href="../lessons/22-safety-security.html" title="Lesson 22: Safety, security and responsible AI">22</a>).</p>
+</details>
+<details class="note">
+<summary>Explain RLHF, DPO and the RL methods behind reasoning models.</summary>
+<p>RLHF: collect human preference comparisons, train a reward model to predict them, then optimise the language model with reinforcement learning (PPO) to maximise reward with a KL penalty that keeps it close to the supervised model. DPO: skip the reward model and RL, and optimise the preference pairs directly with a classification-style loss relative to a frozen reference model; simpler and more stable. Reasoning models are trained with RL against verifiable rewards (a test passes, an answer matches), with group-based methods such as GRPO that drop the separate value model (lessons <a class="ref" href="../lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a>, <a class="ref" href="../lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a> and <a class="ref" href="../lessons/25-reinforcement-learning.html" title="Lesson 25: Reinforcement learning">25</a>).</p>
+</details>
+<details class="note">
+<summary>When is a language model the wrong tool?</summary>
+<p>When the task is numbers, structure or control at volume: tabular prediction (gradient boosting), forecasting (seasonal baselines and boosting on lag features), ranking for users (collaborative filtering), images at scale (a trained CNN or vision transformer), routes and schedules (search and constraint solvers), actions with delayed reward (reinforcement learning). The language model then does the language around it: parsing requests, explaining results, writing reports (lesson <a class="ref" href="../lessons/31-system-design.html" title="Lesson 31: Designing AI systems">31</a> and part IX).</p>
+</details>
+<details class="note">
+<summary>How do you evaluate a recommender?</summary>
+<p>Offline: a time-based split, recall@k and NDCG@k against the held-out interactions, always against a popularity baseline, with coverage to catch a model that only recommends hits. Offline metrics are biased by what the old system showed people, so the decision is made online: an A/B test with a primary metric, guardrail metrics and a sample-size estimate, watching for feedback loops (lesson <a class="ref" href="../lessons/28-time-series-recsys-graphs.html" title="Lesson 28: Time series, recommender systems and graphs">28</a>).</p>
+</details>
+<details class="note">
+<summary>Your RAG system's answers got worse after a change. How do you debug it?</summary>
+<p>Reproduce on the eval set and list newly broken cases. For each, check the trace: was the right chunk retrieved (parsing, chunking, embedding, filters)? Was it ranked high enough (reranker)? Was it in the prompt but ignored or contradicted (prompt, model, context length)? Fix the stage responsible, re-run the full eval, and add the cases to the regression set (lessons <a class="ref" href="../lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a>, <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a> and <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a>).</p>
+</details>
+<h3 id="coding-interviews">Coding interviews<a class="headerlink" href="#coding-interviews" aria-label="Link to this section">#</a></h3>
+<p>Expect standard software engineering questions plus ML-flavoured ones. Practise implementing, without libraries and against a timer: softmax and cross-entropy; logistic regression with gradient descent; k-means; a cosine-similarity top-k search; scaled dot-product attention with a causal mask; a BPE merge step; a value-iteration sweep on a small gridworld; a 2D convolution by hand; a token-bucket rate limiter; and an async function that calls an API with retries and a concurrency limit. You have written versions of almost all of these in this course. Many interviews now allow an AI coding assistant; when they do, the interviewer is watching how you specify, test and verify, so narrate that.</p>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a timed coding drill</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>32-capstones-career.ipynb</code>, cell “Hands-on: a timed coding drill”</p>
+<p>Set a timer for twenty minutes and, in NumPy only, implement:</p>
+<ol>
+<li><code>top_k_cosine(query, matrix, k)</code>: the indices of the k rows of <code>matrix</code> most similar to <code>query</code> by cosine similarity, most similar first.</li>
+<li><code>causal_attention(Q, K, V)</code>: scaled dot-product attention with a causal mask, for a single head with shapes (n, d).</li>
+</ol>
+<p>Then write three asserts for each: a hand-checkable case, a shape check and an edge case (a zero vector; n equal to 1). You are done when all six asserts pass inside the time limit, and you can explain both functions aloud without looking.</p>
+</div>
+<details class="solution">
+<summary>Show what you should find</summary>
+<p>Normalise the rows and the query, take the dot product, and use <code>argsort</code> on the negative similarities (or <code>argpartition</code> for large matrices). For attention, build the mask with <code>np.triu(..., k=1)</code>, set those scores to minus infinity before the softmax, and subtract the row maximum for stability. The solutions notebook prints:</p>
+<div class="highlight" data-lang="text"><div class="code-head"><span class="code-label">Text</span></div><pre><code>top-3 for the query: [2 0 3]
+attention row sums: [1. 1. 1. 1.]
+first row attends only to itself: True
+all asserts passed</code></pre></div>
+</details>
+<h3 id="system-design-interviews">System design interviews<a class="headerlink" href="#system-design-interviews" aria-label="Link to this section">#</a></h3>
+<p>Use the eight-part framework from lesson <a class="ref" href="../lessons/31-system-design.html" title="Lesson 31: Designing AI systems">31</a> and practise on prompts such as: a customer-support assistant for a software company; semantic search over a million product listings; a code-review bot; a meeting summariser; content moderation for a forum; an agent that books travel within a company policy; a recommendation feed for a news app; a visual inspection station; demand forecasting for a warehouse. Talk in trade-offs, estimate costs and latency with rough numbers, say which problems do not need a language model, and always say how you would evaluate it.</p>
+<h3 id="talking-about-your-projects">Talking about your projects<a class="headerlink" href="#talking-about-your-projects" aria-label="Link to this section">#</a></h3>
+<p>Prepare a three-minute story for your capstone: the problem, your approach, one hard decision and the evidence behind it, the results, and what you would do next. Interviewers listen for measurement and judgement more than for the fanciest technique.</p>
+<div class="session-break" id="session-6"><label class="sb-done"><input type="checkbox" data-session="capstones-career:4"><span>Done with session 5: Interview preparation: concepts, coding and system design</span></label><p class="sb-next"><span class="sb-kicker">Session 6 of 6</span>Career paths, continuous learning and your next ninety days</p></div>
+<h2 id="career-paths-and-the-next-ninety-days">Career paths and the next ninety days<a class="headerlink" href="#career-paths-and-the-next-ninety-days" aria-label="Link to this section">#</a></h2>
+<h3 id="where-this-course-can-take-you">Where this course can take you<a class="headerlink" href="#where-this-course-can-take-you" aria-label="Link to this section">#</a></h3>
+<p>Job titles in this field change faster than the work does. In late 2026 these are the directions you will see advertised, under varying names:</p>
+<ul>
+<li><strong>AI engineer / LLM application engineer</strong>: building products on models, including agents. The direct target of this course. Some teams call the customer-facing version of this role <strong>forward-deployed engineer</strong>: you build with the customer's data and constraints, which rewards exactly the design and evaluation habits in lesson <a class="ref" href="../lessons/31-system-design.html" title="Lesson 31: Designing AI systems">31</a>.</li>
+<li><strong>ML engineer / MLOps / inference and platform engineer</strong>: training pipelines, serving infrastructure, model platforms. Go deeper on lessons <a class="ref" href="../lessons/06-pytorch.html" title="Lesson 06: Deep learning with PyTorch">06</a>, <a class="ref" href="../lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a>, <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a>, <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a> and <a class="ref" href="../lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a>, plus distributed systems.</li>
+<li><strong>Applied scientist / research engineer</strong>: new methods and models. Go deeper on maths, papers, lessons <a class="ref" href="../lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a> and <a class="ref" href="../lessons/29-training-at-scale.html" title="Lesson 29: Training at scale: GPUs, parallelism and efficient architectures">29</a>, and large-scale experiments.</li>
+<li><strong>Evaluation, safety and interpretability</strong>: a growing specialism in its own right. Go deeper on lessons <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>, <a class="ref" href="../lessons/22-safety-security.html" title="Lesson 22: Safety, security and responsible AI">22</a> and <a class="ref" href="../lessons/30-interpretability.html" title="Lesson 30: Interpretability and explainability">30</a>.</li>
+<li><strong>Domain expert who builds with AI</strong>: often the most valuable profile of all. Deep knowledge of a field (atmospheric science, instrumentation, medicine, law, finance) combined with these skills lets you build things generalists cannot even specify. If you already have a domain, lean into it.</li>
+</ul>
+<p>Two cautions. First, do not plan around salary surveys or demand statistics; they go stale within a year and vary enormously by country, and this course deliberately quotes none. Second, hiring in 2026 assumes you use AI coding tools daily; what distinguishes candidates is whether they can specify a problem, build an evaluation and verify what the tools produce. That is the skill this course has been training all along.</p>
+<h3 id="keep-growing">Keep growing<a class="headerlink" href="#keep-growing" aria-label="Link to this section">#</a></h3>
+<ul>
+<li><strong>Build in public</strong>: a project or write-up every month or two.</li>
+<li><strong>Contribute</strong> to open-source AI tools you use: documentation, examples and bug reports count.</li>
+<li><strong>Teach</strong>: explaining forces understanding. Write the post you wish you had found.</li>
+<li><strong>Revisit fundamentals yearly</strong>: reread your learning log and redo two or three hands-on exercises; you will be surprised what you now see.</li>
+<li><strong>Pick a lesson from part IX you skipped</strong> and do it properly; the breadth is what lets you say "this is not a language-model problem" with confidence.</li>
+</ul>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: your ninety-day plan</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>32-capstones-career.ipynb</code>, cell “Hands-on: your ninety-day plan”</p>
+<p>Write a plan with three 30-day blocks. For each block: one thing to build, one topic to go deeper on, one thing to publish, and one way to get feedback from people more experienced than you. Put it at the top of your learning log, and schedule a review at day 30.</p>
+</div>
+<details class="solution">
+<summary>Show an example plan</summary>
+<p><strong>Days 1 to 30</strong>: build Capstone A on the service manuals you use at work (with permission, or on public equivalents); go deeper on retrieval evaluation; publish the repository with a results table; get feedback by demoing to two colleagues who would actually use it.</p>
+<p><strong>Days 31 to 60</strong>: extend it with an MCP server and an agent mode (Capstone B ideas); go deeper on security and prompt injection; publish a write-up of what worked and what did not; get feedback by asking a security-minded colleague to attack it.</p>
+<p><strong>Days 61 to 90</strong>: distil the most common query type into a fine-tuned small model and serve it quantised and batched (Capstones D and F); go deeper on inference optimisation; publish a cost-and-quality comparison; get feedback through an open-source contribution or a talk at a local meetup.</p>
+</details>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" aria-label="Link to this section">#</a></h2>
+<div class="quiz" data-quiz>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">1.</span> What should you build first in a capstone?</p>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The user interface</button></li><li><button type="button" class="quiz-opt" data-correct="0">The most advanced component</button></li><li><button type="button" class="quiz-opt" data-correct="1">The evaluation set, then a crude end-to-end walking skeleton</button></li><li><button type="button" class="quiz-opt" data-correct="0">A fine-tuned model</button></li></ol>
+<p class="quiz-expl" hidden>The eval set defines done; the skeleton exposes integration problems early.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">2.</span> What makes a capstone write-up most convincing?</p>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Using as many techniques as possible</button></li><li><button type="button" class="quiz-opt" data-correct="1">Measured results against a baseline, a decision log including what failed, and honest limitations</button></li><li><button type="button" class="quiz-opt" data-correct="0">A long list of libraries used</button></li><li><button type="button" class="quiz-opt" data-correct="0">Screenshots of the code</button></li></ol>
+<p class="quiz-expl" hidden>Evidence and judgement are what reviewers and interviewers look for.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">3.</span> In a system design interview, what should you always cover?</p>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Which programming language you prefer</button></li><li><button type="button" class="quiz-opt" data-correct="1">How you would evaluate the system, alongside trade-offs and rough cost and latency estimates</button></li><li><button type="button" class="quiz-opt" data-correct="0">The exact model name to use</button></li><li><button type="button" class="quiz-opt" data-correct="0">Only the happy path</button></li></ol>
+<p class="quiz-expl" hidden>Evaluation and trade-offs separate senior answers from junior ones.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">4.</span> Why is deep domain expertise valuable for an AI engineer?</p>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">It lets you identify problems worth solving, specify what good looks like, and build evaluation sets generalists cannot</button></li><li><button type="button" class="quiz-opt" data-correct="0">Domain experts do not need to evaluate systems</button></li><li><button type="button" class="quiz-opt" data-correct="0">It replaces the need for engineering skills</button></li><li><button type="button" class="quiz-opt" data-correct="0">Models cannot work without it</button></li></ol>
+<p class="quiz-expl" hidden>Knowing the domain turns generic AI capability into specific, valuable systems.</p>
+</div>
+<div class="quiz-q" data-q>
+<p class="quiz-prompt"><span class="quiz-num">5.</span> Capstone G asks for both offline and online evaluation of a recommender. Why are offline metrics not enough?</p>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Offline metrics cannot be computed for recommenders</button></li><li><button type="button" class="quiz-opt" data-correct="1">Held-out interactions only contain what the old system chose to show, so offline gains may not translate into real behaviour; an A/B test measures the actual effect</button></li><li><button type="button" class="quiz-opt" data-correct="0">Online tests are cheaper to run</button></li><li><button type="button" class="quiz-opt" data-correct="0">NDCG is only defined for search engines</button></li></ol>
+<p class="quiz-expl" hidden>Offline evaluation is biased by past exposure; the decision to ship is made online, with guardrails.</p>
+</div>
+<p class="quiz-score" aria-live="polite"></p></div>
+<div class="admonition takeaways">
+<p class="admonition-title">Key takeaways</p>
+<ul>
+<li>A narrow, finished, measured project is worth more than any number of half-built ambitious ones. Build the eval set first and keep a decision log.</li>
+<li>The seven capstones together exercise RAG, agents and MCP, classical ML with LLM reporting, fine-tuning and distillation, evaluation and observability, efficient inference, and recommendation with online evaluation.</li>
+<li>Build a traced walking skeleton, then improve one stage at a time with an interval on every change.</li>
+<li>Write it up with results first, what you tried, honest limitations and easy setup.</li>
+<li>Interviews test fundamentals, coding, system design and judgement, including knowing when a language model is the wrong tool; you have built most of what they ask about.</li>
+<li>Keep building, publishing, teaching and revisiting fundamentals. If you have a domain, combine it with these skills.</li>
+</ul>
+</div>
+<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" aria-label="Link to this section">#</a></h3>
+<ul>
+<li>The <a href="../resources.html">further resources</a> page of this course</li>
+<li>Eugene Yan, Bryan Bischof, Charles Frye, Hamel Husain, Jason Liu and Shreya Shankar, "What We Learned from a Year of Building with LLMs" (applied-llms.org)</li>
+<li>Your own learning log, reread from lesson <a class="ref" href="../lessons/00-welcome.html" title="Lesson 00: Welcome and your AI workbench">00</a></li>
+</ul>
+</div>
+<footer class="lesson-foot">
+<label class="sb-done final"><input type="checkbox" data-session="capstones-career:5"><span>Done with session 6: Career paths, continuous learning and your next ninety days</span></label>
+<button type="button" class="complete-btn" data-complete="capstones-career" data-sessions="6">Mark all sessions done</button>
+<nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/31-system-design.html"><span>Previous</span>31 Designing AI systems</a></nav>
+</footer>
+</article>
+</main>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#why-a-capstone">Why a capstone</a></li><li><a href="#how-to-run-your-capstone">How to run your capstone</a></li><li><a href="#the-seven-capstones">The seven capstones</a><ul><li><a href="#capstone-a-technical-documentation-assistant-rag">Capstone A: technical documentation assistant (RAG)</a></li><li><a href="#capstone-b-operations-agent-with-mcp-tools">Capstone B: operations agent with MCP tools</a></li><li><a href="#capstone-c-anomaly-detection-with-narrative-reports">Capstone C: anomaly detection with narrative reports</a></li><li><a href="#capstone-d-distil-a-small-model-for-a-structured-task">Capstone D: distil a small model for a structured task</a></li><li><a href="#capstone-e-evaluation-and-observability-for-an-llm-feature">Capstone E: evaluation and observability for an LLM feature</a></li><li><a href="#capstone-f-a-fast-cheap-inference-service-for-a-small-model">Capstone F: a fast, cheap inference service for a small model</a></li><li><a href="#capstone-g-a-recommender-with-offline-and-online-evaluation">Capstone G: a recommender with offline and online evaluation</a></li><li><a href="#rubric-applies-to-every-capstone">Rubric (applies to every capstone)</a></li></ul></li><li><a href="#build-the-walking-skeleton">Build the walking skeleton</a></li><li><a href="#evaluate-harden-and-deploy">Evaluate, harden and deploy</a><ul><li><a href="#one-change-at-a-time-with-an-interval">One change at a time, with an interval</a></li><li><a href="#harden">Harden</a></li><li><a href="#deploy">Deploy</a></li></ul></li><li><a href="#write-it-up">Write it up</a></li><li><a href="#interview-preparation">Interview preparation</a><ul><li><a href="#coding-interviews">Coding interviews</a></li><li><a href="#system-design-interviews">System design interviews</a></li><li><a href="#talking-about-your-projects">Talking about your projects</a></li></ul></li><li><a href="#career-paths-and-the-next-ninety-days">Career paths and the next ninety days</a><ul><li><a href="#where-this-course-can-take-you">Where this course can take you</a></li><li><a href="#keep-growing">Keep growing</a></li></ul></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
+</div>
+<nav class="lesson-bar" aria-label="Lesson">
+<a class="lb-btn" href="../lessons/31-system-design.html" aria-label="Previous lesson: Designing AI systems"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+<button type="button" class="lb-toc" aria-expanded="false" aria-controls="toc-sheet"><span class="lb-where">32 · <span class="lb-section">Capstones and career</span></span><span class="lb-pct" aria-hidden="true"><span></span></span></button>
+<span class="lb-btn" aria-hidden="true"></span>
+</nav>
+<div class="toc-sheet" id="toc-sheet" hidden><div class="toc-sheet-inner"><aside class="toc-sheet-list" aria-label="Contents"><p class="toc-title">Contents</p><ul><li><a href="#why-a-capstone">Why a capstone</a></li><li><a href="#how-to-run-your-capstone">How to run your capstone</a></li><li><a href="#the-seven-capstones">The seven capstones</a><ul><li><a href="#capstone-a-technical-documentation-assistant-rag">Capstone A: technical documentation assistant (RAG)</a></li><li><a href="#capstone-b-operations-agent-with-mcp-tools">Capstone B: operations agent with MCP tools</a></li><li><a href="#capstone-c-anomaly-detection-with-narrative-reports">Capstone C: anomaly detection with narrative reports</a></li><li><a href="#capstone-d-distil-a-small-model-for-a-structured-task">Capstone D: distil a small model for a structured task</a></li><li><a href="#capstone-e-evaluation-and-observability-for-an-llm-feature">Capstone E: evaluation and observability for an LLM feature</a></li><li><a href="#capstone-f-a-fast-cheap-inference-service-for-a-small-model">Capstone F: a fast, cheap inference service for a small model</a></li><li><a href="#capstone-g-a-recommender-with-offline-and-online-evaluation">Capstone G: a recommender with offline and online evaluation</a></li><li><a href="#rubric-applies-to-every-capstone">Rubric (applies to every capstone)</a></li></ul></li><li><a href="#build-the-walking-skeleton">Build the walking skeleton</a></li><li><a href="#evaluate-harden-and-deploy">Evaluate, harden and deploy</a><ul><li><a href="#one-change-at-a-time-with-an-interval">One change at a time, with an interval</a></li><li><a href="#harden">Harden</a></li><li><a href="#deploy">Deploy</a></li></ul></li><li><a href="#write-it-up">Write it up</a></li><li><a href="#interview-preparation">Interview preparation</a><ul><li><a href="#coding-interviews">Coding interviews</a></li><li><a href="#system-design-interviews">System design interviews</a></li><li><a href="#talking-about-your-projects">Talking about your projects</a></li></ul></li><li><a href="#career-paths-and-the-next-ninety-days">Career paths and the next ninety days</a><ul><li><a href="#where-this-course-can-take-you">Where this course can take you</a></li><li><a href="#keep-growing">Keep growing</a></li></ul></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside></div></div>
+<dialog class="settings" aria-labelledby="settings-title">
+<form method="dialog" class="settings-inner">
+<div class="settings-head"><h2 id="settings-title">Reading settings</h2><button class="icon-btn" value="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<fieldset><legend>Theme</legend><div class="seg-ctl" data-pref="theme"><button type="button" value="auto">Auto</button><button type="button" value="light">Light</button><button type="button" value="dark">Dark</button></div></fieldset>
+<fieldset><legend>Text size</legend><div class="seg-ctl" data-pref="size"><button type="button" value="s" aria-label="Small">A</button><button type="button" value="m" aria-label="Medium">A</button><button type="button" value="l" aria-label="Large">A</button><button type="button" value="xl" aria-label="Extra large">A</button></div></fieldset>
+<fieldset><legend>Typeface</legend><div class="seg-ctl" data-pref="font"><button type="button" value="serif">Literata</button><button type="button" value="sans">Atkinson Hyperlegible</button></div></fieldset>
+<fieldset class="sync"><legend>Progress on your other devices</legend>
+<p>Your ticks live in this browser. To carry them to your phone or computer, open this link there:</p>
+<div class="sync-row"><input class="sync-link" type="text" readonly aria-label="Sync link"><button type="button" class="btn-small sync-copy">Copy</button><button type="button" class="btn-small sync-share" hidden>Share</button></div>
+<p class="sync-note">Opening the link adds these ticks to the ones already there; nothing is removed.</p>
+</fieldset>
+<fieldset class="offline" hidden><legend>Offline reading</legend>
+<p class="offline-status">Lessons you open are saved for reading without a connection.</p>
+<button type="button" class="btn-small offline-all">Save every lesson for offline reading</button>
+</fieldset>
+</form>
+</dialog>
+<script src="../assets/course-data.js?v=da7d24f3"></script>
+<script src="../assets/app.js?v=da7d24f3"></script>
+</body>
+</html>

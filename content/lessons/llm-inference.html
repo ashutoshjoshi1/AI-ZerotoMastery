@@ -1,0 +1,27 @@
+<!--
+{
+  "title": "LLM inference in depth",
+  "short": "LLM inference",
+  "summary": "What happens between a prompt arriving and tokens streaming back: prefill and decode, the KV cache, batching, quantisation, speculative decoding and inference engines.",
+  "sessions": [
+    "Read the outline and the related lessons"
+  ],
+  "objectives": [],
+  "prerequisites": [
+    "transformers",
+    "how-llms-are-built"
+  ],
+  "runs_on": "Any computer (CPU). The full notebook is coming with the full lesson.",
+  "glossary": []
+}
+-->
+<h2>This lesson is being written</h2>
+<p>The full lesson, with code, hands-on exercises and a notebook, is on its way. Here is what it will cover, so you know where it fits in the course.</p>
+<ul>
+<li>Prefill versus decode, and the metrics that matter: time to first token, inter-token latency, throughput</li>
+<li>KV cache memory maths, and how grouped-query attention changes it</li>
+<li>Continuous batching, PagedAttention and prefix caching</li>
+<li>Quantisation in depth: int8 and int4, group-wise scales, GPTQ and AWQ, GGUF</li>
+<li>Speculative decoding, sampling and constrained decoding; choosing an inference engine</li>
+</ul>
+<p>Until then, the closest material is in lesson <a data-ref="transformers"></a>, lesson <a data-ref="how-llms-are-built"></a>, lesson <a data-ref="deployment-llmops"></a>, lesson <a data-ref="training-at-scale"></a>.</p>

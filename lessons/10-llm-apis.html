@@ -2,96 +2,128 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Working with LLM APIs | AI Engineering</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='3' height='24' fill='%237a3bd1'/%3E%3Crect x='10' y='4' width='3' height='24' fill='%231f6fd8'/%3E%3Crect x='17' y='4' width='3' height='24' fill='%2311998e'/%3E%3Crect x='24' y='4' width='3' height='24' fill='%23c8262d'/%3E%3C/svg%3E">
+<meta name="description" content="Call hosted and local models from code like a professional, covering messages and system prompts, streaming, reliable structured output, errors and retries, token costs, caching, batches and concurrency, then build a streaming command-line chatbot.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121a22" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Working with LLM APIs">
+<meta property="og:description" content="Call hosted and local models from code like a professional, covering messages and system prompts, streaming, reliable structured output, errors and retries, token costs, caching, batches and concurrency, then build a streaming command-line chatbot.">
+<meta property="og:type" content="website">
+<link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css">
-<script>try{var t=localStorage.getItem("aie-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
+<script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
 <body class="is-lesson" data-root="../" data-page="llm-apis">
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
-<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+<button class="icon-btn nav-toggle" type="button" aria-label="Show course map" aria-controls="course-map" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
 <a class="brand" href="../index.html">AI Engineering<span>from zero to mastery</span></a>
 <div class="search" role="search">
-<input id="search-input" type="search" placeholder="Search" autocomplete="off" aria-label="Search the course">
+<input id="search-input" type="search" placeholder="Search the course" autocomplete="off" aria-label="Search the course" enterkeyhint="search">
+<button class="icon-btn search-close" type="button" aria-label="Close search"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <div class="search-results" hidden></div>
 </div>
-<button class="icon-btn theme-toggle" type="button" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+<button class="icon-btn search-toggle" type="button" aria-label="Search the course"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button class="icon-btn settings-toggle" type="button" aria-label="Reading settings and progress sync" aria-haspopup="dialog"><span class="aa" aria-hidden="true">Aa</span></button>
 </header>
-<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8" title="00 Welcome and your AI workbench"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8" title="01 Python for AI work"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3" title="02 The maths behind AI"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3" title="03 Machine learning fundamentals"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3" title="04 Classical machine learning"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3" title="05 Neural networks from scratch"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7" title="06 Deep learning with PyTorch"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c" title="07 Text as numbers, sequences and embeddings"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c" title="08 Attention and the transformer"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c" title="09 How large language models are built"></a><a class="seg is-current" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" title="10 Working with LLM APIs"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19" title="11 Prompt engineering"></a><a class="seg" href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119" title="12 Embeddings and vector search"></a><a class="seg" href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c" title="13 Retrieval-augmented generation (RAG)"></a><a class="seg" href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c" title="14 Agents, tool use and MCP"></a><a class="seg" href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c" title="15 Evaluating LLM systems"></a><a class="seg" href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c" title="16 Fine-tuning language models"></a><a class="seg" href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c" title="17 Deployment, serving and LLMOps"></a><a class="seg" href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a" title="18 Safety, security and responsible AI"></a><a class="seg" href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919" title="19 Multimodal AI: vision, documents, speech and image generation"></a><a class="seg" href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717" title="20 Designing AI systems"></a><a class="seg" href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515" title="21 Capstone projects and your AI engineering career"></a></div>
+<div class="spectrum-strip" aria-hidden="true"><a class="seg" href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9" title="00 Welcome and your AI workbench" tabindex="-1"></a><a class="seg" href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3" title="01 Python for AI work" tabindex="-1"></a><a class="seg" href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb" title="02 The maths behind AI" tabindex="-1"></a><a class="seg" href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff" title="03 Machine learning fundamentals" tabindex="-1"></a><a class="seg" href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff" title="04 Classical machine learning" tabindex="-1"></a><a class="seg" href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe" title="05 Neural networks from scratch" tabindex="-1"></a><a class="seg" href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0" title="06 Deep learning with PyTorch" tabindex="-1"></a><a class="seg" href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8" title="07 Text as numbers, sequences and embeddings" tabindex="-1"></a><a class="seg" href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8" title="08 Attention and the transformer" tabindex="-1"></a><a class="seg" href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb" title="09 How large language models are built" tabindex="-1"></a><a class="seg is-current" href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1" title="10 Working with LLM APIs" tabindex="-1"></a><a class="seg" href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7" title="11 Prompt engineering" tabindex="-1"></a><a class="seg" href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e" title="12 Reasoning models and test-time compute" tabindex="-1"></a><a class="seg" href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94" title="13 Embeddings and vector search" tabindex="-1"></a><a class="seg" href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a" title="14 Retrieval-augmented generation (RAG)" tabindex="-1"></a><a class="seg" href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e" title="15 Agents, tool use and MCP" tabindex="-1"></a><a class="seg" href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70" title="16 Context engineering and memory" tabindex="-1"></a><a class="seg" href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a" title="17 Evaluating LLM systems" tabindex="-1"></a><a class="seg" href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232" title="18 Fine-tuning language models" tabindex="-1"></a><a class="seg" href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05" title="19 Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging" tabindex="-1"></a><a class="seg" href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701" title="20 LLM inference in depth" tabindex="-1"></a><a class="seg" href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200" title="21 Deployment, serving and LLMOps" tabindex="-1"></a><a class="seg" href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07" title="22 Safety, security and responsible AI" tabindex="-1"></a><a class="seg" href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807" title="23 Multimodal AI: vision, documents, speech and image generation" tabindex="-1"></a><a class="seg" href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304" title="24 Search, planning and classical AI" tabindex="-1"></a><a class="seg" href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06" title="25 Reinforcement learning" tabindex="-1"></a><a class="seg" href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903" title="26 Generative models: autoencoders, VAEs, GANs, flows and diffusion" tabindex="-1"></a><a class="seg" href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307" title="27 Computer vision: detection, segmentation and beyond" tabindex="-1"></a><a class="seg" href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05" title="28 Time series, recommender systems and graphs" tabindex="-1"></a><a class="seg" href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005" title="29 Training at scale: GPUs, parallelism and efficient architectures" tabindex="-1"></a><a class="seg" href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05" title="30 Interpretability and explainability" tabindex="-1"></a><a class="seg" href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29" title="31 Designing AI systems" tabindex="-1"></a><a class="seg" href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48" title="32 Capstone projects and your AI engineering career" tabindex="-1"></a><span class="read-progress"></span></div>
 <div class="layout">
-<nav class="course-map" aria-label="Course map">
-<ul class="map-pages">
-<li><a href="../index.html">Course home</a></li>
-<li><a href="../schedule.html">Daily schedule</a></li>
-<li><a href="../glossary.html">Glossary</a></li>
-<li><a href="../resources.html">Further resources</a></li>
-</ul>
-<section class="map-part" style="--pc:#ab19c8">
+<nav class="course-map" id="course-map" aria-label="Course map">
+<ul class="map-pages"><li><a href="../index.html">Course home</a></li><li><a href="../schedule.html">Daily schedule</a></li><li><a href="../glossary.html">Glossary</a></li><li><a href="../resources.html">Further resources</a></li></ul>
+<section class="map-part" style="--pc:#a45ae9">
 <p class="map-part-name"><span class="roman">I</span> Orientation</p><ol>
-<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#ab19c8"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
+<li><a href="../lessons/00-welcome.html" data-lesson="welcome" data-sessions="2" style="--lc:#a45ae9"><span class="dot" aria-hidden="true"></span><span class="num">00</span><span class="t">Welcome and workbench</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#6d1ce3">
+<section class="map-part" style="--pc:#8368fb">
 <p class="map-part-name"><span class="roman">II</span> Foundations</p><ol>
-<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#7919c8"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
-<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#501ce3"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
+<li><a href="../lessons/01-python-for-ai.html" data-lesson="python-for-ai" data-sessions="3" style="--lc:#9561f3"><span class="dot" aria-hidden="true"></span><span class="num">01</span><span class="t">Python for AI</span></a></li>
+<li><a href="../lessons/02-math-for-ai.html" data-lesson="math-for-ai" data-sessions="4" style="--lc:#8368fb"><span class="dot" aria-hidden="true"></span><span class="num">02</span><span class="t">Maths for AI</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1c44e3">
+<section class="map-part" style="--pc:#5877ff">
 <p class="map-part-name"><span class="roman">III</span> Machine learning</p><ol>
-<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#1c22e3"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
-<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#1c66e3"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
+<li><a href="../lessons/03-ml-fundamentals.html" data-lesson="ml-fundamentals" data-sessions="3" style="--lc:#6f6fff"><span class="dot" aria-hidden="true"></span><span class="num">03</span><span class="t">ML fundamentals</span></a></li>
+<li><a href="../lessons/04-classical-ml.html" data-lesson="classical-ml" data-sessions="4" style="--lc:#5877ff"><span class="dot" aria-hidden="true"></span><span class="num">04</span><span class="t">Classical ML</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#1ce3c5">
+<section class="map-part" style="--pc:#0487f0">
 <p class="map-part-name"><span class="roman">IV</span> Deep learning</p><ol>
-<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#1caae3"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
-<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#1ce3c7"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
-<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#1ce31c"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
+<li><a href="../lessons/05-neural-networks.html" data-lesson="neural-networks" data-sessions="4" style="--lc:#367efe"><span class="dot" aria-hidden="true"></span><span class="num">05</span><span class="t">Neural nets from scratch</span></a></li>
+<li><a href="../lessons/06-pytorch.html" data-lesson="pytorch" data-sessions="4" style="--lc:#0487f0"><span class="dot" aria-hidden="true"></span><span class="num">06</span><span class="t">PyTorch</span></a></li>
+<li><a href="../lessons/07-sequences-embeddings.html" data-lesson="sequences-embeddings" data-sessions="2" style="--lc:#018ed8"><span class="dot" aria-hidden="true"></span><span class="num">07</span><span class="t">Sequences and embeddings</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#65e31c">
+<section class="map-part" style="--pc:#0b94bb">
 <p class="map-part-name"><span class="roman">V</span> Transformers and LLMs</p><ol>
-<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#4de31c"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
-<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#7de31c"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
+<li><a href="../lessons/08-transformers.html" data-lesson="transformers" data-sessions="5" style="--lc:#0191c8"><span class="dot" aria-hidden="true"></span><span class="num">08</span><span class="t">Attention and transformers</span></a></li>
+<li><a href="../lessons/09-how-llms-are-built.html" data-lesson="how-llms-are-built" data-sessions="4" style="--lc:#0b94bb"><span class="dot" aria-hidden="true"></span><span class="num">09</span><span class="t">How LLMs are built</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#e37e1c">
+<section class="map-part" style="--pc:#0b9b8a">
 <p class="map-part-name"><span class="roman">VI</span> Building with LLMs</p><ol>
-<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#9dcc19" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
-<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#c9cc19"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
-<li><a href="../lessons/12-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#cca119"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Embeddings and search</span></a></li>
-<li><a href="../lessons/13-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#e37e1c"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">RAG</span></a></li>
-<li><a href="../lessons/14-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#e34a1c"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">Agents and MCP</span></a></li>
-<li><a href="../lessons/15-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Evaluation</span></a></li>
-<li><a href="../lessons/16-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#e31c1c"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/10-llm-apis.html" data-lesson="llm-apis" data-sessions="3" style="--lc:#0396b1" aria-current="page"><span class="dot" aria-hidden="true"></span><span class="num">10</span><span class="t">LLM APIs</span></a></li>
+<li><a href="../lessons/11-prompt-engineering.html" data-lesson="prompt-engineering" data-sessions="3" style="--lc:#0397a7"><span class="dot" aria-hidden="true"></span><span class="num">11</span><span class="t">Prompt engineering</span></a></li>
+<li><a href="../lessons/12-reasoning-models.html" data-lesson="reasoning-models" data-sessions="3" style="--lc:#0a999e"><span class="dot" aria-hidden="true"></span><span class="num">12</span><span class="t">Reasoning models</span></a></li>
+<li><a href="../lessons/13-embeddings-vector-search.html" data-lesson="embeddings-vector-search" data-sessions="3" style="--lc:#079a94"><span class="dot" aria-hidden="true"></span><span class="num">13</span><span class="t">Embeddings and search</span></a></li>
+<li><a href="../lessons/14-rag.html" data-lesson="rag" data-sessions="5" style="--lc:#0b9b8a"><span class="dot" aria-hidden="true"></span><span class="num">14</span><span class="t">RAG</span></a></li>
+<li><a href="../lessons/15-agents.html" data-lesson="agents" data-sessions="5" style="--lc:#0b9d7e"><span class="dot" aria-hidden="true"></span><span class="num">15</span><span class="t">Agents and MCP</span></a></li>
+<li><a href="../lessons/16-context-engineering.html" data-lesson="context-engineering" data-sessions="3" style="--lc:#069e70"><span class="dot" aria-hidden="true"></span><span class="num">16</span><span class="t">Context engineering</span></a></li>
+<li><a href="../lessons/17-evaluation.html" data-lesson="evaluation" data-sessions="3" style="--lc:#02a05a"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Evaluation</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#d41a1a">
-<p class="map-part-name"><span class="roman">VII</span> Production</p><ol>
-<li><a href="../lessons/17-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#e21c1c"><span class="dot" aria-hidden="true"></span><span class="num">17</span><span class="t">Deployment and LLMOps</span></a></li>
-<li><a href="../lessons/18-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#d41a1a"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Safety and security</span></a></li>
-<li><a href="../lessons/19-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#c71919"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Multimodal AI</span></a></li>
+<section class="map-part" style="--pc:#479e05">
+<p class="map-part-name"><span class="roman">VII</span> Fine-tuning and inference</p><ol>
+<li><a href="../lessons/18-fine-tuning.html" data-lesson="fine-tuning" data-sessions="4" style="--lc:#02a232"><span class="dot" aria-hidden="true"></span><span class="num">18</span><span class="t">Fine-tuning</span></a></li>
+<li><a href="../lessons/19-advanced-fine-tuning.html" data-lesson="advanced-fine-tuning" data-sessions="1" style="--lc:#479e05"><span class="dot" aria-hidden="true"></span><span class="num">19</span><span class="t">Post-training in depth</span></a></li>
+<li><a href="../lessons/20-llm-inference.html" data-lesson="llm-inference" data-sessions="1" style="--lc:#699701"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">LLM inference</span></a></li>
 </ol></section>
-<section class="map-part" style="--pc:#b21616">
-<p class="map-part-name"><span class="roman">VIII</span> Mastery</p><ol>
-<li><a href="../lessons/20-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#b91717"><span class="dot" aria-hidden="true"></span><span class="num">20</span><span class="t">AI system design</span></a></li>
-<li><a href="../lessons/21-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ab1515"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Capstones and career</span></a></li>
+<section class="map-part" style="--pc:#8b8c07">
+<p class="map-part-name"><span class="roman">VIII</span> Production</p><ol>
+<li><a href="../lessons/21-deployment-llmops.html" data-lesson="deployment-llmops" data-sessions="4" style="--lc:#7d9200"><span class="dot" aria-hidden="true"></span><span class="num">21</span><span class="t">Deployment and LLMOps</span></a></li>
+<li><a href="../lessons/22-safety-security.html" data-lesson="safety-security" data-sessions="3" style="--lc:#8b8c07"><span class="dot" aria-hidden="true"></span><span class="num">22</span><span class="t">Safety and security</span></a></li>
+<li><a href="../lessons/23-multimodal.html" data-lesson="multimodal" data-sessions="3" style="--lc:#978807"><span class="dot" aria-hidden="true"></span><span class="num">23</span><span class="t">Multimodal AI</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#bc7307">
+<p class="map-part-name"><span class="roman">IX</span> The wider field</p><ol>
+<li><a href="../lessons/24-classical-ai.html" data-lesson="classical-ai" data-sessions="3" style="--lc:#a18304"><span class="dot" aria-hidden="true"></span><span class="num">24</span><span class="t">Classical AI and search</span></a></li>
+<li><a href="../lessons/25-reinforcement-learning.html" data-lesson="reinforcement-learning" data-sessions="4" style="--lc:#aa7e06"><span class="dot" aria-hidden="true"></span><span class="num">25</span><span class="t">Reinforcement learning</span></a></li>
+<li><a href="../lessons/26-generative-models.html" data-lesson="generative-models" data-sessions="3" style="--lc:#b37903"><span class="dot" aria-hidden="true"></span><span class="num">26</span><span class="t">Generative models</span></a></li>
+<li><a href="../lessons/27-computer-vision.html" data-lesson="computer-vision" data-sessions="3" style="--lc:#bc7307"><span class="dot" aria-hidden="true"></span><span class="num">27</span><span class="t">Computer vision in depth</span></a></li>
+<li><a href="../lessons/28-time-series-recsys-graphs.html" data-lesson="time-series-recsys-graphs" data-sessions="4" style="--lc:#c66b05"><span class="dot" aria-hidden="true"></span><span class="num">28</span><span class="t">Time series, recsys, graphs</span></a></li>
+<li><a href="../lessons/29-training-at-scale.html" data-lesson="training-at-scale" data-sessions="3" style="--lc:#d26005"><span class="dot" aria-hidden="true"></span><span class="num">29</span><span class="t">Training at scale</span></a></li>
+<li><a href="../lessons/30-interpretability.html" data-lesson="interpretability" data-sessions="3" style="--lc:#e14e05"><span class="dot" aria-hidden="true"></span><span class="num">30</span><span class="t">Interpretability</span></a></li>
+</ol></section>
+<section class="map-part" style="--pc:#ea3b48">
+<p class="map-part-name"><span class="roman">X</span> Mastery</p><ol>
+<li><a href="../lessons/31-system-design.html" data-lesson="system-design" data-sessions="3" style="--lc:#e93f29"><span class="dot" aria-hidden="true"></span><span class="num">31</span><span class="t">AI system design</span></a></li>
+<li><a href="../lessons/32-capstones-career.html" data-lesson="capstones-career" data-sessions="6" style="--lc:#ea3b48"><span class="dot" aria-hidden="true"></span><span class="num">32</span><span class="t">Capstones and career</span></a></li>
 </ol></section>
 </nav>
+<div class="scrim" hidden></div>
 <main id="main" tabindex="-1">
-<article class="lesson" data-lesson="llm-apis" style="--lc:#9dcc19;--lct:#749518;--lctd:#cdea7b">
+<article class="lesson" data-lesson="llm-apis" style="--lc:#0396b1;--lct:#056f83;--lctd:#06d3f8">
 <header class="lesson-head">
-<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part VI, Building with LLMs <span class="wl">561 nm</span></p>
+<p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part VI, Building with LLMs <span class="wl">494 nm</span></p>
 <h1><span class="lesson-num">10</span> Working with LLM APIs</h1>
-<p class="lesson-summary">Call hosted and local models from code like a professional, covering messages and system prompts, streaming, reliable structured output, errors and retries, token costs, caching and concurrency, then build a streaming command-line chatbot.</p>
+<p class="lesson-summary">Call hosted and local models from code like a professional, covering messages and system prompts, streaming, reliable structured output, errors and retries, token costs, caching, batches and concurrency, then build a streaming command-line chatbot.</p>
+<p class="lesson-meta"><span>3 sessions</span><span>about 40 min of reading</span><span>22 code examples</span><span>3 hands-on exercises</span></p>
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Call a hosted model with a system prompt and a message list, read the response by block type, and continue a multi-turn conversation</li><li>Stream a reply token by token and act on the stop reason</li><li>Get schema-valid structured output into a Pydantic model and repair the rare failure</li><li>Handle rate limits, timeouts and client errors with retries and a fallback model</li><li>Estimate and reduce cost with token counting, prompt caching, smaller models, concurrency and the Batch API</li><li>Run an open model locally through an OpenAI-compatible endpoint</li></ul></section>
+<p class="prereq"><strong>Before you start:</strong> <a href="../lessons/01-python-for-ai.html">01 Python for AI</a>, <a href="../lessons/09-how-llms-are-built.html">09 How LLMs are built</a></p>
 <div class="study-plan">
 <p class="plan-title">Study plan: 3 sessions of about an hour</p>
-<ol class="sessions"><li><label><input type="checkbox" data-session="llm-apis:0"><span>First calls: messages, system prompts, multi-turn conversations and parameters</span></label></li><li><label><input type="checkbox" data-session="llm-apis:1"><span>Streaming, structured output with Pydantic, errors, retries and rate limits</span></label></li><li><label><input type="checkbox" data-session="llm-apis:2"><span>Tokens and cost, prompt caching, concurrency, local models, and a CLI chatbot</span></label></li></ol>
-<p class="plan-note">Tick a session when you finish it. Progress is saved in this browser only.</p>
-<p class="plan-notebook">Code for this lesson: <a href="../notebooks/10-llm-apis.ipynb" download>notebooks/10-llm-apis.ipynb</a>, with worked solutions in <code>notebooks/solutions/</code>.</p>
+<ol class="sessions"><li><label><input type="checkbox" data-session="llm-apis:0"><span>First calls: messages, system prompts, multi-turn conversations and parameters</span></label></li><li><label><input type="checkbox" data-session="llm-apis:1"><span>Streaming, structured output with Pydantic, errors, retries and rate limits</span></label></li><li><label><input type="checkbox" data-session="llm-apis:2"><span>Tokens and cost, prompt caching, batches and concurrency, local models, and a CLI chatbot</span></label></li></ol>
+<p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
+<aside class="handson" aria-label="Hands-on notebook">
+<p class="handson-title"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Hands-on at your computer</p>
+<p>Read here on any screen. When a <span class="chip">At your computer</span> exercise comes up, open <code>notebooks/10-llm-apis.ipynb</code> in JupyterLab or VS Code and run the cells under the same heading.</p>
+<p class="handson-runs"><strong>Runs on:</strong> Any computer. Cells that call a hosted model are marked and need an API key; the helpers and the fake-client exercises run offline.</p>
+<p class="handson-links"><a href="https://colab.research.google.com/github/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/10-llm-apis.ipynb" rel="noopener">Open in Colab</a><a href="https://github.com/ashutoshjoshi1/AI-ZerotoMastery/blob/main/notebooks/10-llm-apis.ipynb" rel="noopener">View on GitHub</a><a href="../notebooks/10-llm-apis.ipynb" download>Download notebook</a><a href="../notebooks/solutions/10-llm-apis-solutions.ipynb" download>Solutions</a></p>
+</aside>
+<p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
-<h2 id="the-shape-of-every-chat-api">The shape of every chat API<a class="headerlink" href="#the-shape-of-every-chat-api" title="Link to this section">#</a></h2>
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 3</span>First calls: messages, system prompts, multi-turn conversations and parameters</p>
+<h2 id="the-shape-of-every-chat-api">The shape of every chat API<a class="headerlink" href="#the-shape-of-every-chat-api" aria-label="Link to this section">#</a></h2>
 <p>From here on you build <em>with</em> models rather than build models. Almost every LLM provider exposes the same shape of API: you send a list of <strong>messages</strong>, each with a <strong>role</strong> and <strong>content</strong>, plus settings, and you get back the next assistant message along with token counts.</p>
 <ul>
 <li><strong>System prompt</strong>: standing instructions and context for the whole conversation ("You are a support assistant for...").</li>
@@ -99,17 +131,14 @@
 <li><strong>Assistant</strong> messages: what the model said earlier. The API is <strong>stateless</strong>: the model remembers nothing between calls, so to continue a conversation you send the whole history every time.</li>
 </ul>
 <p>This lesson uses the Anthropic Python SDK for the main examples, with the OpenAI-style equivalent alongside, because that second format is also what most local and open-model servers speak. The concepts transfer to any provider.</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>anthropic<span class="w"> </span>openai<span class="w"> </span>pydantic<span class="w"> </span>python-dotenv
-</code></pre></div>
+<div class="highlight" data-lang="bash"><div class="code-head"><span class="code-label">Terminal</span></div><pre><code>uv<span class="w"> </span>add<span class="w"> </span>anthropic<span class="w"> </span>openai<span class="w"> </span>pydantic<span class="w"> </span>python-dotenv</code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Model names change</p>
 <p>Providers release new models every few months. The examples use <code>claude-sonnet-5-5</code> as a capable default and <code>claude-haiku-5-5</code> as a fast, cheap one. Check your provider's model list and keep the name in one configuration constant so swapping models is a one-line change.</p>
 </div>
-<h2 id="first-calls">First calls<a class="headerlink" href="#first-calls" title="Link to this section">#</a></h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Anthropic</label><label for="__tabbed_1_2">OpenAI-compatible</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">anthropic</span>
+<h2 id="first-calls">First calls<a class="headerlink" href="#first-calls" aria-label="Link to this section">#</a></h2>
+<div class="tabbed-set"><input checked id="tab-1-0" name="tab-1" type="radio"><input id="tab-1-1" name="tab-1" type="radio"><div class="tabbed-labels"><label for="tab-1-0">Anthropic</label><label for="tab-1-1">OpenAI-compatible</label></div><div class="tabbed-content"><div class="tabbed-block">
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">anthropic</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
 
 <span class="n">load_dotenv</span><span class="p">()</span>                                   <span class="c1"># ANTHROPIC_API_KEY from .env</span>
@@ -118,24 +147,24 @@
 
 <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span>
-    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>                             <span class="c1"># upper bound on the reply length</span>
+    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>                            <span class="c1"># upper bound on the reply length</span>
     <span class="n">system</span><span class="o">=</span><span class="s2">&quot;You are a concise teaching assistant for an AI engineering course.&quot;</span><span class="p">,</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Explain overfitting in two sentences.&quot;</span><span class="p">}],</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>                      <span class="c1"># a list of blocks: text, tool calls, thinking...</span>
+    <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">stop_reason</span><span class="p">)</span>                         <span class="c1"># &quot;end_turn&quot;, or &quot;max_tokens&quot; if it was cut off</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="p">)</span></code></pre></div>
+</div><div class="tabbed-block">
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
 
 <span class="n">load_dotenv</span><span class="p">()</span>                                   <span class="c1"># OPENAI_API_KEY from .env</span>
 <span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
 <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="s2">&quot;YOUR_MODEL_NAME&quot;</span><span class="p">,</span>
-    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
         <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a concise teaching assistant.&quot;</span><span class="p">},</span>
         <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Explain overfitting in two sentences.&quot;</span><span class="p">},</span>
@@ -143,30 +172,32 @@
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">finish_reason</span><span class="p">)</span>            <span class="c1"># &quot;stop&quot; or &quot;length&quot;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span><span class="p">)</span>
-</code></pre></div>
-</div>
-</div>
-</div>
+<span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span><span class="p">)</span></code></pre></div>
+</div></div></div>
 <p>Note the small differences: Anthropic takes the system prompt as a separate argument and returns a list of content blocks; the OpenAI format puts the system prompt in the message list and returns <code>choices</code>. Wrapping these differences in one small function of your own keeps the rest of your code provider-neutral.</p>
-<h3 id="multi-turn-conversations">Multi-turn conversations<a class="headerlink" href="#multi-turn-conversations" title="Link to this section">#</a></h3>
+<h3 id="read-the-response-by-block-type">Read the response by block type<a class="headerlink" href="#read-the-response-by-block-type" aria-label="Link to this section">#</a></h3>
+<p>The content of an Anthropic response is a <em>list</em> of blocks. Today it holds one text block; tomorrow it may hold a tool call (lesson <a class="ref" href="../lessons/15-agents.html" title="Lesson 15: Agents, tool use and MCP">15</a>) or a thinking block from a reasoning model (lesson <a class="ref" href="../lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a>) in front of the text. Code that reads <code>resp.content[0].text</code> breaks the day that happens. Read by type, and keep the helper around for the rest of the course:</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">def</span><span class="w"> </span><span class="nf">text_of</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Join the text blocks of a response. Never rely on resp.content[0].&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span> <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span></code></pre></div>
+<h3 id="multi-turn-conversations">Multi-turn conversations<a class="headerlink" href="#multi-turn-conversations" aria-label="Link to this section">#</a></h3>
 <p>Because the API is stateless, a conversation is a list you keep appending to.</p>
-<div class="highlight"><pre><span></span><code><span class="n">history</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">history</span> <span class="o">=</span> <span class="p">[]</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">chat</span><span class="p">(</span><span class="n">user_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">user_text</span><span class="p">})</span>
-    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">history</span><span class="p">,</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">history</span><span class="p">,</span>
                                   <span class="n">system</span><span class="o">=</span><span class="s2">&quot;You are a helpful tutor.&quot;</span><span class="p">)</span>
-    <span class="n">reply</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">text_of</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
     <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">})</span>
     <span class="k">return</span> <span class="n">reply</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">chat</span><span class="p">(</span><span class="s2">&quot;What is a learning rate?&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">chat</span><span class="p">(</span><span class="s2">&quot;What happens if mine is too high?&quot;</span><span class="p">))</span>   <span class="c1"># &quot;mine&quot; is understood because history was resent</span>
-</code></pre></div>
-<p>Two consequences to remember: every turn re-sends (and re-bills) the whole history, and history eventually overflows the context window. Long-running chats need a strategy: drop old turns, summarise them, or store facts outside the conversation and retrieve them when needed (lessons 13 and 14).</p>
-<h3 id="the-parameters-that-matter">The parameters that matter<a class="headerlink" href="#the-parameters-that-matter" title="Link to this section">#</a></h3>
-<table>
+<span class="nb">print</span><span class="p">(</span><span class="n">chat</span><span class="p">(</span><span class="s2">&quot;What happens if mine is too high?&quot;</span><span class="p">))</span>   <span class="c1"># &quot;mine&quot; is understood because history was resent</span></code></pre></div>
+<p>Appending the reply text is enough for a plain chat. When the reply contains tool calls or thinking blocks, append <code>resp.content</code> itself (the whole list of blocks), so the model sees its own earlier turn exactly as it produced it.</p>
+<p>Two consequences to remember: every turn re-sends (and re-bills) the whole history, and history eventually overflows the context window. Long-running chats need a strategy: drop old turns, summarise them, or store facts outside the conversation and retrieve them when needed. Lesson <a class="ref" href="../lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a> is about exactly that; lessons <a class="ref" href="../lessons/14-rag.html" title="Lesson 14: Retrieval-augmented generation (RAG)">14</a> and <a class="ref" href="../lessons/15-agents.html" title="Lesson 15: Agents, tool use and MCP">15</a> supply the retrieval and the tools.</p>
+<h3 id="the-parameters-that-matter">The parameters that matter<a class="headerlink" href="#the-parameters-that-matter" aria-label="Link to this section">#</a></h3>
+<div class="table-wrap"><table>
 <thead>
 <tr>
 <th>Parameter</th>
@@ -177,85 +208,188 @@
 <tbody>
 <tr>
 <td><code>max_tokens</code></td>
-<td>Hard cap on output length</td>
-<td>Always set it. Check <code>stop_reason</code> to detect truncation</td>
-</tr>
-<tr>
-<td><code>temperature</code></td>
-<td>Randomness of sampling (lesson 09)</td>
-<td>0 to 0.3 for extraction and code, 0.7 to 1 for creative work</td>
-</tr>
-<tr>
-<td><code>top_p</code></td>
-<td>Nucleus sampling cut-off</td>
-<td>Usually leave at default; adjust temperature instead</td>
-</tr>
-<tr>
-<td><code>stop_sequences</code></td>
-<td>Strings that end generation early</td>
-<td>Stop at a delimiter in structured formats</td>
+<td>Hard cap on output length. On models that think before answering, the thinking counts towards it</td>
+<td>Always set it, with room to spare. Check <code>stop_reason</code> to detect truncation</td>
 </tr>
 <tr>
 <td><code>system</code></td>
 <td>Standing instructions</td>
 <td>Role, rules, context, output format</td>
 </tr>
+<tr>
+<td><code>output_config.effort</code></td>
+<td>How much a reasoning model thinks before it answers (lesson <a class="ref" href="../lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a>)</td>
+<td><code>"low"</code> for easy, high-volume calls; higher for hard problems</td>
+</tr>
+<tr>
+<td><code>temperature</code></td>
+<td>Randomness of sampling (lesson <a class="ref" href="../lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a>)</td>
+<td>Many APIs and local servers take 0 to about 1. The current Claude models fix their sampling settings and reject other values, so steer with instructions and structured output instead</td>
+</tr>
+<tr>
+<td><code>stop_sequences</code></td>
+<td>Strings that end generation early</td>
+<td>Stop at a delimiter in structured formats</td>
+</tr>
 </tbody>
-</table>
-<h2 id="streaming">Streaming<a class="headerlink" href="#streaming" title="Link to this section">#</a></h2>
-<p>A long answer can take many seconds. Streaming sends tokens as they are generated, so users see text appear immediately. The <strong>time to first token</strong> is what makes an app feel fast.</p>
-<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span>
+</table></div>
+<p>Current Claude models reason before they answer by default, and the <strong>effort</strong> level is the dial. For a cheap classification you do not want a paragraph of thinking:</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;claude-haiku-5-5&quot;</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">output_config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;effort&quot;</span><span class="p">:</span> <span class="s2">&quot;low&quot;</span><span class="p">},</span>            <span class="c1"># little or no thinking: cheap and fast</span>
+    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;One word, hardware or software: &#39;The fan is grinding.&#39;&quot;</span><span class="p">}],</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">text_of</span><span class="p">(</span><span class="n">resp</span><span class="p">),</span> <span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="p">,</span> <span class="s2">&quot;output tokens&quot;</span><span class="p">)</span></code></pre></div>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: a provider-neutral ask() helper</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>10-llm-apis.ipynb</code>, cell “Hands-on: a provider-neutral ask() helper”</p>
+<p>Build the small wrapper that the rest of your code will call, and test it without spending a token.</p>
+<ol>
+<li>Write <code>ask(messages, system=None, max_tokens=1000, client=client)</code> that calls the Anthropic API and returns a tuple <code>(text, usage, stop_reason)</code> where <code>usage</code> is a plain dict <code>{"in": ..., "out": ...}</code>.</li>
+<li>Write a <code>FakeAnthropic</code> class whose <code>.messages.create(**kwargs)</code> ignores the arguments and returns an object shaped like a real response (a list of blocks in <code>.content</code>, a <code>.stop_reason</code>, a <code>.usage</code> with token counts). <code>types.SimpleNamespace</code> is enough. Make the fake return two blocks, a thinking block and a text block, so your helper is forced to read by type.</li>
+<li>Add an <code>ask_openai(...)</code> twin for the OpenAI-compatible format, and a <code>FakeOpenAI</code> for it.</li>
+<li>You are done when both fakes make their helper return exactly <code>("Hello from the fake.", {"in": 12, "out": 5}, "end_turn")</code>, and, if you have a key, the real client returns a sensible answer through the same <code>ask()</code>.</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleNamespace</span> <span class="k">as</span> <span class="n">NS</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ask</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">system</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">):</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span> <span class="s2">&quot;max_tokens&quot;</span><span class="p">:</span> <span class="n">max_tokens</span><span class="p">,</span> <span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="n">messages</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">system</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;system&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">system</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">usage</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">,</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">text_of</span><span class="p">(</span><span class="n">resp</span><span class="p">),</span> <span class="n">usage</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">stop_reason</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FakeAnthropic</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Looks like anthropic.Anthropic() from the outside, costs nothing, works offline.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="s2">&quot;Hello from the fake.&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="n">NS</span><span class="p">(</span><span class="n">create</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reply</span> <span class="o">=</span> <span class="n">reply</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">NS</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;thinking&quot;</span><span class="p">,</span> <span class="n">thinking</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">NS</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">NS</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">blocks</span><span class="p">,</span> <span class="n">stop_reason</span><span class="o">=</span><span class="s2">&quot;end_turn&quot;</span><span class="p">,</span> <span class="n">usage</span><span class="o">=</span><span class="n">NS</span><span class="p">(</span><span class="n">input_tokens</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">output_tokens</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ask_openai</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">system</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">&quot;YOUR_MODEL_NAME&quot;</span><span class="p">):</span>
+    <span class="n">msgs</span> <span class="o">=</span> <span class="p">([{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">system</span><span class="p">}]</span> <span class="k">if</span> <span class="n">system</span> <span class="k">else</span> <span class="p">[])</span> <span class="o">+</span> <span class="n">messages</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="n">max_tokens</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">msgs</span><span class="p">)</span>
+    <span class="n">choice</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">usage</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span><span class="p">,</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span><span class="p">}</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;stop&quot;</span><span class="p">:</span> <span class="s2">&quot;end_turn&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="s2">&quot;max_tokens&quot;</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">finish_reason</span><span class="p">,</span> <span class="n">choice</span><span class="o">.</span><span class="n">finish_reason</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="n">usage</span><span class="p">,</span> <span class="n">stop</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FakeOpenAI</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="s2">&quot;Hello from the fake.&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chat</span> <span class="o">=</span> <span class="n">NS</span><span class="p">(</span><span class="n">completions</span><span class="o">=</span><span class="n">NS</span><span class="p">(</span><span class="n">create</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reply</span> <span class="o">=</span> <span class="n">reply</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">NS</span><span class="p">(</span><span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="n">NS</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">NS</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">),</span> <span class="n">finish_reason</span><span class="o">=</span><span class="s2">&quot;stop&quot;</span><span class="p">)],</span>
+                  <span class="n">usage</span><span class="o">=</span><span class="n">NS</span><span class="p">(</span><span class="n">prompt_tokens</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">completion_tokens</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
+
+<span class="n">msgs</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Say hello.&quot;</span><span class="p">}]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ask</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">FakeAnthropic</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ask_openai</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">FakeOpenAI</span><span class="p">()))</span>
+<span class="k">assert</span> <span class="n">ask</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">FakeAnthropic</span><span class="p">())</span> <span class="o">==</span> <span class="n">ask_openai</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">FakeOpenAI</span><span class="p">())</span></code></pre></div>
+The fake is not a toy: it is how you unit-test everything that sits <em>around</em> the model (prompt assembly, parsing, retries, history trimming) without network access or cost. Every later lesson reuses the trick.</p>
+</details>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="llm-apis:0"><span>Done with session 1: First calls: messages, system prompts, multi-turn conversations and parameters</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 3</span>Streaming, structured output with Pydantic, errors, retries and rate limits</p></div>
+<h2 id="streaming">Streaming<a class="headerlink" href="#streaming" aria-label="Link to this section">#</a></h2>
+<p>A long answer can take many seconds. Streaming sends tokens as they are generated, so users see text appear immediately. The <strong>time to first token</strong> is what makes an app feel fast; lesson <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a> explains where that first-token delay comes from (the prefill phase) and why later tokens arrive at a steady rate.</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Explain gradient descent to a new engineer.&quot;</span><span class="p">}],</span>
 <span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">text_stream</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">final</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">get_final_message</span><span class="p">()</span>               <span class="c1"># full message with usage after streaming</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="p">,</span> <span class="s2">&quot;tokens&quot;</span><span class="p">)</span>
-</code></pre></div>
-<p>The OpenAI-style equivalent passes <code>stream=True</code> and iterates over chunks, reading <code>chunk.choices[0].delta.content</code>.</p>
-<h2 id="structured-output-you-can-trust">Structured output you can trust<a class="headerlink" href="#structured-output-you-can-trust" title="Link to this section">#</a></h2>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="p">,</span> <span class="s2">&quot;tokens&quot;</span><span class="p">)</span></code></pre></div>
+<p>The OpenAI-style equivalent passes <code>stream=True</code> and iterates over chunks, reading <code>chunk.choices[0].delta.content</code>. Stream by default for anything long: besides the better experience, a streamed request cannot hit the HTTP timeout that a two-minute non-streamed reply might.</p>
+<h2 id="structured-output-you-can-trust">Structured output you can trust<a class="headerlink" href="#structured-output-you-can-trust" aria-label="Link to this section">#</a></h2>
 <p>Programs need data, not prose. Asking "reply in JSON" works most of the time, and "most of the time" breaks production systems. Use the strongest mechanism the API offers, then <strong>validate</strong> the result.</p>
-<h3 id="define-the-shape-with-pydantic">Define the shape with Pydantic<a class="headerlink" href="#define-the-shape-with-pydantic" title="Link to this section">#</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<h3 id="define-the-shape-with-pydantic">Define the shape with Pydantic<a class="headerlink" href="#define-the-shape-with-pydantic" aria-label="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Ticket</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">category</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;hardware&quot;</span><span class="p">,</span> <span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;other&quot;</span><span class="p">]</span>
     <span class="n">severity</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;1 = cosmetic, 5 = instrument down&quot;</span><span class="p">)</span>
     <span class="n">instrument_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;e.g. &#39;P-117&#39; if mentioned&quot;</span><span class="p">)</span>
-    <span class="n">summary</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="force-the-model-to-fill-it-in">Force the model to fill it in<a class="headerlink" href="#force-the-model-to-fill-it-in" title="Link to this section">#</a></h3>
-<p>A reliable pattern with the Anthropic API is to declare a "tool" whose input schema is your data shape and require the model to call it. The model's output is then the tool's arguments: JSON that matches the schema.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">extract_ticket</span><span class="p">(</span><span class="n">email_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ticket</span><span class="p">:</span>
-    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span></code></pre></div>
+<h3 id="ask-the-api-to-fill-it-in">Ask the API to fill it in<a class="headerlink" href="#ask-the-api-to-fill-it-in" aria-label="Link to this section">#</a></h3>
+<p>Modern APIs accept a JSON schema as an <strong>output format</strong> and constrain generation so the reply is valid JSON that matches it (lesson <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a> shows how constrained decoding does this at the token level). The Anthropic SDK's <code>parse</code> helper takes the Pydantic class, sends its schema, and validates the reply on the way back:</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_ticket</span><span class="p">(</span><span class="n">email_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ticket</span><span class="p">:</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
         <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span>
-        <span class="n">max_tokens</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
-        <span class="n">tools</span><span class="o">=</span><span class="p">[{</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;record_ticket&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Record a structured support ticket.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;input_schema&quot;</span><span class="p">:</span> <span class="n">Ticket</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(),</span>
-        <span class="p">}],</span>
-        <span class="n">tool_choice</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;record_ticket&quot;</span><span class="p">},</span>     <span class="c1"># must call this tool</span>
+        <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">output_format</span><span class="o">=</span><span class="n">Ticket</span><span class="p">,</span>                                          <span class="c1"># schema goes to the API</span>
         <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Create a ticket from this email:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">email_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}],</span>
     <span class="p">)</span>
-    <span class="n">block</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span> <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;tool_use&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">Ticket</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>                       <span class="c1"># raises if anything is off</span>
+    <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">parsed_output</span>                                          <span class="c1"># a validated Ticket</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">extract_ticket</span><span class="p">(</span><span class="s2">&quot;Hi, unit P-117 at the coastal site stopped logging overnight. &quot;</span>
                    <span class="s2">&quot;Power LED is on but no data since 02:00. Urgent, campaign starts Monday.&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="c1"># category=&#39;hardware&#39; severity=4 instrument_id=&#39;P-117&#39; summary=&#39;Unit P-117 stopped logging ...&#39;</span>
-</code></pre></div>
-<p>OpenAI-style APIs offer a similar guarantee through a JSON-schema response format (and the OpenAI SDK can accept a Pydantic class directly). Whichever you use, keep the Pydantic validation: it catches the rare malformed result and gives you typed objects for the rest of your program.</p>
+<span class="c1"># category=&#39;hardware&#39; severity=4 instrument_id=&#39;P-117&#39; summary=&#39;Unit P-117 stopped logging ...&#39;</span></code></pre></div>
+<p>Under the hood this is <code>client.messages.create(..., output_config={"format": {"type": "json_schema", "schema": ...}})</code>, which returns a text block containing JSON for you to parse yourself. The API guarantees the <em>structure</em>: field names, types, enums, required fields. Pydantic then enforces the rest, such as the 1 to 5 range on <code>severity</code>, and <code>parse</code> raises a <code>pydantic.ValidationError</code> if the reply breaks it. An older pattern declared a "tool" whose input schema was the data shape and forced the model to call it; the current Claude models no longer accept a forced tool choice, so prefer the output format.</p>
+<p>OpenAI-style APIs offer the same idea through a JSON-schema response format (and the OpenAI SDK also accepts a Pydantic class directly). Whichever you use, keep the Pydantic validation: it catches the rare malformed result and gives you typed objects for the rest of your program.</p>
 <div class="admonition tip">
 <p class="admonition-title">Validate, then repair</p>
 <p>If validation fails, send the error message back to the model ("Your output failed validation: severity must be at most 5. Fix it.") and retry once or twice. Libraries such as Instructor automate this loop.</p>
 </div>
-<h2 id="errors-retries-and-rate-limits">Errors, retries and rate limits<a class="headerlink" href="#errors-retries-and-rate-limits" title="Link to this section">#</a></h2>
+<div class="admonition exercise">
+<p class="admonition-title">Hands-on: validate, then repair</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>10-llm-apis.ipynb</code>, cell “Hands-on: validate, then repair”</p>
+<p>Build the repair loop yourself, and test it against a scripted model so you can see it work without a key.</p>
+<ol>
+<li>Write <code>extract_with_repair(email, llm, max_attempts=3) -&gt; Ticket</code>. <code>llm(messages) -&gt; str</code> is any function that returns the model's text. Ask for JSON matching <code>Ticket.model_json_schema()</code>, parse it with <code>Ticket.model_validate_json</code>, and on failure append the assistant's reply and a user message quoting the validation error, then call again.</li>
+<li>Write <code>scripted(replies)</code>, which returns an <code>llm</code> that hands out the given replies in order. Script a first reply with <code>"severity": 9</code> and a second that is valid.</li>
+<li>You are done when the scripted run returns a valid <code>Ticket</code> after exactly one repair (count the calls), a script that always returns <code>severity 9</code> makes the function raise after three attempts, and, with a key, the real model passes first time through the same function (use <code>output_config</code> with the schema, or just ask for JSON, and compare).</li>
+</ol>
+</div>
+<details class="solution">
+<summary>Show a solution</summary>
+<p><div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">scripted</span><span class="p">(</span><span class="n">replies</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An llm(messages) -&gt; str that returns the scripted replies in order and counts calls.&quot;&quot;&quot;</span>
+    <span class="n">replies</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">replies</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">llm</span><span class="p">(</span><span class="n">messages</span><span class="p">):</span>
+        <span class="n">llm</span><span class="o">.</span><span class="n">calls</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">replies</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">replies</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">replies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">llm</span><span class="o">.</span><span class="n">calls</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">llm</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_with_repair</span><span class="p">(</span><span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">llm</span><span class="p">,</span> <span class="n">max_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ticket</span><span class="p">:</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">Ticket</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Return only JSON matching this schema:</span><span class="se">\n</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">Email:</span><span class="se">\n</span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}]</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_attempts</span><span class="p">):</span>
+        <span class="n">reply</span> <span class="o">=</span> <span class="n">llm</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Ticket</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">ValidationError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">})</span>
+            <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Your output failed validation:</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Return corrected JSON only.&quot;</span><span class="p">})</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no valid ticket after </span><span class="si">{</span><span class="n">max_attempts</span><span class="si">}</span><span class="s2"> attempts&quot;</span><span class="p">)</span>
+
+<span class="n">bad</span> <span class="o">=</span> <span class="s1">&#39;{&quot;category&quot;: &quot;hardware&quot;, &quot;severity&quot;: 9, &quot;instrument_id&quot;: &quot;P-117&quot;, &quot;summary&quot;: &quot;stopped logging&quot;}&#39;</span>
+<span class="n">good</span> <span class="o">=</span> <span class="s1">&#39;{&quot;category&quot;: &quot;hardware&quot;, &quot;severity&quot;: 4, &quot;instrument_id&quot;: &quot;P-117&quot;, &quot;summary&quot;: &quot;stopped logging&quot;}&#39;</span>
+
+<span class="n">llm</span> <span class="o">=</span> <span class="n">scripted</span><span class="p">([</span><span class="n">bad</span><span class="p">,</span> <span class="n">good</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">extract_with_repair</span><span class="p">(</span><span class="s2">&quot;...&quot;</span><span class="p">,</span> <span class="n">llm</span><span class="p">),</span> <span class="s2">&quot;after&quot;</span><span class="p">,</span> <span class="n">llm</span><span class="o">.</span><span class="n">calls</span><span class="p">,</span> <span class="s2">&quot;calls&quot;</span><span class="p">)</span>     <span class="c1"># severity=4 after 2 calls</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">extract_with_repair</span><span class="p">(</span><span class="s2">&quot;...&quot;</span><span class="p">,</span> <span class="n">scripted</span><span class="p">([</span><span class="n">bad</span><span class="p">]))</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;gave up:&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">real_llm</span><span class="p">(</span><span class="n">messages</span><span class="p">):</span>                                                 <span class="c1"># Needs an API key</span>
+    <span class="k">return</span> <span class="n">text_of</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">))</span>
+<span class="c1"># print(extract_with_repair(&quot;Unit P-117 stopped logging overnight, urgent.&quot;, real_llm))</span></code></pre></div>
+With a real model and the schema in the output format, the repair branch almost never runs. It is still worth having: it turns a rare crash into a rare extra call.</p>
+</details>
+<h2 id="errors-retries-and-rate-limits">Errors, retries and rate limits<a class="headerlink" href="#errors-retries-and-rate-limits" aria-label="Link to this section">#</a></h2>
 <p>Every network call can fail. Expect four kinds of trouble:</p>
 <ul>
 <li><strong>Rate limits</strong> (HTTP 429): too many requests or tokens per minute for your account tier.</li>
@@ -264,42 +398,51 @@
 <li><strong>Bad requests</strong> (400, 401, 404): a bug or bad key. Retrying will not help.</li>
 </ul>
 <p>The official SDKs already retry transient errors with exponential backoff. Configure it, and handle what remains:</p>
-<div class="highlight"><pre><span></span><code><span class="n">client</span> <span class="o">=</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">Anthropic</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">client</span> <span class="o">=</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">Anthropic</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
                                   <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello&quot;</span><span class="p">}])</span>
 <span class="k">except</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">RateLimitError</span><span class="p">:</span>
     <span class="o">...</span>   <span class="c1"># back off further, queue the work, or route to another model</span>
 <span class="k">except</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">APIConnectionError</span><span class="p">:</span>
-    <span class="o">...</span>   <span class="c1"># network trouble: alert if persistent</span>
+    <span class="o">...</span>   <span class="c1"># network trouble or timeout: alert if persistent</span>
 <span class="k">except</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">APIStatusError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>   <span class="c1"># bad request, auth, etc.: log and fix, do not retry blindly</span>
-</code></pre></div>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>   <span class="c1"># bad request, auth, etc.: log and fix, do not retry blindly</span></code></pre></div>
+<p>A request can also succeed and still not give you an answer: <code>stop_reason</code> is <code>"max_tokens"</code> when the cap cut the reply short, and <code>"refusal"</code> when a safety system declined. Check it before you use the text.</p>
 <p>For production, add a <strong>fallback</strong>: if the primary model keeps failing, try a second model or provider, and degrade gracefully (a cached answer, or a clear "try again shortly") rather than crashing.</p>
-<h2 id="tokens-cost-and-speed">Tokens, cost and speed<a class="headerlink" href="#tokens-cost-and-speed" title="Link to this section">#</a></h2>
-<h3 id="estimate-before-you-build">Estimate before you build<a class="headerlink" href="#estimate-before-you-build" title="Link to this section">#</a></h3>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">TRANSIENT</span> <span class="o">=</span> <span class="p">(</span><span class="n">anthropic</span><span class="o">.</span><span class="n">RateLimitError</span><span class="p">,</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">APIConnectionError</span><span class="p">,</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">InternalServerError</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ask_with_fallback</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">models</span><span class="o">=</span><span class="p">(</span><span class="n">MODEL</span><span class="p">,</span> <span class="s2">&quot;claude-haiku-5-5&quot;</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">last_error</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">TRANSIENT</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>            <span class="c1"># the SDK already retried this model; move on</span>
+            <span class="n">last_error</span> <span class="o">=</span> <span class="n">e</span>
+    <span class="k">raise</span> <span class="n">last_error</span></code></pre></div>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="llm-apis:1"><span>Done with session 2: Streaming, structured output with Pydantic, errors, retries and rate limits</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 3</span>Tokens and cost, prompt caching, batches and concurrency, local models, and a CLI chatbot</p></div>
+<h2 id="tokens-cost-and-speed">Tokens, cost and speed<a class="headerlink" href="#tokens-cost-and-speed" aria-label="Link to this section">#</a></h2>
+<h3 id="estimate-before-you-build">Estimate before you build<a class="headerlink" href="#estimate-before-you-build" aria-label="Link to this section">#</a></h3>
 <p>Providers price input and output tokens separately, and output tokens cost several times more than input tokens. A back-of-envelope calculation before you build saves surprises:</p>
-<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">monthly_cost</span><span class="p">(</span><span class="n">requests_per_day</span><span class="p">,</span> <span class="n">in_tokens</span><span class="p">,</span> <span class="n">out_tokens</span><span class="p">,</span> <span class="n">price_in_per_m</span><span class="p">,</span> <span class="n">price_out_per_m</span><span class="p">):</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">def</span><span class="w"> </span><span class="nf">monthly_cost</span><span class="p">(</span><span class="n">requests_per_day</span><span class="p">,</span> <span class="n">in_tokens</span><span class="p">,</span> <span class="n">out_tokens</span><span class="p">,</span> <span class="n">price_in_per_m</span><span class="p">,</span> <span class="n">price_out_per_m</span><span class="p">):</span>
     <span class="n">per_request</span> <span class="o">=</span> <span class="n">in_tokens</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">price_in_per_m</span> <span class="o">+</span> <span class="n">out_tokens</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">price_out_per_m</span>
     <span class="k">return</span> <span class="n">per_request</span> <span class="o">*</span> <span class="n">requests_per_day</span> <span class="o">*</span> <span class="mi">30</span>
 
 <span class="c1"># 5,000 requests a day, 3,000 tokens of prompt (instructions + retrieved context), 400 tokens out.</span>
-<span class="c1"># Plug in your provider&#39;s current per-million-token prices:</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">monthly_cost</span><span class="p">(</span><span class="mi">5_000</span><span class="p">,</span> <span class="mi">3_000</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="n">price_in_per_m</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">price_out_per_m</span><span class="o">=</span><span class="mf">15.0</span><span class="p">))</span>   <span class="c1"># 2250.0 per month</span>
-</code></pre></div>
+<span class="c1"># Illustrative prices for a mid-size model at the time of writing; plug in your provider&#39;s current list:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">monthly_cost</span><span class="p">(</span><span class="mi">5_000</span><span class="p">,</span> <span class="mi">3_000</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="n">price_in_per_m</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">price_out_per_m</span><span class="o">=</span><span class="mf">10.0</span><span class="p">))</span>   <span class="c1"># 1500.0 per month</span></code></pre></div>
 <p>The example shows the usual pattern: the <em>prompt</em> dominates the bill when you stuff in lots of context. That is where caching, shorter prompts and smaller models pay off.</p>
-<p>Count tokens exactly with the provider's tokenizer or counting endpoint rather than guessing:</p>
-<div class="highlight"><pre><span></span><code><span class="n">count</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">count_tokens</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">long_text</span><span class="p">}])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">count</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="prompt-caching">Prompt caching<a class="headerlink" href="#prompt-caching" title="Link to this section">#</a></h3>
+<p>Count tokens exactly with the provider's counting endpoint rather than guessing. Tokenisers differ between providers, so a count from another vendor's tokeniser library is wrong for Claude:</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">count</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">count_tokens</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">long_text</span><span class="p">}])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">count</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">)</span></code></pre></div>
+<h3 id="prompt-caching">Prompt caching<a class="headerlink" href="#prompt-caching" aria-label="Link to this section">#</a></h3>
 <p>If many requests share a long prefix (a big system prompt, a manual, a set of examples), providers can cache the processed prefix. Cached input tokens are billed at a fraction of the normal price and processed faster. With the Anthropic API you mark where the cacheable prefix ends:</p>
-<div class="highlight"><pre><span></span><code><span class="n">manual</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;instrument_manual.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>          <span class="c1"># tens of thousands of tokens, same every call</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">manual</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;instrument_manual.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>          <span class="c1"># thousands of tokens, the same every call</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">ask_manual</span><span class="p">(</span><span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-        <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
         <span class="n">system</span><span class="o">=</span><span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Answer using only the manual below. Quote section numbers.&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">manual</span><span class="p">,</span> <span class="s2">&quot;cache_control&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;ephemeral&quot;</span><span class="p">}},</span>
@@ -308,14 +451,13 @@
     <span class="p">)</span>
     <span class="n">u</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cache write&quot;</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">cache_creation_input_tokens</span><span class="p">,</span> <span class="s2">&quot;cache read&quot;</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">cache_read_input_tokens</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span>
-</code></pre></div>
-<p>The first call writes the cache; calls within the cache lifetime read it. Put stable content first and variable content last: anything that changes before the cache marker invalidates the cache.</p>
-<h3 id="choosing-a-model-size">Choosing a model size<a class="headerlink" href="#choosing-a-model-size" title="Link to this section">#</a></h3>
-<p>Smaller models are several times cheaper and faster. A good habit is to start prototyping with a capable model to learn what "good" looks like, build an evaluation set (lesson 15), then test whether a smaller model passes it. Many production systems <strong>route</strong>: a cheap model handles easy requests and escalates hard ones.</p>
-<h3 id="concurrency-and-batch-processing">Concurrency and batch processing<a class="headerlink" href="#concurrency-and-batch-processing" title="Link to this section">#</a></h3>
+    <span class="k">return</span> <span class="n">text_of</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span></code></pre></div>
+<p>The first call writes the cache; calls within the cache lifetime (minutes by default) read it. Three rules make it work. The cache is a <strong>prefix match</strong>: the request is laid out as tools, then system prompt, then messages, and any byte that changes before the marker invalidates everything after it, so put stable content first and variable content last. Short prefixes are not cached at all (the minimum is model-dependent, from several hundred to a few thousand tokens). And always check <code>cache_read_input_tokens</code>: if it stays at zero, something is silently changing in your prefix, a timestamp or an unsorted dictionary being the usual culprits. Lesson <a class="ref" href="../lessons/16-context-engineering.html" title="Lesson 16: Context engineering and memory">16</a> builds the full strategy, including how to lay out long conversations so the cache keeps hitting.</p>
+<h3 id="choosing-a-model-size">Choosing a model size<a class="headerlink" href="#choosing-a-model-size" aria-label="Link to this section">#</a></h3>
+<p>Smaller models are several times cheaper and faster. A good habit is to start prototyping with a capable model to learn what "good" looks like, build an evaluation set (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>), then test whether a smaller model passes it. Many production systems <strong>route</strong>: a cheap model handles easy requests and escalates hard ones (lesson <a class="ref" href="../lessons/12-reasoning-models.html" title="Lesson 12: Reasoning models and test-time compute">12</a> works through the economics).</p>
+<h3 id="concurrency-and-batch-processing">Concurrency and batch processing<a class="headerlink" href="#concurrency-and-batch-processing" aria-label="Link to this section">#</a></h3>
 <p>To process thousands of documents, run requests concurrently, with a limit so you stay under your rate limits.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">anthropic</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncAnthropic</span>
 
 <span class="n">aclient</span> <span class="o">=</span> <span class="n">AsyncAnthropic</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
@@ -323,33 +465,58 @@
 
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">summarise</span><span class="p">(</span><span class="n">doc</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">async</span> <span class="k">with</span> <span class="n">sem</span><span class="p">:</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aclient</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;claude-haiku-5-5&quot;</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aclient</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;claude-haiku-5-5&quot;</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+                                          <span class="n">output_config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;effort&quot;</span><span class="p">:</span> <span class="s2">&quot;low&quot;</span><span class="p">},</span>
                                           <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Summarise in one sentence:</span><span class="se">\n</span><span class="si">{</span><span class="n">doc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}])</span>
-        <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">return</span> <span class="n">text_of</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
 
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">docs</span><span class="p">):</span>
     <span class="k">return</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">summarise</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">))</span>
 
-<span class="c1"># summaries = asyncio.run(main(docs))</span>
-</code></pre></div>
-<p>For large jobs that do not need answers immediately, providers offer <strong>batch APIs</strong>: submit thousands of requests at once, collect the results within hours, at a substantial discount (often around half price). Ideal for nightly classification, backfills and evaluation runs.</p>
-<h2 id="local-and-open-models">Local and open models<a class="headerlink" href="#local-and-open-models" title="Link to this section">#</a></h2>
+<span class="c1"># summaries = asyncio.run(main(docs))</span></code></pre></div>
+<p>For large jobs that do not need answers immediately, use the <strong>Batch API</strong>: submit thousands of requests at once, collect the results within hours (usually much sooner), at a substantial discount, typically half price. It is ideal for nightly classification, backfills and evaluation runs. Each request carries a <code>custom_id</code>, because results come back in any order:</p>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">from</span><span class="w"> </span><span class="nn">anthropic.types.message_create_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageCreateParamsNonStreaming</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">anthropic.types.messages.batch_create_params</span><span class="w"> </span><span class="kn">import</span> <span class="n">Request</span>
+
+<span class="n">tickets</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;The fan in the enclosure is grinding loudly&quot;</span><span class="p">,</span> <span class="s2">&quot;After updating to 2.4 the GUI crashes&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;Yesterday&#39;s ozone values are all exactly zero&quot;</span><span class="p">]</span>
+
+<span class="n">requests</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Request</span><span class="p">(</span><span class="n">custom_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;ticket-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">MessageCreateParamsNonStreaming</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">&quot;claude-haiku-5-5&quot;</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">output_config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;effort&quot;</span><span class="p">:</span> <span class="s2">&quot;low&quot;</span><span class="p">},</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;One word, hardware/software/data/other: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}]))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tickets</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">batches</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">requests</span><span class="o">=</span><span class="n">requests</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">processing_status</span><span class="p">)</span>          <span class="c1"># &quot;in_progress&quot; until every request has run</span></code></pre></div>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="k">while</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">batches</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">processing_status</span> <span class="o">!=</span> <span class="s2">&quot;ended&quot;</span><span class="p">:</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">batches</span><span class="o">.</span><span class="n">results</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">id</span><span class="p">):</span>      <span class="c1"># any order: key by custom_id</span>
+    <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;succeeded&quot;</span><span class="p">:</span>
+        <span class="n">results</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">custom_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">text_of</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">custom_id</span><span class="p">,</span> <span class="s2">&quot;failed:&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>   <span class="c1"># errored, canceled or expired</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span></code></pre></div>
+<h2 id="local-and-open-models">Local and open models<a class="headerlink" href="#local-and-open-models" aria-label="Link to this section">#</a></h2>
 <p>Many local servers (Ollama, vLLM, llama.cpp's server, LM Studio) expose an <strong>OpenAI-compatible</strong> endpoint, so the same client code works by changing the base URL.</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># install Ollama from ollama.com, then:</span>
-ollama<span class="w"> </span>pull<span class="w"> </span>llama3.2<span class="w">          </span><span class="c1"># a small open model, a couple of GB</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+<div class="highlight" data-lang="bash"><div class="code-head"><span class="code-label">Terminal</span></div><pre><code><span class="c1"># install Ollama from ollama.com, then:</span>
+ollama<span class="w"> </span>pull<span class="w"> </span>llama3.2<span class="w">          </span><span class="c1"># a small open model, a couple of GB</span></code></pre></div>
+<div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
 
 <span class="n">local</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;http://localhost:11434/v1&quot;</span><span class="p">,</span> <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;ollama&quot;</span><span class="p">)</span>   <span class="c1"># the key is ignored locally</span>
 <span class="n">r</span> <span class="o">=</span> <span class="n">local</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="s2">&quot;llama3.2&quot;</span><span class="p">,</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Give me three uses of a spectrometer.&quot;</span><span class="p">}],</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
-</code></pre></div>
-<p>Local models are free per call, private and work offline, but they are smaller and less capable than frontier APIs, and you own the hardware and operations. Lesson 17 covers serving them properly.</p>
+<span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">)</span></code></pre></div>
+<p>Local models are free per call, private and work offline, but they are smaller and less capable than frontier APIs, and you own the hardware and operations. Lesson <a class="ref" href="../lessons/20-llm-inference.html" title="Lesson 20: LLM inference in depth">20</a> explains what the server is doing (batching, the KV cache, quantisation) and lesson <a class="ref" href="../lessons/21-deployment-llmops.html" title="Lesson 21: Deployment, serving and LLMOps">21</a> covers serving them properly.</p>
 <div class="admonition exercise">
 <p class="admonition-title">Hands-on: a streaming CLI chatbot</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>10-llm-apis.ipynb</code>, cell “Hands-on: a streaming CLI chatbot”</p>
 <p>Build <code>chat.py</code>, a terminal chatbot that:</p>
 <ol>
 <li>Streams replies as they are generated.</li>
@@ -358,16 +525,17 @@ ollama<span class="w"> </span>pull<span class="w"> </span>llama3.2<span class="w
 <li>Supports <code>/reset</code> to clear history, <code>/system &lt;text&gt;</code> to change the system prompt, and <code>/quit</code>.</li>
 <li>Survives a network error without losing the conversation.</li>
 </ol>
+<p>Develop it against the <code>FakeAnthropic</code> from the first exercise (give it a <code>messages.stream</code> that yields a few words) and switch to the real client at the end. You are done when a ten-turn conversation shows the input-token count climbing each turn, and pulling the network cable mid-reply leaves the history intact.</p>
 </div>
 <details class="solution">
 <summary>Show a solution</summary>
-<p><div class="highlight"><span class="filename">chat.py</span><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">anthropic</span>
+<p><div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">chat.py</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">anthropic</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
 
 <span class="n">load_dotenv</span><span class="p">()</span>
 <span class="n">client</span> <span class="o">=</span> <span class="n">anthropic</span><span class="o">.</span><span class="n">Anthropic</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">MODEL</span> <span class="o">=</span> <span class="s2">&quot;claude-sonnet-5-5&quot;</span>
-<span class="n">PRICE_IN</span><span class="p">,</span> <span class="n">PRICE_OUT</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">15.0</span>          <span class="c1"># per million tokens: set to your provider&#39;s current prices</span>
+<span class="n">PRICE_IN</span><span class="p">,</span> <span class="n">PRICE_OUT</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">10.0</span>          <span class="c1"># per million tokens: set to your provider&#39;s current prices</span>
 <span class="n">MAX_HISTORY_CHARS</span> <span class="o">=</span> <span class="mi">80_000</span>                <span class="c1"># about 20k tokens</span>
 
 <span class="n">system</span> <span class="o">=</span> <span class="s2">&quot;You are a friendly, precise tutor for an AI engineering course.&quot;</span>
@@ -397,7 +565,7 @@ ollama<span class="w"> </span>pull<span class="w"> </span>llama3.2<span class="w
     <span class="n">trim</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bot&gt; &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">system</span><span class="o">=</span><span class="n">system</span><span class="p">,</span>
+        <span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">MODEL</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">system</span><span class="o">=</span><span class="n">system</span><span class="p">,</span>
                                     <span class="n">messages</span><span class="o">=</span><span class="n">history</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
             <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">piece</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">text_stream</span><span class="p">:</span>
@@ -413,60 +581,34 @@ ollama<span class="w"> </span>pull<span class="w"> </span>llama3.2<span class="w
     <span class="n">spent_in</span> <span class="o">+=</span> <span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">input_tokens</span>
     <span class="n">spent_out</span> <span class="o">+=</span> <span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span>
     <span class="n">cost</span> <span class="o">=</span> <span class="n">spent_in</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">PRICE_IN</span> <span class="o">+</span> <span class="n">spent_out</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">PRICE_OUT</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[</span><span class="si">{</span><span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">input_tokens</span><span class="si">}</span><span class="s2"> in / </span><span class="si">{</span><span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="si">}</span><span class="s2"> out; session ≈ </span><span class="si">{</span><span class="n">cost</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> USD]&quot;</span><span class="p">)</span>
-</code></pre></div>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[</span><span class="si">{</span><span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">input_tokens</span><span class="si">}</span><span class="s2"> in / </span><span class="si">{</span><span class="n">final</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">output_tokens</span><span class="si">}</span><span class="s2"> out; session ≈ </span><span class="si">{</span><span class="n">cost</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> USD]&quot;</span><span class="p">)</span></code></pre></div>
 Watch the input-token count climb every turn: that is the stateless API re-reading the whole history. It is the clearest demonstration of why long conversations get slow and expensive, and why trimming, summarising or caching matters.</p>
 </details>
-<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" title="Link to this section">#</a></h2>
+<h2 id="check-yourself">Check yourself<a class="headerlink" href="#check-yourself" aria-label="Link to this section">#</a></h2>
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Your chatbot "forgets" what the user said two turns ago. What is the most likely cause?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">The model's memory was full</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">The previous turns were not included in the messages sent with the latest request; the API is stateless</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">The temperature was too high</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">The system prompt was too long</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The model's memory was full</button></li><li><button type="button" class="quiz-opt" data-correct="1">The previous turns were not included in the messages sent with the latest request; the API is stateless</button></li><li><button type="button" class="quiz-opt" data-correct="0">The temperature was too high</button></li><li><button type="button" class="quiz-opt" data-correct="0">The system prompt was too long</button></li></ol>
 <p class="quiz-expl" hidden>The model sees only what you send in each request. Conversation state lives in your code.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What is the most reliable way to get structured data out of an LLM?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">Ask politely for JSON in the prompt</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Use a high temperature</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">Use the API's schema-constrained mechanism (such as a forced tool call or JSON-schema output), then validate with Pydantic</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Parse whatever comes back with regular expressions</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Ask politely for JSON in the prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">Use a high temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">Give the API a JSON schema as the output format, then validate the reply with Pydantic and repair on failure</button></li><li><button type="button" class="quiz-opt" data-correct="0">Parse whatever comes back with regular expressions</button></li></ol>
 <p class="quiz-expl" hidden>Constrain the output, validate it, and retry with the error message on the rare failure.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Which errors should your code retry automatically?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="1">Rate limits, overload or server errors, and timeouts, with exponential backoff</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Authentication errors</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Bad request errors caused by an invalid parameter</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">All errors, immediately and indefinitely</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Rate limits, overload or server errors, and timeouts, with exponential backoff</button></li><li><button type="button" class="quiz-opt" data-correct="0">Authentication errors</button></li><li><button type="button" class="quiz-opt" data-correct="0">Bad request errors caused by an invalid parameter</button></li><li><button type="button" class="quiz-opt" data-correct="0">All errors, immediately and indefinitely</button></li></ol>
 <p class="quiz-expl" hidden>Transient errors deserve a retry; client errors mean a bug that retrying will not fix.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Many requests share a 30,000-token system prompt containing a manual. What most reduces cost?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">Increase max_tokens</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">Prompt caching on the shared prefix</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Use streaming</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Raise the temperature</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Increase max_tokens</button></li><li><button type="button" class="quiz-opt" data-correct="1">Prompt caching on the shared prefix</button></li><li><button type="button" class="quiz-opt" data-correct="0">Use streaming</button></li><li><button type="button" class="quiz-opt" data-correct="0">Raise the temperature</button></li></ol>
 <p class="quiz-expl" hidden>Cached prefix tokens are billed at a fraction of the normal rate and processed faster.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Why does each turn of a long chat cost more than the previous one?</p>
-<ol class="quiz-options" type="A">
-<li><button type="button" class="quiz-opt" data-correct="0">Providers charge more as the conversation ages</button></li>
-<li><button type="button" class="quiz-opt" data-correct="1">Each request re-sends and re-bills the entire history as input tokens</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Output tokens get more expensive over time</button></li>
-<li><button type="button" class="quiz-opt" data-correct="0">Streaming adds overhead</button></li>
-</ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Providers charge more as the conversation ages</button></li><li><button type="button" class="quiz-opt" data-correct="1">Each request re-sends and re-bills the entire history as input tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">Output tokens get more expensive over time</button></li><li><button type="button" class="quiz-opt" data-correct="0">Streaming adds overhead</button></li></ol>
 <p class="quiz-expl" hidden>Input tokens grow with every turn. Trim, summarise or cache to control it.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -474,30 +616,54 @@ Watch the input-token count climb every turn: that is the stateless API re-readi
 <p class="admonition-title">Key takeaways</p>
 <ul>
 <li>Chat APIs take a system prompt plus a list of role-tagged messages and are stateless: you resend history each turn.</li>
-<li>Always set <code>max_tokens</code> and check the stop reason. Stream responses for a fast-feeling experience.</li>
-<li>Get structured output with schema-constrained mechanisms and validate with Pydantic.</li>
-<li>Retry transient errors with backoff, fail fast on client errors, and keep a fallback.</li>
-<li>Estimate costs up front; input context usually dominates. Use prompt caching, smaller models, routing, concurrency limits and batch APIs.</li>
-<li>OpenAI-compatible endpoints let the same code talk to local open models.</li>
+<li>Read responses by block type, always set <code>max_tokens</code> with room for thinking, and check the stop reason. Stream responses for a fast-feeling experience.</li>
+<li>Get structured output by giving the API a JSON schema, then validate with Pydantic and repair on failure.</li>
+<li>Retry transient errors with backoff, fail fast on client errors, and keep a fallback model.</li>
+<li>Estimate costs up front; input context usually dominates. Use prompt caching, smaller models and low effort, routing, concurrency limits and the Batch API.</li>
+<li>A fake client lets you test everything around the model offline. OpenAI-compatible endpoints let the same code talk to local open models.</li>
 </ul>
 </div>
-<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" title="Link to this section">#</a></h3>
+<h3 id="go-deeper">Go deeper<a class="headerlink" href="#go-deeper" aria-label="Link to this section">#</a></h3>
 <ul>
-<li><a href="https://docs.claude.com/en/api/overview">Claude API documentation</a>, including tool use, prompt caching, streaming and batches</li>
+<li><a href="https://docs.claude.com/en/api/overview">Claude API documentation</a>, including structured outputs, prompt caching, streaming and the Batch API</li>
 <li><a href="https://platform.openai.com/docs/api-reference">OpenAI API reference</a></li>
 <li><a href="https://docs.pydantic.dev/">Pydantic documentation</a></li>
 <li><a href="https://ollama.com">Ollama</a> for running open models locally</li>
 </ul>
 </div>
 <footer class="lesson-foot">
+<label class="sb-done final"><input type="checkbox" data-session="llm-apis:2"><span>Done with session 3: Tokens and cost, prompt caching, batches and concurrency, local models, and a CLI chatbot</span></label>
 <button type="button" class="complete-btn" data-complete="llm-apis" data-sessions="3">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/09-how-llms-are-built.html"><span>Previous</span>09 How large language models are built</a><a class="next" href="../lessons/11-prompt-engineering.html"><span>Next</span>11 Prompt engineering</a></nav>
 </footer>
 </article>
 </main>
-<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#the-shape-of-every-chat-api">The shape of every chat API</a></li><li><a href="#first-calls">First calls</a><ul><li><a href="#multi-turn-conversations">Multi-turn conversations</a></li><li><a href="#the-parameters-that-matter">The parameters that matter</a></li></ul></li><li><a href="#streaming">Streaming</a></li><li><a href="#structured-output-you-can-trust">Structured output you can trust</a><ul><li><a href="#define-the-shape-with-pydantic">Define the shape with Pydantic</a></li><li><a href="#force-the-model-to-fill-it-in">Force the model to fill it in</a></li></ul></li><li><a href="#errors-retries-and-rate-limits">Errors, retries and rate limits</a></li><li><a href="#tokens-cost-and-speed">Tokens, cost and speed</a><ul><li><a href="#estimate-before-you-build">Estimate before you build</a></li><li><a href="#prompt-caching">Prompt caching</a></li><li><a href="#choosing-a-model-size">Choosing a model size</a></li><li><a href="#concurrency-and-batch-processing">Concurrency and batch processing</a></li></ul></li><li><a href="#local-and-open-models">Local and open models</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#the-shape-of-every-chat-api">The shape of every chat API</a></li><li><a href="#first-calls">First calls</a><ul><li><a href="#read-the-response-by-block-type">Read the response by block type</a></li><li><a href="#multi-turn-conversations">Multi-turn conversations</a></li><li><a href="#the-parameters-that-matter">The parameters that matter</a></li></ul></li><li><a href="#streaming">Streaming</a></li><li><a href="#structured-output-you-can-trust">Structured output you can trust</a><ul><li><a href="#define-the-shape-with-pydantic">Define the shape with Pydantic</a></li><li><a href="#ask-the-api-to-fill-it-in">Ask the API to fill it in</a></li></ul></li><li><a href="#errors-retries-and-rate-limits">Errors, retries and rate limits</a></li><li><a href="#tokens-cost-and-speed">Tokens, cost and speed</a><ul><li><a href="#estimate-before-you-build">Estimate before you build</a></li><li><a href="#prompt-caching">Prompt caching</a></li><li><a href="#choosing-a-model-size">Choosing a model size</a></li><li><a href="#concurrency-and-batch-processing">Concurrency and batch processing</a></li></ul></li><li><a href="#local-and-open-models">Local and open models</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
 </div>
-<script src="../assets/course-data.js"></script>
-<script src="../assets/app.js"></script>
+<nav class="lesson-bar" aria-label="Lesson">
+<a class="lb-btn" href="../lessons/09-how-llms-are-built.html" aria-label="Previous lesson: How large language models are built"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+<button type="button" class="lb-toc" aria-expanded="false" aria-controls="toc-sheet"><span class="lb-where">10 · <span class="lb-section">LLM APIs</span></span><span class="lb-pct" aria-hidden="true"><span></span></span></button>
+<a class="lb-btn" href="../lessons/11-prompt-engineering.html" aria-label="Next lesson: Prompt engineering"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+</nav>
+<div class="toc-sheet" id="toc-sheet" hidden><div class="toc-sheet-inner"><aside class="toc-sheet-list" aria-label="Contents"><p class="toc-title">Contents</p><ul><li><a href="#the-shape-of-every-chat-api">The shape of every chat API</a></li><li><a href="#first-calls">First calls</a><ul><li><a href="#read-the-response-by-block-type">Read the response by block type</a></li><li><a href="#multi-turn-conversations">Multi-turn conversations</a></li><li><a href="#the-parameters-that-matter">The parameters that matter</a></li></ul></li><li><a href="#streaming">Streaming</a></li><li><a href="#structured-output-you-can-trust">Structured output you can trust</a><ul><li><a href="#define-the-shape-with-pydantic">Define the shape with Pydantic</a></li><li><a href="#ask-the-api-to-fill-it-in">Ask the API to fill it in</a></li></ul></li><li><a href="#errors-retries-and-rate-limits">Errors, retries and rate limits</a></li><li><a href="#tokens-cost-and-speed">Tokens, cost and speed</a><ul><li><a href="#estimate-before-you-build">Estimate before you build</a></li><li><a href="#prompt-caching">Prompt caching</a></li><li><a href="#choosing-a-model-size">Choosing a model size</a></li><li><a href="#concurrency-and-batch-processing">Concurrency and batch processing</a></li></ul></li><li><a href="#local-and-open-models">Local and open models</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside></div></div>
+<dialog class="settings" aria-labelledby="settings-title">
+<form method="dialog" class="settings-inner">
+<div class="settings-head"><h2 id="settings-title">Reading settings</h2><button class="icon-btn" value="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<fieldset><legend>Theme</legend><div class="seg-ctl" data-pref="theme"><button type="button" value="auto">Auto</button><button type="button" value="light">Light</button><button type="button" value="dark">Dark</button></div></fieldset>
+<fieldset><legend>Text size</legend><div class="seg-ctl" data-pref="size"><button type="button" value="s" aria-label="Small">A</button><button type="button" value="m" aria-label="Medium">A</button><button type="button" value="l" aria-label="Large">A</button><button type="button" value="xl" aria-label="Extra large">A</button></div></fieldset>
+<fieldset><legend>Typeface</legend><div class="seg-ctl" data-pref="font"><button type="button" value="serif">Literata</button><button type="button" value="sans">Atkinson Hyperlegible</button></div></fieldset>
+<fieldset class="sync"><legend>Progress on your other devices</legend>
+<p>Your ticks live in this browser. To carry them to your phone or computer, open this link there:</p>
+<div class="sync-row"><input class="sync-link" type="text" readonly aria-label="Sync link"><button type="button" class="btn-small sync-copy">Copy</button><button type="button" class="btn-small sync-share" hidden>Share</button></div>
+<p class="sync-note">Opening the link adds these ticks to the ones already there; nothing is removed.</p>
+</fieldset>
+<fieldset class="offline" hidden><legend>Offline reading</legend>
+<p class="offline-status">Lessons you open are saved for reading without a connection.</p>
+<button type="button" class="btn-small offline-all">Save every lesson for offline reading</button>
+</fieldset>
+</form>
+</dialog>
+<script src="../assets/course-data.js?v=da7d24f3"></script>
+<script src="../assets/app.js?v=da7d24f3"></script>
 </body>
 </html>
