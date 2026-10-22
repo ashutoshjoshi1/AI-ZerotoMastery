@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>How large language models are built | AI Engineering</title>
-<meta name="description" content="The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.">
+<meta name="description" content="The full life of an LLM, from tokeniser to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.">
 <meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121a22" media="(prefers-color-scheme: dark)">
 <meta property="og:title" content="How large language models are built">
-<meta property="og:description" content="The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.">
+<meta property="og:description" content="The full life of an LLM, from tokeniser to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.">
 <meta property="og:type" content="website">
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -105,13 +105,13 @@
 <header class="lesson-head">
 <p class="lesson-part"><span class="swatch" aria-hidden="true"></span>Part V, Transformers and LLMs <span class="wl">484 nm</span></p>
 <h1><span class="lesson-num">09</span> How large language models are built</h1>
-<p class="lesson-summary">The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.</p>
+<p class="lesson-summary">The full life of an LLM, from tokeniser to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.</p>
 <p class="lesson-meta"><span>4 sessions</span><span>about 20 min of reading</span><span>4 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Implement byte-pair encoding and explain how tokenisation causes quirks with spelling, numbers and non-English text</li><li>Estimate training compute with C ≈ 6ND and explain what scaling laws and the Chinchilla result say about model size and data</li><li>Explain how supervised fine-tuning, RLHF, DPO, AI feedback and RL on checkable problems turn a base model into an assistant or a reasoning model</li><li>Implement temperature, top-k and top-p sampling and choose decoding settings to suit a task</li><li>Explain why models hallucinate and which engineering mitigations reduce it</li><li>Weigh closed API-only models against open-weight models on capability, setup, data control, customisation and cost</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 4 sessions of about an hour</p>
-<ol class="sessions"><li><label><input type="checkbox" data-session="how-llms-are-built:0"><span>Tokenization: implement byte-pair encoding and see its quirks</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:1"><span>Pretraining: data, objective, compute and scaling laws</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:2"><span>Post-training: instruction tuning, RLHF, DPO, reasoning models</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:3"><span>Decoding, context windows, hallucination, and the model landscape</span></label></li></ol>
+<ol class="sessions"><li><label><input type="checkbox" data-session="how-llms-are-built:0"><span>Tokenisation: implement byte-pair encoding and see its quirks</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:1"><span>Pretraining: data, objective, compute and scaling laws</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:2"><span>Post-training: instruction tuning, RLHF, DPO, reasoning models</span></label></li><li><label><input type="checkbox" data-session="how-llms-are-built:3"><span>Decoding, context windows, hallucination and the model landscape; hands-on with a real tokeniser</span></label></li></ol>
 <p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
 <aside class="handson" aria-label="Hands-on notebook">
@@ -123,12 +123,13 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 4</span>Tokenisation: implement byte-pair encoding and see its quirks</p>
 <h2 id="from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model<a class="headerlink" href="#from-tinygpt-to-a-frontier-model" aria-label="Link to this section">#</a></h2>
-<p>Your TinyGPT from lesson <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a> has the same architecture as a frontier LLM, give or take some refinements. The differences are a proper tokenizer, about a million times more parameters, roughly a hundred million times more training data, and a long post-training phase that turns a text predictor into a helpful assistant. This lesson walks through each stage, because each one explains behaviour you will run into as an engineer: odd failures on spelling and arithmetic, the cost of long prompts, why temperature matters, and why models can be confidently wrong.</p>
-<h2 id="tokenization">Tokenization<a class="headerlink" href="#tokenization" aria-label="Link to this section">#</a></h2>
+<p>Your TinyGPT from lesson <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a> has the same architecture as a frontier LLM, give or take some refinements. The differences are a proper tokeniser, about a million times more parameters, roughly a hundred million times more training data, and a long post-training phase that turns a text predictor into a helpful assistant. This lesson walks through each stage, because each one explains behaviour you will run into as an engineer: odd failures on spelling and arithmetic, the cost of long prompts, why temperature matters, and why models can be confidently wrong.</p>
+<h2 id="tokenisation">Tokenisation<a class="headerlink" href="#tokenisation" aria-label="Link to this section">#</a></h2>
 <p>Characters make sequences long (attention is quadratic in length); whole words make the vocabulary enormous and cannot handle new words. Modern LLMs use <strong>subword tokens</strong>: frequent words get a single token, rare words are split into pieces, and anything at all can fall back to raw bytes. Vocabularies are typically 32,000 to 260,000 tokens. In English, one token is roughly four characters, or about three-quarters of a word.</p>
 <h3 id="byte-pair-encoding-implemented">Byte-pair encoding, implemented<a class="headerlink" href="#byte-pair-encoding-implemented" aria-label="Link to this section">#</a></h3>
-<p>BPE starts from the 256 possible byte values and repeatedly merges the most frequent adjacent pair into a new token. Real tokenizers first split text into word-like chunks with a regular expression, so merges never cross word boundaries.</p>
+<p>BPE starts from the 256 possible byte values and repeatedly merges the most frequent adjacent pair into a new token. Real tokenisers first split text into word-like chunks with a regular expression, so merges never cross word boundaries.</p>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
 
@@ -178,7 +179,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">decode</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">vocab</span><span class="p">):</span>
     <span class="k">return</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">vocab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">)</span></code></pre></div>
-<p>Train it on a paragraph about tokenizers (repeated a few times) with a 400-token vocabulary, then look at what it does:</p>
+<p>Train it on a paragraph about tokenisers (repeated a few times) with a 400-token vocabulary, then look at what it does:</p>
 <div class="highlight" data-lang="text"><div class="code-head"><span class="code-label">Text</span></div><pre><code>&#39;The tokenizer splits words.&#39;   27 bytes -&gt;  6 tokens: &#39;T&#39; &#39;he&#39; &#39; tokenizer&#39; &#39; splits&#39; &#39; words&#39; &#39;.&#39;
 &#39;remodelling&#39;                   11 bytes -&gt;  4 tokens: &#39;re&#39; &#39;model&#39; &#39;l&#39; &#39;ing&#39;
 &#39;Tokenization of 3.14159&#39;       23 bytes -&gt; 18 tokens: &#39;T&#39; &#39;o&#39; &#39;k&#39; &#39;en&#39; &#39;i&#39; &#39;z&#39; &#39;at&#39; &#39;i&#39; &#39;on&#39; &#39; of&#39; ...
@@ -187,13 +188,14 @@
 <ul>
 <li><strong>Frequent words are one token; rare ones fragment.</strong> " tokenizer" was common in training text, "Tokenization" with a capital T was not, so it shatters into letters.</li>
 <li><strong>Shared pieces carry meaning.</strong> "remodelling" reuses "model".</li>
-<li><strong>Numbers tokenize awkwardly.</strong> Digits are split inconsistently, which is one reason LLMs can be unreliable at arithmetic and at counting letters ("how many r's in strawberry?"): the model never sees individual characters, only tokens.</li>
+<li><strong>Numbers tokenise awkwardly.</strong> Digits are split inconsistently, which is one reason LLMs can be unreliable at arithmetic and at counting letters ("how many r's in strawberry?"): the model never sees individual characters, only tokens.</li>
 <li><strong>Unseen text falls back to bytes.</strong> Nothing is ever unknown, but non-English text and emoji cost many more tokens, which means more cost and less effective context.</li>
 </ul>
 <div class="admonition tip">
 <p class="admonition-title">Tokens are the unit of everything</p>
-<p>APIs charge per token, context windows are measured in tokens, and latency scales with tokens generated. Use the provider's token counter (or <code>tiktoken</code> for OpenAI-style tokenizers, or a Hugging Face tokenizer for open models) when you estimate costs. Never estimate from word counts in production.</p>
+<p>APIs charge per token, context windows are measured in tokens, and latency scales with tokens generated. Use the provider's token counter (or <code>tiktoken</code> for OpenAI-style tokenisers, or a Hugging Face tokeniser for open models) when you estimate costs. Never estimate from word counts in production.</p>
 </div>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="how-llms-are-built:0"><span>Done with session 1: Tokenisation: implement byte-pair encoding and see its quirks</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 4</span>Pretraining: data, objective, compute and scaling laws</p></div>
 <h2 id="pretraining">Pretraining<a class="headerlink" href="#pretraining" aria-label="Link to this section">#</a></h2>
 <h3 id="the-objective">The objective<a class="headerlink" href="#the-objective" aria-label="Link to this section">#</a></h3>
 <p>Exactly what TinyGPT did: minimise cross-entropy on the next token, averaged over every position of every sequence. No labels, no task definitions. To predict the next token of a physics textbook, a chemistry paper, a Python repository and a legal contract, a model has to absorb grammar, facts, reasoning patterns and coding conventions. Capabilities emerge as a by-product of compression.</p>
@@ -211,6 +213,7 @@
 <li><strong>RoPE</strong> positions and <strong>grouped-query attention</strong> (lesson <a class="ref" href="../lessons/08-transformers.html" title="Lesson 08: Attention and the transformer">08</a>).</li>
 <li><strong>Mixture of experts (MoE)</strong>: each MLP is replaced by many "expert" MLPs and a small router that sends each token to only a few of them. Total parameters can be huge while the compute per token stays modest. Several leading open models use MoE.</li>
 </ul>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="how-llms-are-built:1"><span>Done with session 2: Pretraining: data, objective, compute and scaling laws</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 4</span>Post-training: instruction tuning, RLHF, DPO, reasoning models</p></div>
 <h2 id="post-training-from-predictor-to-assistant">Post-training: from predictor to assistant<a class="headerlink" href="#post-training-from-predictor-to-assistant" aria-label="Link to this section">#</a></h2>
 <p>A freshly pretrained <strong>base model</strong> continues text. Ask it "What is the capital of France?" and it may continue with "What is the capital of Germany?", because lists of quiz questions are common on the web. Post-training turns it into something that follows instructions, holds a conversation, refuses harmful requests and uses tools.</p>
 <h3 id="1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)<a class="headerlink" href="#1-supervised-fine-tuning-sft" aria-label="Link to this section">#</a></h3>
@@ -223,6 +226,7 @@
 <p>Human labelling is slow and costly. <strong>RLAIF</strong> uses a model to judge responses, often against a written set of principles. Anthropic's Constitutional AI is the best-known example: a model critiques and revises its own outputs according to a constitution of principles, and AI-generated preferences train the final model.</p>
 <h3 id="5-reasoning-models">5. Reasoning models<a class="headerlink" href="#5-reasoning-models" aria-label="Link to this section">#</a></h3>
 <p>A more recent shift: train models with reinforcement learning on problems whose answers can be <strong>checked automatically</strong> (maths with known answers, code with unit tests), rewarding correct final answers. Models learn to produce long chains of intermediate reasoning, to try approaches, notice mistakes and backtrack. At inference time these models spend extra tokens "thinking" before answering, and accuracy on hard problems improves as they are allowed to think longer. This <strong>test-time compute</strong> is a second scaling axis next to model size. As an engineer you will see it as a setting (a thinking or reasoning budget) that trades latency and cost for accuracy.</p>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="how-llms-are-built:2"><span>Done with session 3: Post-training: instruction tuning, RLHF, DPO, reasoning models</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 4</span>Decoding, context windows, hallucination and the model landscape; hands-on with a real tokeniser</p></div>
 <h2 id="decoding-turning-distributions-into-text">Decoding: turning distributions into text<a class="headerlink" href="#decoding-turning-distributions-into-text" aria-label="Link to this section">#</a></h2>
 <p>At each step the model outputs a probability for every token in its vocabulary. How you pick from that distribution changes the output a lot.</p>
 <ul>
@@ -309,11 +313,11 @@
 </table></div>
 <p>Most real systems mix them: a frontier model for hard reasoning, a small open model for high-volume classification, an embedding model for search. Model names and rankings change every few months, so build systems where the model is a configuration value, and keep an evaluation set (lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>) to tell you objectively when to switch.</p>
 <div class="admonition exercise">
-<p class="admonition-title">Hands-on: tokenizers in the wild</p>
-<p class="exercise-where"><span class="chip">At your computer</span> <code>09-how-llms-are-built.ipynb</code>, cell “Hands-on: tokenizers in the wild”</p>
-<p>Install <code>tiktoken</code> (<code>uv add tiktoken</code>) and load <code>tiktoken.get_encoding("cl100k_base")</code>, a real production tokenizer.</p>
+<p class="admonition-title">Hands-on: tokenisers in the wild</p>
+<p class="exercise-where"><span class="chip">At your computer</span> <code>09-how-llms-are-built.ipynb</code>, cell “Hands-on: tokenisers in the wild”</p>
+<p>Install <code>tiktoken</code> (<code>uv add tiktoken</code>) and load <code>tiktoken.get_encoding("cl100k_base")</code>, a real production tokeniser.</p>
 <ol>
-<li>Tokenize an English sentence, the same sentence translated into another language you know, a line of Python, and a long number. Compare token counts per character.</li>
+<li>Tokenise an English sentence, the same sentence translated into another language you know, a line of Python, and a long number. Compare token counts per character.</li>
 <li>Print the individual tokens for "strawberry", " strawberry" and "Strawberry". Why do these differ, and how does this relate to letter-counting failures?</li>
 <li>Remove the pre-split regex from the BPE code above (treat the whole text as one chunk) and retrain. Look at the longest learned tokens. What goes wrong?</li>
 </ol>
@@ -338,7 +342,7 @@
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why do LLMs often struggle to count the letters in a word?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They are trained only on numbers</button></li><li><button type="button" class="quiz-opt" data-correct="1">They see tokens, multi-character chunks, rather than individual letters</button></li><li><button type="button" class="quiz-opt" data-correct="0">Their context window is too short</button></li><li><button type="button" class="quiz-opt" data-correct="0">Letter counting is disabled during post-training</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Their context window is too short</button></li><li><button type="button" class="quiz-opt" data-correct="0">Letter counting is disabled during post-training</button></li><li><button type="button" class="quiz-opt" data-correct="0">They are trained only on numbers</button></li><li><button type="button" class="quiz-opt" data-correct="1">They see tokens, multi-character chunks, rather than individual letters</button></li></ol>
 <p class="quiz-expl" hidden>The model has to infer spelling from tokens it never sees broken into characters.</p>
 </div>
 <div class="quiz-q" data-q>
@@ -348,17 +352,17 @@
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> What is the role of the KL penalty in RLHF?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It speeds up training</button></li><li><button type="button" class="quiz-opt" data-correct="1">It keeps the tuned model close to its starting point so it cannot drift into exploiting the reward model</button></li><li><button type="button" class="quiz-opt" data-correct="0">It removes the need for human preferences</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes the model's outputs shorter</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It removes the need for human preferences</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes the model's outputs shorter</button></li><li><button type="button" class="quiz-opt" data-correct="1">It keeps the tuned model close to its starting point so it cannot drift into exploiting the reward model</button></li><li><button type="button" class="quiz-opt" data-correct="0">It speeds up training</button></li></ol>
 <p class="quiz-expl" hidden>Without it the policy can find degenerate outputs that score highly on an imperfect reward model.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> You need a model to extract invoice fields into JSON reliably. Which decoding setting fits best?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Low temperature, such as 0 to 0.2</button></li><li><button type="button" class="quiz-opt" data-correct="0">Temperature 1.5 for variety</button></li><li><button type="button" class="quiz-opt" data-correct="0">High top-k with high temperature</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes no difference</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">High top-k with high temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">Low temperature, such as 0 to 0.2</button></li><li><button type="button" class="quiz-opt" data-correct="0">Temperature 1.5 for variety</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes no difference</button></li></ol>
 <p class="quiz-expl" hidden>Tasks with one right answer want the most likely tokens, not creative variation.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> What distinguishes reasoning models from standard chat models?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They have larger context windows</button></li><li><button type="button" class="quiz-opt" data-correct="1">They are trained with RL on checkable problems to produce long reasoning before answering, and improve with more thinking tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">They do not use transformers</button></li><li><button type="button" class="quiz-opt" data-correct="0">They cannot hallucinate</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">They are trained with RL on checkable problems to produce long reasoning before answering, and improve with more thinking tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">They do not use transformers</button></li><li><button type="button" class="quiz-opt" data-correct="0">They cannot hallucinate</button></li><li><button type="button" class="quiz-opt" data-correct="0">They have larger context windows</button></li></ol>
 <p class="quiz-expl" hidden>Test-time compute is a second scaling axis: more thinking, at higher latency and cost, for better accuracy on hard problems.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -383,20 +387,20 @@
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="how-llms-are-built:3"><span>Done with session 4: Decoding, context windows, hallucination and the model landscape; hands-on with a real tokeniser</span></label>
 <button type="button" class="complete-btn" data-complete="how-llms-are-built" data-sessions="4">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/08-transformers.html"><span>Previous</span>08 Attention and the transformer</a><a class="next" href="../lessons/10-llm-apis.html"><span>Next</span>10 Working with LLM APIs</a></nav>
 </footer>
 </article>
 </main>
-<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model</a></li><li><a href="#tokenization">Tokenization</a><ul><li><a href="#byte-pair-encoding-implemented">Byte-pair encoding, implemented</a></li></ul></li><li><a href="#pretraining">Pretraining</a><ul><li><a href="#the-objective">The objective</a></li><li><a href="#the-data">The data</a></li><li><a href="#compute-and-scaling-laws">Compute and scaling laws</a></li><li><a href="#architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards</a></li></ul></li><li><a href="#post-training-from-predictor-to-assistant">Post-training: from predictor to assistant</a><ul><li><a href="#1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)</a></li><li><a href="#2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF</a></li><li><a href="#3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)</a></li><li><a href="#4-ai-feedback-and-principles">4. AI feedback and principles</a></li><li><a href="#5-reasoning-models">5. Reasoning models</a></li></ul></li><li><a href="#decoding-turning-distributions-into-text">Decoding: turning distributions into text</a><ul><li><a href="#context-windows">Context windows</a></li></ul></li><li><a href="#why-models-make-things-up">Why models make things up</a></li><li><a href="#the-model-landscape">The model landscape</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
+<aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model</a></li><li><a href="#tokenisation">Tokenisation</a><ul><li><a href="#byte-pair-encoding-implemented">Byte-pair encoding, implemented</a></li></ul></li><li><a href="#pretraining">Pretraining</a><ul><li><a href="#the-objective">The objective</a></li><li><a href="#the-data">The data</a></li><li><a href="#compute-and-scaling-laws">Compute and scaling laws</a></li><li><a href="#architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards</a></li></ul></li><li><a href="#post-training-from-predictor-to-assistant">Post-training: from predictor to assistant</a><ul><li><a href="#1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)</a></li><li><a href="#2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF</a></li><li><a href="#3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)</a></li><li><a href="#4-ai-feedback-and-principles">4. AI feedback and principles</a></li><li><a href="#5-reasoning-models">5. Reasoning models</a></li></ul></li><li><a href="#decoding-turning-distributions-into-text">Decoding: turning distributions into text</a><ul><li><a href="#context-windows">Context windows</a></li></ul></li><li><a href="#why-models-make-things-up">Why models make things up</a></li><li><a href="#the-model-landscape">The model landscape</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside>
 </div>
 <nav class="lesson-bar" aria-label="Lesson">
 <a class="lb-btn" href="../lessons/08-transformers.html" aria-label="Previous lesson: Attention and the transformer"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
 <button type="button" class="lb-toc" aria-expanded="false" aria-controls="toc-sheet"><span class="lb-where">09 · <span class="lb-section">How LLMs are built</span></span><span class="lb-pct" aria-hidden="true"><span></span></span></button>
 <a class="lb-btn" href="../lessons/10-llm-apis.html" aria-label="Next lesson: Working with LLM APIs"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
 </nav>
-<div class="toc-sheet" id="toc-sheet" hidden><div class="toc-sheet-inner"><aside class="toc-sheet-list" aria-label="Contents"><p class="toc-title">Contents</p><ul><li><a href="#from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model</a></li><li><a href="#tokenization">Tokenization</a><ul><li><a href="#byte-pair-encoding-implemented">Byte-pair encoding, implemented</a></li></ul></li><li><a href="#pretraining">Pretraining</a><ul><li><a href="#the-objective">The objective</a></li><li><a href="#the-data">The data</a></li><li><a href="#compute-and-scaling-laws">Compute and scaling laws</a></li><li><a href="#architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards</a></li></ul></li><li><a href="#post-training-from-predictor-to-assistant">Post-training: from predictor to assistant</a><ul><li><a href="#1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)</a></li><li><a href="#2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF</a></li><li><a href="#3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)</a></li><li><a href="#4-ai-feedback-and-principles">4. AI feedback and principles</a></li><li><a href="#5-reasoning-models">5. Reasoning models</a></li></ul></li><li><a href="#decoding-turning-distributions-into-text">Decoding: turning distributions into text</a><ul><li><a href="#context-windows">Context windows</a></li></ul></li><li><a href="#why-models-make-things-up">Why models make things up</a></li><li><a href="#the-model-landscape">The model landscape</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside></div></div>
+<div class="toc-sheet" id="toc-sheet" hidden><div class="toc-sheet-inner"><aside class="toc-sheet-list" aria-label="Contents"><p class="toc-title">Contents</p><ul><li><a href="#from-tinygpt-to-a-frontier-model">From TinyGPT to a frontier model</a></li><li><a href="#tokenisation">Tokenisation</a><ul><li><a href="#byte-pair-encoding-implemented">Byte-pair encoding, implemented</a></li></ul></li><li><a href="#pretraining">Pretraining</a><ul><li><a href="#the-objective">The objective</a></li><li><a href="#the-data">The data</a></li><li><a href="#compute-and-scaling-laws">Compute and scaling laws</a></li><li><a href="#architecture-refinements-you-will-see-in-model-cards">Architecture refinements you will see in model cards</a></li></ul></li><li><a href="#post-training-from-predictor-to-assistant">Post-training: from predictor to assistant</a><ul><li><a href="#1-supervised-fine-tuning-sft">1. Supervised fine-tuning (SFT)</a></li><li><a href="#2-learning-from-preferences-rlhf">2. Learning from preferences: RLHF</a></li><li><a href="#3-direct-preference-optimisation-dpo">3. Direct preference optimisation (DPO)</a></li><li><a href="#4-ai-feedback-and-principles">4. AI feedback and principles</a></li><li><a href="#5-reasoning-models">5. Reasoning models</a></li></ul></li><li><a href="#decoding-turning-distributions-into-text">Decoding: turning distributions into text</a><ul><li><a href="#context-windows">Context windows</a></li></ul></li><li><a href="#why-models-make-things-up">Why models make things up</a></li><li><a href="#the-model-landscape">The model landscape</a></li><li><a href="#check-yourself">Check yourself</a><ul><li><a href="#go-deeper">Go deeper</a></li></ul></li></ul></aside></div></div>
 <dialog class="settings" aria-labelledby="settings-title">
 <form method="dialog" class="settings-inner">
 <div class="settings-head"><h2 id="settings-title">Reading settings</h2><button class="icon-btn" value="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
@@ -414,7 +418,7 @@
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,7 +107,7 @@
 <h1><span class="lesson-num">01</span> Python for AI work</h1>
 <p class="lesson-summary">The Python you actually need for AI, then NumPy for fast array maths and pandas plus Matplotlib for loading, cleaning and plotting real data.</p>
 <p class="lesson-meta"><span>3 sessions</span><span>about 25 min of reading</span><span>16 code examples</span><span>2 hands-on exercises</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Write clear data-handling Python with comprehensions, type-hinted functions, dataclasses and generators that stream data in batches</li><li>Wrap unreliable calls in a retry helper with exponential backoff and jitter</li><li>Create, index and reduce NumPy arrays, reading shapes and axes to debug array code</li><li>Replace Python loops with vectorised maths, using broadcasting and matrix multiplication to compute a full distance matrix</li><li>Load, inspect and clean a messy time series in pandas: flag outliers with a rolling median, fill short gaps and resample</li><li>Plot a series and a daily profile with Matplotlib to confirm the structure you expect is really in the data</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 3 sessions of about an hour</p>
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 3</span>Python essentials for AI code: data structures, functions, classes, typing, generators</p>
 <h2 id="why-python-and-which-parts-of-it">Why Python, and which parts of it<a class="headerlink" href="#why-python-and-which-parts-of-it" aria-label="Link to this section">#</a></h2>
 <p>Python won AI because it is pleasant to write and because the heavy lifting happens in fast compiled libraries underneath it: NumPy, PyTorch and friends are thin Python skins over C, C++ and CUDA. Your job is to describe <em>what</em> to compute in Python and let those libraries do it quickly.</p>
 <p>This lesson assumes you can already write a loop and a function in some language. If Python is new, work through the official <a href="https://docs.python.org/3/tutorial/">Python tutorial</a> sections 3 to 9 first, then come back.</p>
@@ -217,6 +218,7 @@
             <span class="n">wait</span> <span class="o">=</span> <span class="n">base</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">i</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>   <span class="c1"># exponential backoff with jitter</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;attempt </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> failed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">); retrying in </span><span class="si">{</span><span class="n">wait</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait</span><span class="p">)</span></code></pre></div>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="python-for-ai:0"><span>Done with session 1: Python essentials for AI code: data structures, functions, classes, typing, generators</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 3</span>NumPy: arrays, shapes, broadcasting and vectorised maths</p></div>
 <h2 id="numpy-thinking-in-arrays">NumPy: thinking in arrays<a class="headerlink" href="#numpy-thinking-in-arrays" aria-label="Link to this section">#</a></h2>
 <p>Everything in machine learning is an array of numbers: an image is a 3-D array of pixel intensities, a batch of sentences is a 2-D array of token ids, a model's weights are a pile of matrices. NumPy's <code>ndarray</code> is the shared language, and PyTorch tensors behave almost identically, so time spent here pays off twice.</p>
 <h3 id="creating-arrays-and-reading-shapes">Creating arrays and reading shapes<a class="headerlink" href="#creating-arrays-and-reading-shapes" aria-label="Link to this section">#</a></h3>
@@ -316,6 +318,7 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">nearest</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span></code></pre></div>
 This is the core of nearest-neighbour search, which you will meet again in the embeddings and RAG lessons. <code>keepdims=True</code> keeps <code>q2</code> as a column so it broadcasts across columns.</p>
 </details>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="python-for-ai:1"><span>Done with session 2: NumPy: arrays, shapes, broadcasting and vectorised maths</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 3</span>pandas and Matplotlib: clean, explore and plot a week of sensor data</p></div>
 <h2 id="pandas-and-matplotlib-real-data-is-messy">pandas and Matplotlib: real data is messy<a class="headerlink" href="#pandas-and-matplotlib-real-data-is-messy" aria-label="Link to this section">#</a></h2>
 <p>NumPy handles numbers; pandas handles <em>tables</em>: named columns of mixed types, timestamps, missing values, group-bys and joins. Matplotlib draws the pictures. Together they are how you get to know a dataset before you model it, and skipping that step is the most common beginner mistake in ML.</p>
 <h3 id="a-week-of-sensor-data">A week of sensor data<a class="headerlink" href="#a-week-of-sensor-data" aria-label="Link to this section">#</a></h3>
@@ -400,27 +403,27 @@ The weekend question is the important one: a model can only learn patterns that 
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why is vectorised NumPy code so much faster than a Python loop over the same numbers?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">NumPy uses multiple threads for everything</button></li><li><button type="button" class="quiz-opt" data-correct="1">The arithmetic runs in compiled code over contiguous memory instead of the Python interpreter, one element at a time</button></li><li><button type="button" class="quiz-opt" data-correct="0">Python loops are limited to 1,000 iterations per second</button></li><li><button type="button" class="quiz-opt" data-correct="0">NumPy approximates the result</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Python loops are limited to 1,000 iterations per second</button></li><li><button type="button" class="quiz-opt" data-correct="0">NumPy uses multiple threads for everything</button></li><li><button type="button" class="quiz-opt" data-correct="1">The arithmetic runs in compiled code over contiguous memory instead of the Python interpreter, one element at a time</button></li><li><button type="button" class="quiz-opt" data-correct="0">NumPy approximates the result</button></li></ol>
 <p class="quiz-expl" hidden>The interpreter overhead per element disappears. Some operations also use SIMD instructions and multithreaded BLAS libraries.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> X has shape (64, 10) and b has shape (10,). What is the shape of X + b?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">(64, 10)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(10, 64)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(64,)</button></li><li><button type="button" class="quiz-opt" data-correct="0">An error is raised</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">(64, 10)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(64,)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(10, 64)</button></li><li><button type="button" class="quiz-opt" data-correct="0">An error is raised</button></li></ol>
 <p class="quiz-expl" hidden>Comparing from the right, 10 matches 10, and the missing leading dimension of b is broadcast across the 64 rows.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> A has shape (8, 3) and B has shape (3, 5). What is the shape of A @ B?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">(3, 3)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(8, 3, 5)</button></li><li><button type="button" class="quiz-opt" data-correct="1">(8, 5)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(5, 8)</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">(3, 3)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(8, 3, 5)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(5, 8)</button></li><li><button type="button" class="quiz-opt" data-correct="1">(8, 5)</button></li></ol>
 <p class="quiz-expl" hidden>The inner dimensions (3 and 3) must match and disappear.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why did we flag outliers using a rolling median rather than a rolling mean?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Medians are faster to compute</button></li><li><button type="button" class="quiz-opt" data-correct="1">A median is barely moved by a few extreme spikes, so the spikes stand out against it</button></li><li><button type="button" class="quiz-opt" data-correct="0">pandas does not support rolling means</button></li><li><button type="button" class="quiz-opt" data-correct="0">Means only work on integers</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">pandas does not support rolling means</button></li><li><button type="button" class="quiz-opt" data-correct="1">A median is barely moved by a few extreme spikes, so the spikes stand out against it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Means only work on integers</button></li><li><button type="button" class="quiz-opt" data-correct="0">Medians are faster to compute</button></li></ol>
 <p class="quiz-expl" hidden>A single 30-degree spike drags a rolling mean towards itself, making the spike look smaller. The median ignores it.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> What is wrong with <code>def add_item(x, items=[])</code>?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Lists cannot be default arguments</button></li><li><button type="button" class="quiz-opt" data-correct="1">The same list object is shared across every call, so items pile up between calls</button></li><li><button type="button" class="quiz-opt" data-correct="0">It needs a type hint</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nothing; this is the recommended style</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">The same list object is shared across every call, so items pile up between calls</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nothing; this is the recommended style</button></li><li><button type="button" class="quiz-opt" data-correct="0">It needs a type hint</button></li><li><button type="button" class="quiz-opt" data-correct="0">Lists cannot be default arguments</button></li></ol>
 <p class="quiz-expl" hidden>Default values are evaluated once, when the function is defined. Use <code>items=None</code> and create a new list inside.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -441,7 +444,7 @@ The weekend question is the important one: a model can only learn patterns that 
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="python-for-ai:2"><span>Done with session 3: pandas and Matplotlib: clean, explore and plot a week of sensor data</span></label>
 <button type="button" class="complete-btn" data-complete="python-for-ai" data-sessions="3">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/00-welcome.html"><span>Previous</span>00 Welcome and your AI workbench</a><a class="next" href="../lessons/02-math-for-ai.html"><span>Next</span>02 The maths behind AI</a></nav>
 </footer>
@@ -472,7 +475,7 @@ The weekend question is the important one: a model can only learn patterns that 
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

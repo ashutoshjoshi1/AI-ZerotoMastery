@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -779,27 +779,27 @@ pass rate over all 19 targets: 0.934
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why can a purely greedy bandit agent (epsilon = 0) suffer linearly growing regret?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It updates its estimates too quickly</button></li><li><button type="button" class="quiz-opt" data-correct="1">It can lock onto an early arm and never gather evidence that another is better</button></li><li><button type="button" class="quiz-opt" data-correct="0">Regret always grows linearly</button></li><li><button type="button" class="quiz-opt" data-correct="0">It pulls arms at random</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Regret always grows linearly</button></li><li><button type="button" class="quiz-opt" data-correct="1">It can lock onto an early arm and never gather evidence that another is better</button></li><li><button type="button" class="quiz-opt" data-correct="0">It pulls arms at random</button></li><li><button type="button" class="quiz-opt" data-correct="0">It updates its estimates too quickly</button></li></ol>
 <p class="quiz-expl" hidden>Without exploration a bad early choice is never corrected, so every pull pays the same gap.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> On CliffWalking with epsilon = 0.1, why does SARSA learn a safer route than Q-learning?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It uses a larger learning rate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Q-learning ignores negative rewards</button></li><li><button type="button" class="quiz-opt" data-correct="1">Its target uses the action it will actually take next, so it learns the value of its own exploring policy</button></li><li><button type="button" class="quiz-opt" data-correct="0">It has a model of the environment</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Q-learning ignores negative rewards</button></li><li><button type="button" class="quiz-opt" data-correct="0">It has a model of the environment</button></li><li><button type="button" class="quiz-opt" data-correct="1">Its target uses the action it will actually take next, so it learns the value of its own exploring policy</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses a larger learning rate</button></li></ol>
 <p class="quiz-expl" hidden>SARSA is on-policy: occasional random steps near the cliff lower the value of the edge.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> In PPO with clip 0.2, an action has positive advantage and a ratio of 1.3. What does it add to the gradient?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Nothing: above 1.2 the clipped objective is flat</button></li><li><button type="button" class="quiz-opt" data-correct="0">A large push upwards</button></li><li><button type="button" class="quiz-opt" data-correct="0">A push back towards a ratio of 1</button></li><li><button type="button" class="quiz-opt" data-correct="0">Only a KL term</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Only a KL term</button></li><li><button type="button" class="quiz-opt" data-correct="0">A large push upwards</button></li><li><button type="button" class="quiz-opt" data-correct="0">A push back towards a ratio of 1</button></li><li><button type="button" class="quiz-opt" data-correct="1">Nothing: above 1.2 the clipped objective is flat</button></li></ol>
 <p class="quiz-expl" hidden>Clipping removes the incentive to move further in a direction that has already helped.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> In GRPO, all eight answers to a prompt pass the verifier. What does that prompt contribute?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A strong positive signal</button></li><li><button type="button" class="quiz-opt" data-correct="1">Nothing apart from the KL term: every advantage is zero</button></li><li><button type="button" class="quiz-opt" data-correct="0">A negative signal for diversity</button></li><li><button type="button" class="quiz-opt" data-correct="0">Training data for the value network</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Nothing apart from the KL term: every advantage is zero</button></li><li><button type="button" class="quiz-opt" data-correct="0">A negative signal for diversity</button></li><li><button type="button" class="quiz-opt" data-correct="0">A strong positive signal</button></li><li><button type="button" class="quiz-opt" data-correct="0">Training data for the value network</button></li></ol>
 <p class="quiz-expl" hidden>Advantages are relative to the group, so always-solved and never-solved prompts carry no signal.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> During RLHF the reward model's score keeps rising but held-out human ratings fall. Most likely?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li><li><button type="button" class="quiz-opt" data-correct="0">The raters became harsher</button></li><li><button type="button" class="quiz-opt" data-correct="1">The policy is exploiting the reward model's errors (reward hacking)</button></li><li><button type="button" class="quiz-opt" data-correct="0">The KL penalty is too large</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The raters became harsher</button></li><li><button type="button" class="quiz-opt" data-correct="1">The policy is exploiting the reward model's errors (reward hacking)</button></li><li><button type="button" class="quiz-opt" data-correct="0">The KL penalty is too large</button></li><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li></ol>
 <p class="quiz-expl" hidden>A reward model is a proxy that is accurate only near its training data; stronger KL, a better reward model and early stopping on independent evaluations help.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -855,7 +855,7 @@ pass rate over all 19 targets: 0.934
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

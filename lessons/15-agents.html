@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -106,11 +106,11 @@
 <h1><span class="lesson-num">15</span> Agents, tool use and MCP</h1>
 <p class="lesson-summary">Give models the ability to act by writing the tool-use loop by hand, designing tools models use well, choosing between workflows and autonomous agents, and building an MCP server, then add the guardrails and evaluation that make agents safe to deploy.</p>
 <p class="lesson-meta"><span>5 sessions</span><span>about 25 min of reading</span><span>6 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Define tools with names, descriptions and JSON schemas, and write the tool-use loop by hand, returning results and errors to the model</li><li>Design tools that models use well, with clear descriptions, compact results, instructive errors and safe implementations</li><li>Choose between workflow patterns and an autonomous agent, and explain where planning, memory and multiple agents help</li><li>Build an MCP server that exposes tools and a resource, test it and register it with a client</li><li>Guard an agent with step and cost limits, least privilege, human approval and tracing, and evaluate it on task success, trajectory, cost and safety</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 5 sessions of about an hour</p>
-<ol class="sessions"><li><label><input type="checkbox" data-session="agents:0"><span>What an agent is, and the tool-use loop written by hand</span></label></li><li><label><input type="checkbox" data-session="agents:1"><span>Designing good tools, and handling results, errors and parallel calls</span></label></li><li><label><input type="checkbox" data-session="agents:2"><span>Patterns: workflows versus agents, planning, memory and multi-agent systems</span></label></li><li><label><input type="checkbox" data-session="agents:3"><span>The Model Context Protocol: build an MCP server for your own data</span></label></li><li><label><input type="checkbox" data-session="agents:4"><span>Build a research agent with guardrails, budgets and an evaluation</span></label></li></ol>
+<ol class="sessions"><li><label><input type="checkbox" data-session="agents:0"><span>What an agent is, and defining tools for a model by hand</span></label></li><li><label><input type="checkbox" data-session="agents:1"><span>The tool-use loop written by hand: results, errors, parallel calls and good tool design</span></label></li><li><label><input type="checkbox" data-session="agents:2"><span>Patterns: workflows versus agents, planning, memory and multi-agent systems</span></label></li><li><label><input type="checkbox" data-session="agents:3"><span>The Model Context Protocol: build an MCP server for your own data</span></label></li><li><label><input type="checkbox" data-session="agents:4"><span>Build a research agent with guardrails, budgets and an evaluation</span></label></li></ol>
 <p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
 <aside class="handson" aria-label="Hands-on notebook">
@@ -122,6 +122,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 5</span>What an agent is, and defining tools for a model by hand</p>
 <h2 id="what-makes-something-an-agent">What makes something an agent<a class="headerlink" href="#what-makes-something-an-agent" aria-label="Link to this section">#</a></h2>
 <p>A chatbot produces text. An <strong>agent</strong> uses a model to decide on <em>actions</em>, takes them through <strong>tools</strong>, observes the results, and keeps going until the task is done. The model is no longer just answering; it is controlling a loop.</p>
 <p>A useful working definition: an agent is <strong>a model using tools in a loop, deciding for itself what to do next</strong>. A useful working caution: autonomy costs latency, money and predictability, so use the least autonomy that solves the problem.</p>
@@ -209,6 +210,7 @@
     <span class="p">},</span>
 <span class="p">]</span>
 <span class="n">TOOL_FUNCS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;get_instrument_status&quot;</span><span class="p">:</span> <span class="n">get_instrument_status</span><span class="p">,</span> <span class="s2">&quot;calculate&quot;</span><span class="p">:</span> <span class="n">calculate</span><span class="p">}</span></code></pre></div>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="agents:0"><span>Done with session 1: What an agent is, and defining tools for a model by hand</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 5</span>The tool-use loop written by hand: results, errors, parallel calls and good tool design</p></div>
 <h3 id="the-loop">The loop<a class="headerlink" href="#the-loop" aria-label="Link to this section">#</a></h3>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">def</span><span class="w"> </span><span class="nf">run_agent</span><span class="p">(</span><span class="n">task</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">}]</span>
@@ -256,6 +258,7 @@
 <li><strong>Separate reading from acting.</strong> Tools that change the world (send email, restart an instrument, delete data) deserve confirmation steps, narrow permissions and logs.</li>
 </ul>
 <p>Models can request <strong>several tool calls in one turn</strong> (for example, checking five instruments at once). The loop above handles this; run independent calls concurrently when they are slow.</p>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="agents:1"><span>Done with session 2: The tool-use loop written by hand: results, errors, parallel calls and good tool design</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 5</span>Patterns: workflows versus agents, planning, memory and multi-agent systems</p></div>
 <h2 id="workflows-agents-and-when-to-use-which">Workflows, agents and when to use which<a class="headerlink" href="#workflows-agents-and-when-to-use-which" aria-label="Link to this section">#</a></h2>
 <p>Many "agent" problems are better solved with <strong>workflows</strong>: predefined code paths that call models at fixed points. They are cheaper, faster and easier to test. Anthropic's guide "Building effective agents" names a useful set of patterns:</p>
 <div class="table-wrap"><table>
@@ -310,6 +313,7 @@
 </ul>
 <h3 id="multi-agent-systems">Multi-agent systems<a class="headerlink" href="#multi-agent-systems" aria-label="Link to this section">#</a></h3>
 <p>Splitting work across several agents (an orchestrator plus specialised sub-agents with their own context windows) can help on broad tasks such as deep research, because each sub-agent explores in parallel with a clean context. It also multiplies token use and adds coordination failure modes. Start with one agent and add more only when a single context demonstrably becomes the bottleneck.</p>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="agents:2"><span>Done with session 3: Patterns: workflows versus agents, planning, memory and multi-agent systems</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 5</span>The Model Context Protocol: build an MCP server for your own data</p></div>
 <h2 id="the-model-context-protocol">The Model Context Protocol<a class="headerlink" href="#the-model-context-protocol" aria-label="Link to this section">#</a></h2>
 <p>Every application used to wire up its own tools. The <strong>Model Context Protocol (MCP)</strong> is an open standard, introduced by Anthropic in 2024 and since adopted widely, for connecting AI applications to tools and data. Write an <strong>MCP server</strong> once, and any MCP-capable client (Claude's apps, IDEs, agent frameworks, your own code) can use it. Think of it as USB for AI tools.</p>
 <p>An MCP server can expose:</p>
@@ -360,6 +364,7 @@
 <p class="admonition-title">MCP servers are code you run with your permissions</p>
 <p>Only install servers you trust, give them the narrowest credentials that work, and remember that tool results are untrusted input to the model: a document or web page fetched by one tool can contain instructions trying to hijack the agent (prompt injection, lesson <a class="ref" href="../lessons/22-safety-security.html" title="Lesson 22: Safety, security and responsible AI">22</a>).</p>
 </div>
+<div class="session-break" id="session-5"><label class="sb-done"><input type="checkbox" data-session="agents:3"><span>Done with session 4: The Model Context Protocol: build an MCP server for your own data</span></label><p class="sb-next"><span class="sb-kicker">Session 5 of 5</span>Build a research agent with guardrails, budgets and an evaluation</p></div>
 <h2 id="guardrails-budgets-and-evaluation">Guardrails, budgets and evaluation<a class="headerlink" href="#guardrails-budgets-and-evaluation" aria-label="Link to this section">#</a></h2>
 <p>An agent that loops forever, burns your budget or deletes the wrong thing is worse than no agent. Build in:</p>
 <ul>
@@ -425,27 +430,27 @@ Typical findings: on simple lookups the agent matches plain RAG but costs severa
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Who actually executes a tool when a model "calls" it?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The model, inside the provider's servers</button></li><li><button type="button" class="quiz-opt" data-correct="1">Your application code, which then sends the result back to the model</button></li><li><button type="button" class="quiz-opt" data-correct="0">The user</button></li><li><button type="button" class="quiz-opt" data-correct="0">The tool description</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The model, inside the provider's servers</button></li><li><button type="button" class="quiz-opt" data-correct="0">The tool description</button></li><li><button type="button" class="quiz-opt" data-correct="1">Your application code, which then sends the result back to the model</button></li><li><button type="button" class="quiz-opt" data-correct="0">The user</button></li></ol>
 <p class="quiz-expl" hidden>The model only proposes a structured call. Your code decides whether and how to run it.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> In the Anthropic Messages API, how are tool results returned to the model?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">As a new system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="1">As tool_result blocks in a user message, each referencing its tool_use_id</button></li><li><button type="button" class="quiz-opt" data-correct="0">As an assistant message</button></li><li><button type="button" class="quiz-opt" data-correct="0">By calling the tool endpoint</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">As a new system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">By calling the tool endpoint</button></li><li><button type="button" class="quiz-opt" data-correct="0">As an assistant message</button></li><li><button type="button" class="quiz-opt" data-correct="1">As tool_result blocks in a user message, each referencing its tool_use_id</button></li></ol>
 <p class="quiz-expl" hidden>The assistant's tool_use blocks stay in history, followed by a user turn containing the matching results.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> You can draw the full flowchart of a task in advance. What should you build?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">A workflow with fixed steps that call the model where needed</button></li><li><button type="button" class="quiz-opt" data-correct="0">A multi-agent system</button></li><li><button type="button" class="quiz-opt" data-correct="0">An autonomous agent with all tools available</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nothing; models cannot handle fixed steps</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">An autonomous agent with all tools available</button></li><li><button type="button" class="quiz-opt" data-correct="1">A workflow with fixed steps that call the model where needed</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nothing; models cannot handle fixed steps</button></li><li><button type="button" class="quiz-opt" data-correct="0">A multi-agent system</button></li></ol>
 <p class="quiz-expl" hidden>Workflows are cheaper, faster and easier to test. Save autonomy for genuinely open-ended tasks.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> What is the main benefit of the Model Context Protocol?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It makes models smarter</button></li><li><button type="button" class="quiz-opt" data-correct="1">Tools and data exposed once as an MCP server can be used by any MCP-capable client</button></li><li><button type="button" class="quiz-opt" data-correct="0">It encrypts all model traffic</button></li><li><button type="button" class="quiz-opt" data-correct="0">It replaces the need for tool descriptions</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Tools and data exposed once as an MCP server can be used by any MCP-capable client</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes models smarter</button></li><li><button type="button" class="quiz-opt" data-correct="0">It replaces the need for tool descriptions</button></li><li><button type="button" class="quiz-opt" data-correct="0">It encrypts all model traffic</button></li></ol>
 <p class="quiz-expl" hidden>It standardises the connection between AI applications and tools, like a common port.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Which is the strongest safeguard for an agent tool that can delete data?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A longer system prompt asking the model to be careful</button></li><li><button type="button" class="quiz-opt" data-correct="0">A higher temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">Least-privilege credentials plus explicit human approval of the exact action, with logging</button></li><li><button type="button" class="quiz-opt" data-correct="0">Running more agents to double-check</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Least-privilege credentials plus explicit human approval of the exact action, with logging</button></li><li><button type="button" class="quiz-opt" data-correct="0">A longer system prompt asking the model to be careful</button></li><li><button type="button" class="quiz-opt" data-correct="0">Running more agents to double-check</button></li><li><button type="button" class="quiz-opt" data-correct="0">A higher temperature</button></li></ol>
 <p class="quiz-expl" hidden>Do not rely on the model's judgement alone for irreversible actions.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -469,7 +474,7 @@ Typical findings: on simple lookups the agent matches plain RAG but costs severa
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="agents:4"><span>Done with session 5: Build a research agent with guardrails, budgets and an evaluation</span></label>
 <button type="button" class="complete-btn" data-complete="agents" data-sessions="5">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/14-rag.html"><span>Previous</span>14 Retrieval-augmented generation (RAG)</a><a class="next" href="../lessons/16-context-engineering.html"><span>Next</span>16 Context engineering and memory</a></nav>
 </footer>
@@ -500,7 +505,7 @@ Typical findings: on simple lookups the agent matches plain RAG but costs severa
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,11 +107,11 @@
 <h1><span class="lesson-num">07</span> Text as numbers, sequences and embeddings</h1>
 <p class="lesson-summary">How text becomes vectors whose geometry captures meaning, how recurrent networks read sequences one step at a time, and the bottleneck that motivated attention.</p>
 <p class="lesson-meta"><span>2 sessions</span><span>about 15 min of reading</span><span>6 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Explain why one-hot vectors carry no meaning and how the distributional hypothesis fixes that</li><li>Build word vectors from co-occurrence counts with PPMI and the SVD, and find nearest neighbours by cosine similarity</li><li>Describe how word2vec learns embeddings by prediction, and use nn.Embedding as a trainable lookup table</li><li>Run a recurrent network step by step in NumPy, and explain why plain RNNs suffer vanishing gradients while LSTMs cope better</li><li>Explain the sequence-to-sequence bottleneck and how attention removed it, leading to the transformer</li><li>Probe pretrained GloVe vectors for neighbours, analogies and social bias</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 2 sessions of about an hour</p>
-<ol class="sessions"><li><label><input type="checkbox" data-session="sequences-embeddings:0"><span>Representing text: one-hot vectors, the distributional hypothesis and word embeddings</span></label></li><li><label><input type="checkbox" data-session="sequences-embeddings:1"><span>Recurrent networks, LSTMs, sequence-to-sequence models and their bottleneck</span></label></li></ol>
+<ol class="sessions"><li><label><input type="checkbox" data-session="sequences-embeddings:0"><span>Representing text: one-hot vectors, the distributional hypothesis and word embeddings</span></label></li><li><label><input type="checkbox" data-session="sequences-embeddings:1"><span>Recurrent networks, LSTMs, the sequence-to-sequence bottleneck and attention</span></label></li></ol>
 <p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
 <aside class="handson" aria-label="Hands-on notebook">
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 2</span>Representing text: one-hot vectors, the distributional hypothesis and word embeddings</p>
 <h2 id="the-problem-models-need-numbers">The problem: models need numbers<a class="headerlink" href="#the-problem-models-need-numbers" aria-label="Link to this section">#</a></h2>
 <p>Neural networks multiply matrices, so text has to become numbers. How you do that decides what the model can learn. This lesson follows the historical path from naive encodings to learned embeddings and recurrent networks, because each step explains a design choice in the transformer you will build next.</p>
 <h2 id="one-hot-vectors-and-their-limits">One-hot vectors and their limits<a class="headerlink" href="#one-hot-vectors-and-their-limits" aria-label="Link to this section">#</a></h2>
@@ -217,6 +218,7 @@ c-16-25.333-24-45-24-59z"/></svg></span></span></span></span><span class="vlist-
 <p class="admonition-title">Static versus contextual embeddings</p>
 <p>word2vec gives "bank" one vector, whether it is a river bank or a savings bank. Transformers produce <strong>contextual</strong> embeddings: the vector for "bank" changes depending on the surrounding words. That is a large part of why they understand language so much better.</p>
 </div>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="sequences-embeddings:0"><span>Done with session 1: Representing text: one-hot vectors, the distributional hypothesis and word embeddings</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 2</span>Recurrent networks, LSTMs, the sequence-to-sequence bottleneck and attention</p></div>
 <h2 id="recurrent-neural-networks">Recurrent neural networks<a class="headerlink" href="#recurrent-neural-networks" aria-label="Link to this section">#</a></h2>
 <p>Embeddings handle individual words; language is sequences. A feed-forward network takes a fixed-size input, but sentences vary in length and order matters ("dog bites man" is not "man bites dog").</p>
 <p>A <strong>recurrent neural network</strong> (RNN) reads a sequence one step at a time, carrying a <strong>hidden state</strong> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>h</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">h_t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> that summarises everything so far:</p>
@@ -237,7 +239,7 @@ c-16-25.333-24-45-24-59z"/></svg></span></span></span></span><span class="vlist-
 <p>Training an RNN backpropagates through every time step, multiplying by <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>W</mi><mi>h</mi></msub></mrow><annotation encoding="application/x-tex">W_h</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> (and the tanh derivative) again and again. Repeated multiplication either shrinks or explodes:</p>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">]:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">factor</span> <span class="o">**</span> <span class="mi">50</span><span class="p">)</span>       <span class="c1"># 0.0052, 1.0, 117.4</span></code></pre></div>
-<p>After 50 steps, a factor of 0.9 leaves half a percent of the gradient: the network effectively cannot learn that a word at the start of a paragraph matters for one at the end. This is the <strong>vanishing gradient problem</strong> in time.</p>
+<p>After 50 steps, a factor of 0.9 leaves half a per cent of the gradient: the network effectively cannot learn that a word at the start of a paragraph matters for one at the end. This is the <strong>vanishing gradient problem</strong> in time.</p>
 <h3 id="lstms-and-grus">LSTMs and GRUs<a class="headerlink" href="#lstms-and-grus" aria-label="Link to this section">#</a></h3>
 <p>The <strong>LSTM</strong> (long short-term memory) adds a separate cell state that flows through time with only gentle, gated modifications, and three learned <strong>gates</strong> decide what to forget, what to write and what to output. Because the cell state is updated additively, gradients can flow across many more steps (the same insight as residual connections). The <strong>GRU</strong> is a simpler variant with two gates. From roughly 2014 to 2017, LSTMs were the state of the art for translation, speech recognition and language modelling.</p>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">lstm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span><span class="n">input_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -293,27 +295,27 @@ c-16-25.333-24-45-24-59z"/></svg></span></span></span></span><span class="vlist-
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> What is the main weakness of one-hot word vectors?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They are too small</button></li><li><button type="button" class="quiz-opt" data-correct="1">Every pair of words is equally dissimilar, so the representation carries no information about meaning</button></li><li><button type="button" class="quiz-opt" data-correct="0">They cannot represent rare words</button></li><li><button type="button" class="quiz-opt" data-correct="0">They require a GPU</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They cannot represent rare words</button></li><li><button type="button" class="quiz-opt" data-correct="0">They require a GPU</button></li><li><button type="button" class="quiz-opt" data-correct="1">Every pair of words is equally dissimilar, so the representation carries no information about meaning</button></li><li><button type="button" class="quiz-opt" data-correct="0">They are too small</button></li></ol>
 <p class="quiz-expl" hidden>All one-hot vectors are orthogonal: the dot product between any two different words is 0.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What idea underlies both count-based embeddings and word2vec?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Words with similar spellings have similar meanings</button></li><li><button type="button" class="quiz-opt" data-correct="1">Words that appear in similar contexts tend to have similar meanings</button></li><li><button type="button" class="quiz-opt" data-correct="0">Frequent words are more important</button></li><li><button type="button" class="quiz-opt" data-correct="0">Grammar determines meaning</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Grammar determines meaning</button></li><li><button type="button" class="quiz-opt" data-correct="1">Words that appear in similar contexts tend to have similar meanings</button></li><li><button type="button" class="quiz-opt" data-correct="0">Words with similar spellings have similar meanings</button></li><li><button type="button" class="quiz-opt" data-correct="0">Frequent words are more important</button></li></ol>
 <p class="quiz-expl" hidden>The distributional hypothesis: you know a word by the company it keeps.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> An nn.Embedding layer with 50,000 entries and dimension 256 receives token ids of shape (8, 128). What is the output shape?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">(8, 256)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(50000, 256)</button></li><li><button type="button" class="quiz-opt" data-correct="1">(8, 128, 256)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(8, 128)</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">(8, 128, 256)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(50000, 256)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(8, 256)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(8, 128)</button></li></ol>
 <p class="quiz-expl" hidden>Each id is replaced by its 256-dimensional row.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why do plain RNNs struggle with long-range dependencies?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Backpropagating through many time steps multiplies many factors together, so gradients vanish or explode</button></li><li><button type="button" class="quiz-opt" data-correct="0">They have too many parameters</button></li><li><button type="button" class="quiz-opt" data-correct="0">They can only read sequences backwards</button></li><li><button type="button" class="quiz-opt" data-correct="0">They cannot use embeddings</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They cannot use embeddings</button></li><li><button type="button" class="quiz-opt" data-correct="0">They can only read sequences backwards</button></li><li><button type="button" class="quiz-opt" data-correct="0">They have too many parameters</button></li><li><button type="button" class="quiz-opt" data-correct="1">Backpropagating through many time steps multiplies many factors together, so gradients vanish or explode</button></li></ol>
 <p class="quiz-expl" hidden>LSTMs ease this with additive cell-state updates; transformers avoid it by connecting every token directly.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> What problem did attention originally solve in sequence-to-sequence models?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Slow training on GPUs</button></li><li><button type="button" class="quiz-opt" data-correct="1">The fixed-size bottleneck vector between encoder and decoder</button></li><li><button type="button" class="quiz-opt" data-correct="0">The lack of a vocabulary</button></li><li><button type="button" class="quiz-opt" data-correct="0">Overfitting on small datasets</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Overfitting on small datasets</button></li><li><button type="button" class="quiz-opt" data-correct="1">The fixed-size bottleneck vector between encoder and decoder</button></li><li><button type="button" class="quiz-opt" data-correct="0">Slow training on GPUs</button></li><li><button type="button" class="quiz-opt" data-correct="0">The lack of a vocabulary</button></li></ol>
 <p class="quiz-expl" hidden>The decoder could look back at every encoder state and focus on the relevant ones.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -336,7 +338,7 @@ c-16-25.333-24-45-24-59z"/></svg></span></span></span></span><span class="vlist-
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="sequences-embeddings:1"><span>Done with session 2: Recurrent networks, LSTMs, the sequence-to-sequence bottleneck and attention</span></label>
 <button type="button" class="complete-btn" data-complete="sequences-embeddings" data-sessions="2">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/06-pytorch.html"><span>Previous</span>06 Deep learning with PyTorch</a><a class="next" href="../lessons/08-transformers.html"><span>Next</span>08 Attention and the transformer</a></nav>
 </footer>
@@ -367,7 +369,7 @@ c-16-25.333-24-45-24-59z"/></svg></span></span></span></span><span class="vlist-
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

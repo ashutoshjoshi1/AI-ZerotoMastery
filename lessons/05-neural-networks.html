@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,11 +107,11 @@
 <h1><span class="lesson-num">05</span> Neural networks from scratch</h1>
 <p class="lesson-summary">Build a multilayer neural network in plain NumPy, derive and implement backpropagation yourself, then learn the practical tricks (initialisation, Adam, normalisation, dropout) that make deep networks train.</p>
 <p class="lesson-meta"><span>4 sessions</span><span>about 15 min of reading</span><span>6 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Explain why stacked layers need non-linear activations, and compare sigmoid, tanh, ReLU and GELU</li><li>Implement the forward pass of a multilayer perceptron in NumPy and sanity-check its initial loss</li><li>Derive and code backpropagation for linear and ReLU layers, and verify it with a gradient check</li><li>Write the Adam optimiser and a mini-batch training loop that learns to separate the two-moons dataset</li><li>Explain how initialisation, residual connections, normalisation, dropout and learning-rate schedules keep deep networks trainable, and test some of them by experiment</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 4 sessions of about an hour</p>
-<ol class="sessions"><li><label><input type="checkbox" data-session="neural-networks:0"><span>The neuron, activation functions, and why depth needs non-linearity</span></label></li><li><label><input type="checkbox" data-session="neural-networks:1"><span>The forward pass and the loss for a multilayer perceptron</span></label></li><li><label><input type="checkbox" data-session="neural-networks:2"><span>Backpropagation by hand, verified with a gradient check</span></label></li><li><label><input type="checkbox" data-session="neural-networks:3"><span>Making training work: initialisation, mini-batches, momentum and Adam, normalisation, dropout</span></label></li></ol>
+<ol class="sessions"><li><label><input type="checkbox" data-session="neural-networks:0"><span>The neuron, activation functions, and why depth needs non-linearity</span></label></li><li><label><input type="checkbox" data-session="neural-networks:1"><span>The forward pass and the loss for a multilayer perceptron</span></label></li><li><label><input type="checkbox" data-session="neural-networks:2"><span>Backpropagation by hand, verified with a gradient check</span></label></li><li><label><input type="checkbox" data-session="neural-networks:3"><span>Making training work: mini-batches, momentum and Adam, initialisation, residual connections, normalisation and dropout</span></label></li></ol>
 <p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
 <aside class="handson" aria-label="Hands-on notebook">
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 4</span>The neuron, activation functions, and why depth needs non-linearity</p>
 <h2 id="why-build-one-by-hand">Why build one by hand?<a class="headerlink" href="#why-build-one-by-hand" aria-label="Link to this section">#</a></h2>
 <p>You will never ship a hand-written neural network; PyTorch does this better. But writing one once, including backpropagation, removes the mystery for good. When a large model's loss turns to <code>nan</code>, when gradients vanish, or when someone says "the residual stream" or "layer norm", you will know what is physically happening to the numbers. That understanding is what separates engineers who can debug models from those who can only call them.</p>
 <h2 id="the-neuron">The neuron<a class="headerlink" href="#the-neuron" aria-label="Link to this section">#</a></h2>
@@ -169,6 +170,7 @@
 </tr>
 </tbody>
 </table></div>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="neural-networks:0"><span>Done with session 1: The neuron, activation functions, and why depth needs non-linearity</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 4</span>The forward pass and the loss for a multilayer perceptron</p></div>
 <h2 id="the-forward-pass">The forward pass<a class="headerlink" href="#the-forward-pass" aria-label="Link to this section">#</a></h2>
 <p>We will classify the "two moons" dataset: two interlocking crescents that no straight line can separate. The network has two hidden layers of 16 ReLU neurons and a sigmoid output.</p>
 <figure class="fig">
@@ -225,6 +227,7 @@
 <span class="n">p</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">forward</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">bce</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>                   <span class="c1"># (1000, 1) about 0.7: random guessing</span></code></pre></div>
 <p>A loss around <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ln</mi><mo>⁡</mo><mn>2</mn><mo>≈</mo><mn>0.69</mn></mrow><annotation encoding="application/x-tex">\ln 2 \approx 0.69</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mop">ln</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.69</span></span></span></span> is what you get from predicting 0.5 for everything. That is a useful sanity check: an untrained binary classifier should start near 0.69, and an untrained 10-class classifier near <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ln</mi><mo>⁡</mo><mn>10</mn><mo>≈</mo><mn>2.3</mn></mrow><annotation encoding="application/x-tex">\ln 10 \approx 2.3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mop">ln</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">10</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2.3</span></span></span></span>. If yours starts far from that, something is wrong before training even begins.</p>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="neural-networks:1"><span>Done with session 2: The forward pass and the loss for a multilayer perceptron</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 4</span>Backpropagation by hand, verified with a gradient check</p></div>
 <h2 id="backpropagation">Backpropagation<a class="headerlink" href="#backpropagation" aria-label="Link to this section">#</a></h2>
 <p>We need <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∂</mi><mi>L</mi><mi mathvariant="normal">/</mi><mi mathvariant="normal">∂</mi><mi>W</mi></mrow><annotation encoding="application/x-tex">\partial L/\partial W</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord" style="margin-right:0.05556em;">∂</span><span class="mord mathnormal">L</span><span class="mord">/</span><span class="mord" style="margin-right:0.05556em;">∂</span><span class="mord mathnormal" style="margin-right:0.13889em;">W</span></span></span></span> for every weight. Backpropagation computes them all in one backward sweep, applying the chain rule layer by layer from the loss to the inputs and reusing intermediate results so nothing is computed twice.</p>
 <h3 id="deriving-it-one-layer-at-a-time">Deriving it, one layer at a time<a class="headerlink" href="#deriving-it-one-layer-at-a-time" aria-label="Link to this section">#</a></h3>
@@ -268,6 +271,7 @@
     <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">old</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">idx</span><span class="p">],</span> <span class="p">(</span><span class="n">lp</span> <span class="o">-</span> <span class="n">lm</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">eps</span><span class="p">))</span>   <span class="c1"># the two columns should agree to ~8 digits</span></code></pre></div>
 <p>This is exactly what PyTorch's <strong>autograd</strong> does for you automatically, for any composition of operations: it records the forward pass as a graph and walks it backwards applying these rules. Lesson <a class="ref" href="../lessons/06-pytorch.html" title="Lesson 06: Deep learning with PyTorch">06</a> hands this job over to the machine.</p>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="neural-networks:2"><span>Done with session 3: Backpropagation by hand, verified with a gradient check</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 4</span>Making training work: mini-batches, momentum and Adam, initialisation, residual connections, normalisation and dropout</p></div>
 <h2 id="training-it">Training it<a class="headerlink" href="#training-it" aria-label="Link to this section">#</a></h2>
 <h3 id="mini-batches">Mini-batches<a class="headerlink" href="#mini-batches" aria-label="Link to this section">#</a></h3>
 <p>Computing the gradient on all 800 training examples per step is slow; using one example is noisy. <strong>Mini-batch</strong> gradient descent uses a batch of, say, 32. The noise is actually helpful: it jolts the model out of poor regions. One pass over the training data is an <strong>epoch</strong>.</p>
@@ -358,27 +362,27 @@ On noisier data the train/validation gap usually narrows a little. On a problem 
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> What happens if you stack ten linear layers with no activation functions?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The network becomes more expressive with each layer</button></li><li><button type="button" class="quiz-opt" data-correct="1">The stack is mathematically equivalent to a single linear layer</button></li><li><button type="button" class="quiz-opt" data-correct="0">Training becomes impossible</button></li><li><button type="button" class="quiz-opt" data-correct="0">It behaves like a decision tree</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">The stack is mathematically equivalent to a single linear layer</button></li><li><button type="button" class="quiz-opt" data-correct="0">The network becomes more expressive with each layer</button></li><li><button type="button" class="quiz-opt" data-correct="0">Training becomes impossible</button></li><li><button type="button" class="quiz-opt" data-correct="0">It behaves like a decision tree</button></li></ol>
 <p class="quiz-expl" hidden>Matrix products compose into one matrix. Non-linear activations are what give depth its power.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> In backprop, what shape is the gradient of a weight matrix W of shape (64, 32)?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">(32, 64)</button></li><li><button type="button" class="quiz-opt" data-correct="1">(64, 32)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(batch, 32)</button></li><li><button type="button" class="quiz-opt" data-correct="0">A single number</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A single number</button></li><li><button type="button" class="quiz-opt" data-correct="0">(batch, 32)</button></li><li><button type="button" class="quiz-opt" data-correct="1">(64, 32)</button></li><li><button type="button" class="quiz-opt" data-correct="0">(32, 64)</button></li></ol>
 <p class="quiz-expl" hidden>A parameter's gradient always has the same shape as the parameter, which is a handy check when deriving them.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> An untrained 10-class classifier starts with a loss of 45. What does that suggest?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It is learning very fast</button></li><li><button type="button" class="quiz-opt" data-correct="1">Something is wrong before training: a reasonable initial loss is about ln(10) ≈ 2.3, so check initialisation or the loss computation</button></li><li><button type="button" class="quiz-opt" data-correct="0">45 is normal for 10 classes</button></li><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">45 is normal for 10 classes</button></li><li><button type="button" class="quiz-opt" data-correct="1">Something is wrong before training: a reasonable initial loss is about ln(10) ≈ 2.3, so check initialisation or the loss computation</button></li><li><button type="button" class="quiz-opt" data-correct="0">It is learning very fast</button></li><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li></ol>
 <p class="quiz-expl" hidden>A sensible untrained model predicts roughly uniform probabilities. Far higher means confident wrong outputs, usually from bad initialisation or a bug.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> What do residual connections (a = x + f(x)) mainly help with?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Reducing the number of parameters</button></li><li><button type="button" class="quiz-opt" data-correct="1">Letting gradients flow directly back to early layers, so very deep networks can train</button></li><li><button type="button" class="quiz-opt" data-correct="0">Making the model faster at inference</button></li><li><button type="button" class="quiz-opt" data-correct="0">Replacing the need for activation functions</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Making the model faster at inference</button></li><li><button type="button" class="quiz-opt" data-correct="0">Reducing the number of parameters</button></li><li><button type="button" class="quiz-opt" data-correct="0">Replacing the need for activation functions</button></li><li><button type="button" class="quiz-opt" data-correct="1">Letting gradients flow directly back to early layers, so very deep networks can train</button></li></ol>
 <p class="quiz-expl" hidden>The identity path is a gradient highway. Every transformer block uses residual connections.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Why is dropout switched off at inference time?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">It is a regulariser for training; at inference we want the full, deterministic network</button></li><li><button type="button" class="quiz-opt" data-correct="0">It would make inference faster but less accurate</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only works on GPUs</button></li><li><button type="button" class="quiz-opt" data-correct="0">Dropout layers are deleted after training</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It would make inference faster but less accurate</button></li><li><button type="button" class="quiz-opt" data-correct="1">It is a regulariser for training; at inference we want the full, deterministic network</button></li><li><button type="button" class="quiz-opt" data-correct="0">Dropout layers are deleted after training</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only works on GPUs</button></li></ol>
 <p class="quiz-expl" hidden>During training the activations are rescaled so the expected output matches the inference-time network.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -400,7 +404,7 @@ On noisier data the train/validation gap usually narrows a little. On a problem 
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="neural-networks:3"><span>Done with session 4: Making training work: mini-batches, momentum and Adam, initialisation, residual connections, normalisation and dropout</span></label>
 <button type="button" class="complete-btn" data-complete="neural-networks" data-sessions="4">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/04-classical-ml.html"><span>Previous</span>04 Classical machine learning</a><a class="next" href="../lessons/06-pytorch.html"><span>Next</span>06 Deep learning with PyTorch</a></nav>
 </footer>
@@ -431,7 +435,7 @@ On noisier data the train/validation gap usually narrows a little. On a problem 
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

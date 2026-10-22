@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -566,27 +566,27 @@ all asserts passed</code></pre></div>
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> What should you build first in a capstone?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The user interface</button></li><li><button type="button" class="quiz-opt" data-correct="0">The most advanced component</button></li><li><button type="button" class="quiz-opt" data-correct="1">The evaluation set, then a crude end-to-end walking skeleton</button></li><li><button type="button" class="quiz-opt" data-correct="0">A fine-tuned model</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The user interface</button></li><li><button type="button" class="quiz-opt" data-correct="1">The evaluation set, then a crude end-to-end walking skeleton</button></li><li><button type="button" class="quiz-opt" data-correct="0">The most advanced component</button></li><li><button type="button" class="quiz-opt" data-correct="0">A fine-tuned model</button></li></ol>
 <p class="quiz-expl" hidden>The eval set defines done; the skeleton exposes integration problems early.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What makes a capstone write-up most convincing?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Using as many techniques as possible</button></li><li><button type="button" class="quiz-opt" data-correct="1">Measured results against a baseline, a decision log including what failed, and honest limitations</button></li><li><button type="button" class="quiz-opt" data-correct="0">A long list of libraries used</button></li><li><button type="button" class="quiz-opt" data-correct="0">Screenshots of the code</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Measured results against a baseline, a decision log including what failed, and honest limitations</button></li><li><button type="button" class="quiz-opt" data-correct="0">Screenshots of the code</button></li><li><button type="button" class="quiz-opt" data-correct="0">A long list of libraries used</button></li><li><button type="button" class="quiz-opt" data-correct="0">Using as many techniques as possible</button></li></ol>
 <p class="quiz-expl" hidden>Evidence and judgement are what reviewers and interviewers look for.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> In a system design interview, what should you always cover?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Which programming language you prefer</button></li><li><button type="button" class="quiz-opt" data-correct="1">How you would evaluate the system, alongside trade-offs and rough cost and latency estimates</button></li><li><button type="button" class="quiz-opt" data-correct="0">The exact model name to use</button></li><li><button type="button" class="quiz-opt" data-correct="0">Only the happy path</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The exact model name to use</button></li><li><button type="button" class="quiz-opt" data-correct="0">Which programming language you prefer</button></li><li><button type="button" class="quiz-opt" data-correct="1">How you would evaluate the system, alongside trade-offs and rough cost and latency estimates</button></li><li><button type="button" class="quiz-opt" data-correct="0">Only the happy path</button></li></ol>
 <p class="quiz-expl" hidden>Evaluation and trade-offs separate senior answers from junior ones.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why is deep domain expertise valuable for an AI engineer?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">It lets you identify problems worth solving, specify what good looks like, and build evaluation sets generalists cannot</button></li><li><button type="button" class="quiz-opt" data-correct="0">Domain experts do not need to evaluate systems</button></li><li><button type="button" class="quiz-opt" data-correct="0">It replaces the need for engineering skills</button></li><li><button type="button" class="quiz-opt" data-correct="0">Models cannot work without it</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Models cannot work without it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Domain experts do not need to evaluate systems</button></li><li><button type="button" class="quiz-opt" data-correct="0">It replaces the need for engineering skills</button></li><li><button type="button" class="quiz-opt" data-correct="1">It lets you identify problems worth solving, specify what good looks like, and build evaluation sets generalists cannot</button></li></ol>
 <p class="quiz-expl" hidden>Knowing the domain turns generic AI capability into specific, valuable systems.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Capstone G asks for both offline and online evaluation of a recommender. Why are offline metrics not enough?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Offline metrics cannot be computed for recommenders</button></li><li><button type="button" class="quiz-opt" data-correct="1">Held-out interactions only contain what the old system chose to show, so offline gains may not translate into real behaviour; an A/B test measures the actual effect</button></li><li><button type="button" class="quiz-opt" data-correct="0">Online tests are cheaper to run</button></li><li><button type="button" class="quiz-opt" data-correct="0">NDCG is only defined for search engines</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Held-out interactions only contain what the old system chose to show, so offline gains may not translate into real behaviour; an A/B test measures the actual effect</button></li><li><button type="button" class="quiz-opt" data-correct="0">NDCG is only defined for search engines</button></li><li><button type="button" class="quiz-opt" data-correct="0">Online tests are cheaper to run</button></li><li><button type="button" class="quiz-opt" data-correct="0">Offline metrics cannot be computed for recommenders</button></li></ol>
 <p class="quiz-expl" hidden>Offline evaluation is biased by past exposure; the decision to ship is made online, with guardrails.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -640,7 +640,7 @@ all asserts passed</code></pre></div>
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

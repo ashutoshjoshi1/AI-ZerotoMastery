@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -730,7 +730,7 @@ after skewing:     [978, 43, 41, 316, 80, 72, 73, 397] loss 1.961</code></pre></
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> An element-wise addition runs at a tiny fraction of an accelerator's peak FLOP/s. Why?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Accelerators have no dedicated addition units</button></li><li><button type="button" class="quiz-opt" data-correct="1">Its arithmetic intensity is very low, so memory bandwidth limits it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Additions must run in float32</button></li><li><button type="button" class="quiz-opt" data-correct="0">It cannot be split across enough cores</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Its arithmetic intensity is very low, so memory bandwidth limits it</button></li><li><button type="button" class="quiz-opt" data-correct="0">It cannot be split across enough cores</button></li><li><button type="button" class="quiz-opt" data-correct="0">Additions must run in float32</button></li><li><button type="button" class="quiz-opt" data-correct="0">Accelerators have no dedicated addition units</button></li></ol>
 <p class="quiz-expl" hidden>About one FLOP per 12 bytes moved puts it far left of the ridge point. Fusing it with neighbouring operations is the fix.</p>
 </div>
 <div class="quiz-q" data-q>
@@ -740,17 +740,17 @@ after skewing:     [978, 43, 41, 316, 80, 72, 73, 397] loss 1.961</code></pre></
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Why is tensor parallelism usually kept within a single server?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It only works with exactly 8 GPUs</button></li><li><button type="button" class="quiz-opt" data-correct="0">It copies the optimiser state to every GPU</button></li><li><button type="button" class="quiz-opt" data-correct="1">It communicates inside every layer, so it needs the fastest links</button></li><li><button type="button" class="quiz-opt" data-correct="0">It changes the maths of the model</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It copies the optimiser state to every GPU</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only works with exactly 8 GPUs</button></li><li><button type="button" class="quiz-opt" data-correct="0">It changes the maths of the model</button></li><li><button type="button" class="quiz-opt" data-correct="1">It communicates inside every layer, so it needs the fastest links</button></li></ol>
 <p class="quiz-expl" hidden>Its all-reduces sit on the critical path of every layer in both passes; over the slower network the GPUs would mostly wait.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> What does FlashAttention change?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It approximates attention with low-rank matrices</button></li><li><button type="button" class="quiz-opt" data-correct="0">It reduces attention's FLOPs from quadratic to linear</button></li><li><button type="button" class="quiz-opt" data-correct="1">It computes exact attention tile by tile in on-chip memory, never writing the full score matrix to HBM</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only speeds up inference, not training</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It approximates attention with low-rank matrices</button></li><li><button type="button" class="quiz-opt" data-correct="1">It computes exact attention tile by tile in on-chip memory, never writing the full score matrix to HBM</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only speeds up inference, not training</button></li><li><button type="button" class="quiz-opt" data-correct="0">It reduces attention's FLOPs from quadratic to linear</button></li></ol>
 <p class="quiz-expl" hidden>Same result and the same FLOPs, but far less memory traffic, and memory that grows linearly with context.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> A mixture-of-experts model has 64 experts per layer and sends each token to 2. Compared with a dense model of the same total size, it needs...</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">much less memory and much less compute per token</button></li><li><button type="button" class="quiz-opt" data-correct="1">about the same memory, but much less compute per token</button></li><li><button type="button" class="quiz-opt" data-correct="0">more compute per token, because of the router</button></li><li><button type="button" class="quiz-opt" data-correct="0">the same memory and the same compute</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">more compute per token, because of the router</button></li><li><button type="button" class="quiz-opt" data-correct="0">the same memory and the same compute</button></li><li><button type="button" class="quiz-opt" data-correct="1">about the same memory, but much less compute per token</button></li><li><button type="button" class="quiz-opt" data-correct="0">much less memory and much less compute per token</button></li></ol>
 <p class="quiz-expl" hidden>All experts must be held in memory, but each token runs through only the active ones, so use the active count in 6ND.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -808,7 +808,7 @@ after skewing:     [978, 43, 41, 316, 80, 72, 73, 397] loss 1.961</code></pre></
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

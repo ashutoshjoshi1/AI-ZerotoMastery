@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -800,27 +800,27 @@ disagreement: accuracy 0.888   cost per question  9.27   escalated 48%</code></p
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why does writing out intermediate steps improve a transformer's accuracy on multi-step problems?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The model reads its own text more carefully than the user's</button></li><li><button type="button" class="quiz-opt" data-correct="1">Each generated token is a further pass of computation that can use the intermediate results written before it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Longer outputs are sampled at a lower temperature</button></li><li><button type="button" class="quiz-opt" data-correct="0">The attention window resets after each step</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The attention window resets after each step</button></li><li><button type="button" class="quiz-opt" data-correct="1">Each generated token is a further pass of computation that can use the intermediate results written before it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Longer outputs are sampled at a lower temperature</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model reads its own text more carefully than the user's</button></li></ol>
 <p class="quiz-expl" hidden>Computation per token is fixed, so the only way to compute more is to generate more tokens. The reasoning text is working memory.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> A model answers a question correctly 35% of the time and gives one particular wrong answer 50% of the time. What happens to accuracy if you sample 25 times and take the majority answer?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It rises to about 90%</button></li><li><button type="button" class="quiz-opt" data-correct="0">It stays at 35%</button></li><li><button type="button" class="quiz-opt" data-correct="1">It falls well below 35%, because the systematic wrong answer wins the vote more and more reliably</button></li><li><button type="button" class="quiz-opt" data-correct="0">It depends on the temperature</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It depends on the temperature</button></li><li><button type="button" class="quiz-opt" data-correct="0">It rises to about 90%</button></li><li><button type="button" class="quiz-opt" data-correct="0">It stays at 35%</button></li><li><button type="button" class="quiz-opt" data-correct="1">It falls well below 35%, because the systematic wrong answer wins the vote more and more reliably</button></li></ol>
 <p class="quiz-expl" hidden>Majority voting converges on whichever single answer is most probable. Voting helps only when the correct answer beats every individual wrong answer.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Best-of-N with a learned verifier improves accuracy up to N = 8 and then gets worse. What is the most likely explanation?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The model gets tired after eight samples</button></li><li><button type="button" class="quiz-opt" data-correct="1">Some wrong answers fool the verifier, and generating more candidates makes it more likely that one of them is found and selected</button></li><li><button type="button" class="quiz-opt" data-correct="0">The API caches earlier samples</button></li><li><button type="button" class="quiz-opt" data-correct="0">Majority voting was used by mistake</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Some wrong answers fool the verifier, and generating more candidates makes it more likely that one of them is found and selected</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model gets tired after eight samples</button></li><li><button type="button" class="quiz-opt" data-correct="0">The API caches earlier samples</button></li><li><button type="button" class="quiz-opt" data-correct="0">Majority voting was used by mistake</button></li></ol>
 <p class="quiz-expl" hidden>Optimising against an imperfect judge eventually finds its blind spots: Goodhart's law applied to selection.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Your agent will run the same nightly task every day and must not fail. Which metric should you report?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">pass@10, since you can retry on failure</button></li><li><button type="button" class="quiz-opt" data-correct="1">pass^k, the probability that all k runs succeed</button></li><li><button type="button" class="quiz-opt" data-correct="0">Mean output tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">Accuracy on a single sample at high effort</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Mean output tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">pass@10, since you can retry on failure</button></li><li><button type="button" class="quiz-opt" data-correct="1">pass^k, the probability that all k runs succeed</button></li><li><button type="button" class="quiz-opt" data-correct="0">Accuracy on a single sample at high effort</button></li></ol>
 <p class="quiz-expl" hidden>pass@k assumes a free oracle picks the good attempt. A user who gets a different result on a bad day experiences pass^k.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> A model's visible thinking says "I checked this request against the data-handling policy and it complies." Can your compliance pipeline rely on that?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Yes, thinking is produced before the answer so it must be the reason for it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Yes, provided the thinking is longer than 200 tokens</button></li><li><button type="button" class="quiz-opt" data-correct="1">No. The visible reasoning is not guaranteed to be the cause of the answer, so verify compliance with an independent check</button></li><li><button type="button" class="quiz-opt" data-correct="0">Only if the effort level was high</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Yes, thinking is produced before the answer so it must be the reason for it</button></li><li><button type="button" class="quiz-opt" data-correct="1">No. The visible reasoning is not guaranteed to be the cause of the answer, so verify compliance with an independent check</button></li><li><button type="button" class="quiz-opt" data-correct="0">Only if the effort level was high</button></li><li><button type="button" class="quiz-opt" data-correct="0">Yes, provided the thinking is longer than 200 tokens</button></li></ol>
 <p class="quiz-expl" hidden>Reasoning faithfulness is not guaranteed, and summaries hide detail. Use the narration for debugging, not as evidence.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -877,7 +877,7 @@ disagreement: accuracy 0.888   cost per question  9.27   escalated 48%</code></p
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

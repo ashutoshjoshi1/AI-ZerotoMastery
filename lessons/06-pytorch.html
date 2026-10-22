@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -106,7 +106,7 @@
 <h1><span class="lesson-num">06</span> Deep learning with PyTorch</h1>
 <p class="lesson-summary">Move from hand-written NumPy to PyTorch, the framework behind most modern AI research and open models; learn tensors, autograd and the standard training loop, then train CNNs and fine-tune a pretrained network.</p>
 <p class="lesson-meta"><span>4 sessions</span><span>about 20 min of reading</span><span>12 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Create tensors, move them between NumPy and devices, and let autograd compute gradients</li><li>Define models with nn.Module and feed them batches with Dataset and DataLoader</li><li>Write the standard training loop with train and eval modes, zeroed gradients and a loss that takes raw logits</li><li>Train a small convolutional network on Fashion-MNIST and read its confusion matrix</li><li>Set up transfer learning from a pretrained ResNet by freezing its layers and replacing the head, and save and reload checkpoints</li><li>Use mixed precision, and debug a model that will not learn with a checklist that starts by overfitting one batch</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 4 sessions of about an hour</p>
@@ -122,6 +122,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 4</span>Tensors, devices and autograd</p>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" aria-label="Link to this section">#</a></h2>
 <p>Install PyTorch from the selector on <a href="https://pytorch.org/get-started/locally/">pytorch.org</a>, which gives the right command for your OS and GPU. On Google Colab it is already installed; switch the runtime to a GPU for the CNN sessions.</p>
 <div class="highlight" data-lang="bash"><div class="code-head"><span class="code-label">Terminal</span></div><pre><code>uv<span class="w"> </span>add<span class="w"> </span>torch<span class="w"> </span>torchvision<span class="w">          </span><span class="c1"># or: pip install torch torchvision</span></code></pre></div>
@@ -156,6 +157,7 @@
 <li><strong>Gradients accumulate.</strong> <code>.backward()</code> <em>adds</em> to <code>.grad</code>. You must zero gradients before each step (<code>optimizer.zero_grad()</code>).</li>
 <li><strong>Turn tracking off when you do not need it.</strong> Wrap evaluation and inference in <code>with torch.no_grad():</code> (or <code>torch.inference_mode()</code>) to save memory and time.</li>
 </ul>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="pytorch:0"><span>Done with session 1: Tensors, devices and autograd</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 4</span>nn.Module, Dataset, DataLoader and a clean training loop</p></div>
 <h2 id="modules-data-and-the-training-loop">Modules, data and the training loop<a class="headerlink" href="#modules-data-and-the-training-loop" aria-label="Link to this section">#</a></h2>
 <h3 id="nnmodule">nn.Module<a class="headerlink" href="#nnmodule" aria-label="Link to this section">#</a></h3>
 <p>Layers and models are subclasses of <code>nn.Module</code>. You declare layers in <code>__init__</code> and describe the computation in <code>forward</code>. PyTorch tracks all their parameters for you.</p>
@@ -231,6 +233,7 @@
 
 <span class="n">train</span><span class="p">(</span><span class="n">MLP</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">train_dl</span><span class="p">,</span> <span class="n">val_dl</span><span class="p">)</span>    <span class="c1"># val accuracy about 0.97</span></code></pre></div>
 <p>Note <code>model(xb) &gt; 0</code>: with logits, the sigmoid's 0.5 threshold is a logit threshold of 0.</p>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="pytorch:1"><span>Done with session 2: nn.Module, Dataset, DataLoader and a clean training loop</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 4</span>Convolutional networks: train an image classifier on Fashion-MNIST</p></div>
 <h2 id="convolutional-networks">Convolutional networks<a class="headerlink" href="#convolutional-networks" aria-label="Link to this section">#</a></h2>
 <p>Feeding a 28×28 image into a fully connected layer treats every pixel as unrelated to its neighbours and needs a separate weight for every pixel-neuron pair. <strong>Convolutions</strong> build in two facts about images: nearby pixels are related (local receptive fields), and a pattern means the same thing wherever it appears (weight sharing). A small filter, say 3×3, slides over the image computing a dot product at each position, producing a feature map. Early layers learn edges and textures; deeper layers combine them into parts and objects. <strong>Pooling</strong> downsamples between stages.</p>
 <p>Even if you mostly work with language, CNN ideas reappear: vision transformers split images into patches, and speech models often start with convolutions over audio.</p>
@@ -273,6 +276,7 @@
             <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">xb</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span> <span class="o">==</span> <span class="n">yb</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">correct</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_set</span><span class="p">))</span>                      <span class="c1"># about 0.91 to 0.92 after 5 epochs</span></code></pre></div>
 <p>On a free Colab GPU each epoch takes seconds. On a laptop CPU it takes a minute or two, which is still fine.</p>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="pytorch:2"><span>Done with session 3: Convolutional networks: train an image classifier on Fashion-MNIST</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 4</span>Transfer learning, checkpoints, mixed precision and debugging training</p></div>
 <h2 id="transfer-learning">Transfer learning<a class="headerlink" href="#transfer-learning" aria-label="Link to this section">#</a></h2>
 <p>Training from scratch needs lots of data. <strong>Transfer learning</strong> starts from a network already trained on a huge dataset and adapts it, which is the same idea that later lets you fine-tune LLMs instead of pretraining them. Two flavours:</p>
 <ul>
@@ -372,22 +376,22 @@ Expect about 93% test accuracy. The biggest confusions are among shirt, T-shirt,
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why must you call optimizer.zero_grad() every step?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To reset the learning rate</button></li><li><button type="button" class="quiz-opt" data-correct="1">Because backward() adds to existing .grad values, so old gradients would accumulate</button></li><li><button type="button" class="quiz-opt" data-correct="0">To free GPU memory</button></li><li><button type="button" class="quiz-opt" data-correct="0">To switch the model into training mode</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To free GPU memory</button></li><li><button type="button" class="quiz-opt" data-correct="0">To reset the learning rate</button></li><li><button type="button" class="quiz-opt" data-correct="0">To switch the model into training mode</button></li><li><button type="button" class="quiz-opt" data-correct="1">Because backward() adds to existing .grad values, so old gradients would accumulate</button></li></ol>
 <p class="quiz-expl" hidden>Accumulation is deliberate (it enables gradient accumulation over several small batches) but must be cleared each step otherwise.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> You apply softmax at the end of your model and then use nn.CrossEntropyLoss. What happens?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">An error is raised</button></li><li><button type="button" class="quiz-opt" data-correct="0">It works exactly the same</button></li><li><button type="button" class="quiz-opt" data-correct="1">It still trains, but worse, because CrossEntropyLoss applies log-softmax itself, so softmax is applied twice</button></li><li><button type="button" class="quiz-opt" data-correct="0">The loss becomes negative</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It works exactly the same</button></li><li><button type="button" class="quiz-opt" data-correct="1">It still trains, but worse, because CrossEntropyLoss applies log-softmax itself, so softmax is applied twice</button></li><li><button type="button" class="quiz-opt" data-correct="0">The loss becomes negative</button></li><li><button type="button" class="quiz-opt" data-correct="0">An error is raised</button></li></ol>
 <p class="quiz-expl" hidden>Feed raw logits to CrossEntropyLoss and BCEWithLogitsLoss.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Your model cannot drive the loss near zero on a single batch of 16 examples. What does that tell you?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">There is probably a bug in the model, loss or data pipeline; capacity is not the issue</button></li><li><button type="button" class="quiz-opt" data-correct="0">You need more training data</button></li><li><button type="button" class="quiz-opt" data-correct="0">You need a bigger batch</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model is overfitting</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">There is probably a bug in the model, loss or data pipeline; capacity is not the issue</button></li><li><button type="button" class="quiz-opt" data-correct="0">You need more training data</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model is overfitting</button></li><li><button type="button" class="quiz-opt" data-correct="0">You need a bigger batch</button></li></ol>
 <p class="quiz-expl" hidden>Any reasonable model should be able to memorise 16 examples. Failure to do so points to a bug.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> What is the main benefit of transfer learning?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It removes the need for a validation set</button></li><li><button type="button" class="quiz-opt" data-correct="1">You reuse features learned on a huge dataset, so you need far less data and compute for the new task</button></li><li><button type="button" class="quiz-opt" data-correct="0">It always outperforms training from scratch</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes models smaller</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It always outperforms training from scratch</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes models smaller</button></li><li><button type="button" class="quiz-opt" data-correct="1">You reuse features learned on a huge dataset, so you need far less data and compute for the new task</button></li><li><button type="button" class="quiz-opt" data-correct="0">It removes the need for a validation set</button></li></ol>
 <p class="quiz-expl" hidden>The same principle lets you fine-tune pretrained LLMs rather than pretraining your own.</p>
 </div>
 <div class="quiz-q" data-q>
@@ -414,7 +418,7 @@ Expect about 93% test accuracy. The biggest confusions are among shirt, T-shirt,
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="pytorch:3"><span>Done with session 4: Transfer learning, checkpoints, mixed precision and debugging training</span></label>
 <button type="button" class="complete-btn" data-complete="pytorch" data-sessions="4">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/05-neural-networks.html"><span>Previous</span>05 Neural networks from scratch</a><a class="next" href="../lessons/07-sequences-embeddings.html"><span>Next</span>07 Text as numbers, sequences and embeddings</a></nav>
 </footer>
@@ -445,7 +449,7 @@ Expect about 93% test accuracy. The biggest confusions are among shirt, T-shirt,
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

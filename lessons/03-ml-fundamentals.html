@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,7 +107,7 @@
 <h1><span class="lesson-num">03</span> Machine learning fundamentals</h1>
 <p class="lesson-summary">What it means for a model to learn, the workflow every ML project follows, why models overfit and how to stop them, and how to measure performance honestly.</p>
 <p class="lesson-meta"><span>3 sessions</span><span>about 15 min of reading</span><span>6 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Tell supervised, unsupervised, self-supervised and reinforcement learning apart, and lay out the workflow every ML project follows</li><li>Split data into training, validation and test sets that match how the model will meet data in production</li><li>Diagnose underfitting and overfitting from training and validation error, and reduce overfitting with ridge or lasso regularisation</li><li>Estimate performance with k-fold cross-validation and report the spread across folds, not just the mean</li><li>Choose metrics that reflect the cost of each mistake, using precision, recall, F1 and PR curves when classes are imbalanced</li><li>Beat a trivial baseline, and prevent data leakage by fitting preprocessing inside a scikit-learn Pipeline</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 3 sessions of about an hour</p>
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 3</span>Learning from data, the kinds of learning, and the ML workflow</p>
 <h2 id="what-learning-means">What "learning" means<a class="headerlink" href="#what-learning-means" aria-label="Link to this section">#</a></h2>
 <p>Traditional programming takes rules and data and produces answers. Machine learning takes data and answers and produces the rules. You give a model many examples of inputs <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> paired with desired outputs <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span>, and an algorithm searches for a function <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span></span></span></span> such that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>≈</mo><mi>y</mi></mrow><annotation encoding="application/x-tex">f(x) \approx y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span>, including for inputs it has never seen.</p>
 <p>That last clause is the whole game. A model that memorises its training examples is useless; we want one that <strong>generalises</strong>. Every technique in this lesson is about measuring and improving generalisation.</p>
@@ -177,6 +178,7 @@
 <li><strong>Test once</strong> on the held-out test set.</li>
 <li><strong>Deploy and monitor</strong>, because the world changes and models decay.</li>
 </ol>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="ml-fundamentals:0"><span>Done with session 1: Learning from data, the kinds of learning, and the ML workflow</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 3</span>Train, validation and test sets; overfitting, bias and variance; regularisation and cross-validation</p></div>
 <h2 id="splits-overfitting-and-generalisation">Splits, overfitting and generalisation<a class="headerlink" href="#splits-overfitting-and-generalisation" aria-label="Link to this section">#</a></h2>
 <h3 id="three-sets-three-jobs">Three sets, three jobs<a class="headerlink" href="#three-sets-three-jobs" aria-label="Link to this section">#</a></h3>
 <ul>
@@ -294,6 +296,7 @@ L_{\text{lasso}} = \text{MSE} + \alpha \sum_j |w_j|</annotation></semantics></ma
                          <span class="n">scoring</span><span class="o">=</span><span class="s2">&quot;neg_mean_squared_error&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MSE </span><span class="si">{</span><span class="o">-</span><span class="n">scores</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> ± </span><span class="si">{</span><span class="n">scores</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></code></pre></div>
 <p>Report the spread, not just the mean. If two models differ by less than the standard deviation across folds, you have not shown that one is better.</p>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="ml-fundamentals:1"><span>Done with session 2: Train, validation and test sets; overfitting, bias and variance; regularisation and cross-validation</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 3</span>Metrics that tell the truth, baselines, and data leakage</p></div>
 <h2 id="metrics-that-tell-the-truth">Metrics that tell the truth<a class="headerlink" href="#metrics-that-tell-the-truth" aria-label="Link to this section">#</a></h2>
 <h3 id="regression">Regression<a class="headerlink" href="#regression" aria-label="Link to this section">#</a></h3>
 <ul>
@@ -398,27 +401,27 @@ Missing a malignant tumour (a false negative for the malignant class) is far wor
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> A model has 2% training error and 25% validation error. What is the most likely diagnosis?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Underfitting; use a bigger model</button></li><li><button type="button" class="quiz-opt" data-correct="1">Overfitting; get more data, regularise, or simplify the model</button></li><li><button type="button" class="quiz-opt" data-correct="0">The validation set is too large</button></li><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Underfitting; use a bigger model</button></li><li><button type="button" class="quiz-opt" data-correct="0">The validation set is too large</button></li><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li><li><button type="button" class="quiz-opt" data-correct="1">Overfitting; get more data, regularise, or simplify the model</button></li></ol>
 <p class="quiz-expl" hidden>A large gap between training and validation error is the signature of high variance.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> Why keep a separate test set if you already have a validation set?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To have more training data</button></li><li><button type="button" class="quiz-opt" data-correct="1">Because repeated tuning against the validation set makes its score optimistic; the test set gives one unbiased estimate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Because scikit-learn requires three splits</button></li><li><button type="button" class="quiz-opt" data-correct="0">To measure training speed</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Because scikit-learn requires three splits</button></li><li><button type="button" class="quiz-opt" data-correct="0">To measure training speed</button></li><li><button type="button" class="quiz-opt" data-correct="1">Because repeated tuning against the validation set makes its score optimistic; the test set gives one unbiased estimate</button></li><li><button type="button" class="quiz-opt" data-correct="0">To have more training data</button></li></ol>
 <p class="quiz-expl" hidden>Every decision informed by validation results leaks information about it. The test set is used once, at the end.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Only 1 in 200 transactions is fraud. Your model is 99.5% accurate. What should you conclude?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The model is excellent</button></li><li><button type="button" class="quiz-opt" data-correct="1">Nothing yet; always predicting "not fraud" also scores 99.5%. Look at precision and recall for the fraud class</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model is overfitting</button></li><li><button type="button" class="quiz-opt" data-correct="0">Accuracy is the right metric here</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Nothing yet; always predicting "not fraud" also scores 99.5%. Look at precision and recall for the fraud class</button></li><li><button type="button" class="quiz-opt" data-correct="0">Accuracy is the right metric here</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model is excellent</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model is overfitting</button></li></ol>
 <p class="quiz-expl" hidden>With heavy imbalance, accuracy hides everything. Compare against the majority-class baseline and use precision, recall or PR-AUC.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> You standardise all features using the mean and standard deviation of the full dataset, then split. What is the problem?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Standardisation is unnecessary for most models</button></li><li><button type="button" class="quiz-opt" data-correct="1">Test-set statistics leak into training; fit preprocessing on the training data only, ideally inside a Pipeline</button></li><li><button type="button" class="quiz-opt" data-correct="0">The features will no longer be normally distributed</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nothing; this is correct</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Nothing; this is correct</button></li><li><button type="button" class="quiz-opt" data-correct="1">Test-set statistics leak into training; fit preprocessing on the training data only, ideally inside a Pipeline</button></li><li><button type="button" class="quiz-opt" data-correct="0">Standardisation is unnecessary for most models</button></li><li><button type="button" class="quiz-opt" data-correct="0">The features will no longer be normally distributed</button></li></ol>
 <p class="quiz-expl" hidden>This is preprocessing leakage. Small here, but it is the same mistake that produces badly inflated scores in other settings.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Which kind of learning is LLM pretraining?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Supervised, with human-written labels</button></li><li><button type="button" class="quiz-opt" data-correct="0">Unsupervised clustering</button></li><li><button type="button" class="quiz-opt" data-correct="1">Self-supervised: the next token in real text is the label</button></li><li><button type="button" class="quiz-opt" data-correct="0">Reinforcement learning</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Supervised, with human-written labels</button></li><li><button type="button" class="quiz-opt" data-correct="1">Self-supervised: the next token in real text is the label</button></li><li><button type="button" class="quiz-opt" data-correct="0">Reinforcement learning</button></li><li><button type="button" class="quiz-opt" data-correct="0">Unsupervised clustering</button></li></ol>
 <p class="quiz-expl" hidden>The labels come free from the data itself. RLHF, applied later, is the reinforcement learning part.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -440,7 +443,7 @@ Missing a malignant tumour (a false negative for the malignant class) is far wor
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="ml-fundamentals:2"><span>Done with session 3: Metrics that tell the truth, baselines, and data leakage</span></label>
 <button type="button" class="complete-btn" data-complete="ml-fundamentals" data-sessions="3">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/02-math-for-ai.html"><span>Previous</span>02 The maths behind AI</a><a class="next" href="../lessons/04-classical-ml.html"><span>Next</span>04 Classical machine learning</a></nav>
 </footer>
@@ -471,7 +474,7 @@ Missing a malignant tumour (a false negative for the malignant class) is far wor
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

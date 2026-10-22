@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -902,27 +902,27 @@ L=32: mean cosine similarity between nodes 1.000</code></pre></div>
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> You validate a demand forecaster with shuffled 5-fold cross-validation and get an excellent score. What is the main problem?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The folds are too small</button></li><li><button type="button" class="quiz-opt" data-correct="1">The model trains on data from after each test point, so it interpolates and the score overstates real forecasting accuracy</button></li><li><button type="button" class="quiz-opt" data-correct="0">Shuffling changes the seasonal period</button></li><li><button type="button" class="quiz-opt" data-correct="0">K-fold cannot be used with gradient boosting</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">K-fold cannot be used with gradient boosting</button></li><li><button type="button" class="quiz-opt" data-correct="0">The folds are too small</button></li><li><button type="button" class="quiz-opt" data-correct="0">Shuffling changes the seasonal period</button></li><li><button type="button" class="quiz-opt" data-correct="1">The model trains on data from after each test point, so it interpolates and the score overstates real forecasting accuracy</button></li></ol>
 <p class="quiz-expl" hidden>A forecast may only use the past. Walk-forward backtesting keeps every test period after its training data.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> A forecast has a MASE of 0.8. What does that mean?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It is 80% accurate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Its MAPE is 0.8%</button></li><li><button type="button" class="quiz-opt" data-correct="1">Its mean absolute error is 20% lower than that of the in-sample seasonal naive forecast</button></li><li><button type="button" class="quiz-opt" data-correct="0">It explains 80% of the variance</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It is 80% accurate</button></li><li><button type="button" class="quiz-opt" data-correct="1">Its mean absolute error is 20% lower than that of the in-sample seasonal naive forecast</button></li><li><button type="button" class="quiz-opt" data-correct="0">It explains 80% of the variance</button></li><li><button type="button" class="quiz-opt" data-correct="0">Its MAPE is 0.8%</button></li></ol>
 <p class="quiz-expl" hidden>MASE divides the forecast's MAE by the naive benchmark's MAE, so values below 1 beat the benchmark.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Matrix factorisation has a much better test RMSE than a popularity baseline, but a worse recall@10. What is the most likely explanation?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The RMSE was computed incorrectly</button></li><li><button type="button" class="quiz-opt" data-correct="1">The model predicts how much users would like items, while the test set records which items they chose, and choice depends heavily on popularity</button></li><li><button type="button" class="quiz-opt" data-correct="0">Recall@10 always favours popularity</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model has too many factors</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The RMSE was computed incorrectly</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model has too many factors</button></li><li><button type="button" class="quiz-opt" data-correct="1">The model predicts how much users would like items, while the test set records which items they chose, and choice depends heavily on popularity</button></li><li><button type="button" class="quiz-opt" data-correct="0">Recall@10 always favours popularity</button></li></ol>
 <p class="quiz-expl" hidden>Rating prediction and top-k ranking are different tasks. Train on the signal you will be judged on, or blend in exposure.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why are two-tower models the usual choice for candidate generation?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They are more accurate than any ranking model</button></li><li><button type="button" class="quiz-opt" data-correct="0">They need no training data</button></li><li><button type="button" class="quiz-opt" data-correct="1">Item vectors can be precomputed and indexed for nearest-neighbour search, so each request needs only one pass of the user tower</button></li><li><button type="button" class="quiz-opt" data-correct="0">They remove position bias automatically</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Item vectors can be precomputed and indexed for nearest-neighbour search, so each request needs only one pass of the user tower</button></li><li><button type="button" class="quiz-opt" data-correct="0">They are more accurate than any ranking model</button></li><li><button type="button" class="quiz-opt" data-correct="0">They remove position bias automatically</button></li><li><button type="button" class="quiz-opt" data-correct="0">They need no training data</button></li></ol>
 <p class="quiz-expl" hidden>The towers interact only through a dot product, which is exactly what an approximate nearest-neighbour index searches.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> In the karate club, why does an MLP on one-hot node ids score only chance on the unlabelled members, while the GCN scores 97%?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The MLP has too few parameters</button></li><li><button type="button" class="quiz-opt" data-correct="1">The MLP never trained on the unlabelled nodes' inputs and has no edges to carry information from the labelled ones; message passing spreads it along friendships</button></li><li><button type="button" class="quiz-opt" data-correct="0">The GCN uses a better optimiser</button></li><li><button type="button" class="quiz-opt" data-correct="0">The MLP needs more epochs</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The MLP needs more epochs</button></li><li><button type="button" class="quiz-opt" data-correct="0">The GCN uses a better optimiser</button></li><li><button type="button" class="quiz-opt" data-correct="0">The MLP has too few parameters</button></li><li><button type="button" class="quiz-opt" data-correct="1">The MLP never trained on the unlabelled nodes' inputs and has no edges to carry information from the labelled ones; message passing spreads it along friendships</button></li></ol>
 <p class="quiz-expl" hidden>Message passing lets labels influence the nodes they are connected to, which is the point of learning on graphs.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -979,7 +979,7 @@ L=32: mean cosine similarity between nodes 1.000</code></pre></div>
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

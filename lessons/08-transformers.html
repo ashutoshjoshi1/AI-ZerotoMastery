@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,7 +107,7 @@
 <h1><span class="lesson-num">08</span> Attention and the transformer</h1>
 <p class="lesson-summary">The architecture behind every modern LLM, built up piece by piece: self-attention in NumPy, masking and multiple heads, the transformer block, then a small GPT you train yourself in PyTorch.</p>
 <p class="lesson-meta"><span>5 sessions</span><span>about 25 min of reading</span><span>8 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Implement scaled dot-product self-attention in NumPy and explain why the scores are divided by the square root of the key dimension</li><li>Add causal masking, multiple heads and positional information, and explain the problem each one solves</li><li>Assemble a transformer block from attention, an MLP, residual connections and layer norm, and compare encoder-only, decoder-only and encoder-decoder models</li><li>Build and train a character-level GPT in PyTorch, then run ablations that show what the mask, positions and model size contribute</li><li>Explain generation as a sampling loop, estimate the memory a KV cache needs, and reason about the quadratic cost of attention</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 5 sessions of about an hour</p>
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 5</span>Self-attention: queries, keys and values, implemented in NumPy</p>
 <h2 id="the-idea-in-one-paragraph">The idea in one paragraph<a class="headerlink" href="#the-idea-in-one-paragraph" aria-label="Link to this section">#</a></h2>
 <p>Every token in a sequence looks at every other token and decides how much each one matters to it right now. It then pulls in a weighted mix of their information. "It" in "the animal didn't cross the street because it was too tired" should pull heavily from "animal"; in "...because it was too wide", from "street". That operation, <strong>self-attention</strong>, repeated in many layers with small neural networks in between, is the transformer. Everything else is engineering to make it train well and run fast.</p>
 <h2 id="self-attention-step-by-step">Self-attention, step by step<a class="headerlink" href="#self-attention-step-by-step" aria-label="Link to this section">#</a></h2>
@@ -197,6 +198,7 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">�
     <span class="n">q</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">d</span><span class="p">),</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span> <span class="o">@</span> <span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">k</span> <span class="o">@</span> <span class="n">q</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">d</span><span class="p">))</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 <span class="c1"># 4 1.8 0.9    64 8.6 1.1    1024 31.5 1.0</span></code></pre></div>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="transformers:0"><span>Done with session 1: Self-attention: queries, keys and values, implemented in NumPy</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 5</span>Causal masking, multi-head attention and positional information</p></div>
 <h2 id="masking-heads-and-positions">Masking, heads and positions<a class="headerlink" href="#masking-heads-and-positions" aria-label="Link to this section">#</a></h2>
 <h3 id="causal-masking-no-peeking-at-the-future">Causal masking: no peeking at the future<a class="headerlink" href="#causal-masking-no-peeking-at-the-future" aria-label="Link to this section">#</a></h3>
 <p>A language model predicts the next token, so position <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span> must not see positions after it. Set those scores to <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>−</mo><mi mathvariant="normal">∞</mi></mrow><annotation encoding="application/x-tex">-\infty</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord">−</span><span class="mord">∞</span></span></span></span> before softmax; they become exactly zero weight.</p>
@@ -235,6 +237,7 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">�
 <li><strong>Sinusoidal positions</strong> (original transformer): add fixed sine and cosine waves of different frequencies.</li>
 <li><strong>Rotary position embeddings, RoPE</strong> (most current open LLMs): rotate query and key vectors by an angle proportional to their position, so the dot product <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mi>i</mi></msub><mo>⋅</mo><msub><mi>k</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">q_i\cdot k_j</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6389em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.9805em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0315em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span> depends on the <em>relative</em> offset <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>−</mo><mi>j</mi></mrow><annotation encoding="application/x-tex">i-j</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7429em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.854em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span></span></span></span>. It generalises better and can be stretched to longer contexts.</li>
 </ul>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="transformers:1"><span>Done with session 2: Causal masking, multi-head attention and positional information</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 5</span>The transformer block: residuals, layer norm and the MLP; encoders versus decoders</p></div>
 <h2 id="the-transformer-block">The transformer block<a class="headerlink" href="#the-transformer-block" aria-label="Link to this section">#</a></h2>
 <p>Attention lets tokens exchange information. A per-token <strong>MLP</strong> (two linear layers with a non-linearity, typically expanding the dimension fourfold in between) then processes what each token gathered. Wrap both in residual connections and layer normalisation, the stabilisers from lesson <a class="ref" href="../lessons/05-neural-networks.html" title="Lesson 05: Neural networks from scratch">05</a>, and you have a block:</p>
 <div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mi>x</mi></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>←</mo><mi>x</mi><mo>+</mo><mrow><mi mathvariant="normal">M</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">H</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">A</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi></mrow><mo stretchy="false">(</mo><mrow><mi mathvariant="normal">L</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">N</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">m</mi></mrow><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mi>x</mi></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>←</mo><mi>x</mi><mo>+</mo><mrow><mi mathvariant="normal">M</mi><mi mathvariant="normal">L</mi><mi mathvariant="normal">P</mi></mrow><mo stretchy="false">(</mo><mrow><mi mathvariant="normal">L</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">N</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">m</mi></mrow><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
@@ -269,40 +272,37 @@ x &amp;\leftarrow x + \mathrm{MLP}(\mathrm{LayerNorm}(x))
 <div class="table-wrap"><table>
 <thead>
 <tr>
-<th>Architecture</th>
+<th>Architecture (examples)</th>
 <th>Attention</th>
 <th>Trained to</th>
-<th>Examples</th>
 <th>Good for</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Encoder-only</td>
+<td>Encoder-only (BERT, RoBERTa)</td>
 <td>Bidirectional (sees all tokens)</td>
 <td>Fill in masked-out words</td>
-<td>BERT, RoBERTa</td>
 <td>Classification, embeddings, search ranking</td>
 </tr>
 <tr>
-<td>Decoder-only</td>
+<td>Decoder-only (GPT, Claude, Llama, Mistral, Qwen)</td>
 <td>Causal (sees the past only)</td>
 <td>Predict the next token</td>
-<td>GPT, Claude, Llama, Mistral, Qwen</td>
 <td>Text generation, chat, essentially all modern LLMs</td>
 </tr>
 <tr>
-<td>Encoder-decoder</td>
+<td>Encoder-decoder (original transformer, T5, Whisper)</td>
 <td>Encoder bidirectional, decoder causal plus cross-attention</td>
 <td>Map input sequence to output sequence</td>
-<td>Original transformer, T5, Whisper</td>
 <td>Translation, speech recognition, summarisation</td>
 </tr>
 </tbody>
 </table></div>
 <p>Decoder-only models won the generality race: with enough scale, "predict the next token" covers translation, classification and everything else as special cases.</p>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="transformers:2"><span>Done with session 3: The transformer block: residuals, layer norm and the MLP; encoders versus decoders</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 5</span>Build and train a tiny GPT in PyTorch</p></div>
 <h2 id="build-a-tiny-gpt">Build a tiny GPT<a class="headerlink" href="#build-a-tiny-gpt" aria-label="Link to this section">#</a></h2>
-<p>Now the real thing, in about a hundred lines of PyTorch. It is a character-level model, so the "tokens" are single characters and you need no tokenizer yet (that comes in the next lesson). Train it on any plain-text file; the classic choice is Tiny Shakespeare, about 1 MB of plays. Run this on a Colab GPU for speed, although a modern laptop CPU will finish a shorter run.</p>
+<p>Now the real thing, in about a hundred lines of PyTorch. It is a character-level model, so the "tokens" are single characters and you need no tokeniser yet (that comes in the next lesson). Train it on any plain-text file; the classic choice is Tiny Shakespeare, about 1 MB of plays. Run this on a Colab GPU for speed, although a modern laptop CPU will finish a shorter run.</p>
 <h3 id="data">Data<a class="headerlink" href="#data" aria-label="Link to this section">#</a></h3>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">math</span><span class="o">,</span><span class="w"> </span><span class="nn">torch</span><span class="o">,</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span><span class="o">,</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
 
@@ -461,6 +461,7 @@ x &amp;\leftarrow x + \mathrm{MLP}(\mathrm{LayerNorm}(x))
 <li>On Python code the model quickly learns indentation and keywords, and soon produces plausible-looking, non-working code: a miniature version of why code LLMs work and why their output needs testing.</li>
 </ol>
 </details>
+<div class="session-break" id="session-5"><label class="sb-done"><input type="checkbox" data-session="transformers:3"><span>Done with session 4: Build and train a tiny GPT in PyTorch</span></label><p class="sb-next"><span class="sb-kicker">Session 5 of 5</span>Generation, the KV cache, and what attention costs</p></div>
 <h2 id="generation-the-kv-cache-and-the-cost-of-attention">Generation, the KV cache and the cost of attention<a class="headerlink" href="#generation-the-kv-cache-and-the-cost-of-attention" aria-label="Link to this section">#</a></h2>
 <h3 id="generation-is-a-loop">Generation is a loop<a class="headerlink" href="#generation-is-a-loop" aria-label="Link to this section">#</a></h3>
 <p>An LLM produces text one token at a time: run the model on the context, sample a token from the last position's distribution, append it, repeat. Our <code>generate</code> method does exactly that, and so does every chat model, which is why responses stream in word by word.</p>
@@ -474,27 +475,27 @@ x &amp;\leftarrow x + \mathrm{MLP}(\mathrm{LayerNorm}(x))
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> In self-attention, what determines how much token i attends to token j?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The distance between i and j</button></li><li><button type="button" class="quiz-opt" data-correct="1">The softmax-normalised dot product of token i's query with token j's key</button></li><li><button type="button" class="quiz-opt" data-correct="0">The value vector of token j</button></li><li><button type="button" class="quiz-opt" data-correct="0">A fixed pattern chosen before training</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The value vector of token j</button></li><li><button type="button" class="quiz-opt" data-correct="0">A fixed pattern chosen before training</button></li><li><button type="button" class="quiz-opt" data-correct="0">The distance between i and j</button></li><li><button type="button" class="quiz-opt" data-correct="1">The softmax-normalised dot product of token i's query with token j's key</button></li></ol>
 <p class="quiz-expl" hidden>Scores are q_i · k_j / √d_k, normalised by softmax across j.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> Why is the causal mask necessary when training a GPT-style model?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To speed up training</button></li><li><button type="button" class="quiz-opt" data-correct="0">To reduce memory</button></li><li><button type="button" class="quiz-opt" data-correct="1">So each position can only use earlier tokens; otherwise it could see the token it must predict</button></li><li><button type="button" class="quiz-opt" data-correct="0">To make attention symmetric</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To make attention symmetric</button></li><li><button type="button" class="quiz-opt" data-correct="0">To speed up training</button></li><li><button type="button" class="quiz-opt" data-correct="1">So each position can only use earlier tokens; otherwise it could see the token it must predict</button></li><li><button type="button" class="quiz-opt" data-correct="0">To reduce memory</button></li></ol>
 <p class="quiz-expl" hidden>Without it the model cheats by copying the answer, and the low training loss means nothing.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Self-attention without any positional information treats its input as...</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A sequence read left to right</button></li><li><button type="button" class="quiz-opt" data-correct="1">An unordered set: shuffling the tokens just shuffles the outputs</button></li><li><button type="button" class="quiz-opt" data-correct="0">A tree</button></li><li><button type="button" class="quiz-opt" data-correct="0">A sequence read right to left</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">An unordered set: shuffling the tokens just shuffles the outputs</button></li><li><button type="button" class="quiz-opt" data-correct="0">A tree</button></li><li><button type="button" class="quiz-opt" data-correct="0">A sequence read right to left</button></li><li><button type="button" class="quiz-opt" data-correct="0">A sequence read left to right</button></li></ol>
 <p class="quiz-expl" hidden>Order must be injected, by learned positions, sinusoids or rotary embeddings.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> What is the KV cache?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Stored keys and values of previous tokens, so each generation step only computes the new token's projections</button></li><li><button type="button" class="quiz-opt" data-correct="0">A cache of previous user prompts</button></li><li><button type="button" class="quiz-opt" data-correct="0">A compressed copy of the model weights</button></li><li><button type="button" class="quiz-opt" data-correct="0">The vocabulary lookup table</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A compressed copy of the model weights</button></li><li><button type="button" class="quiz-opt" data-correct="1">Stored keys and values of previous tokens, so each generation step only computes the new token's projections</button></li><li><button type="button" class="quiz-opt" data-correct="0">A cache of previous user prompts</button></li><li><button type="button" class="quiz-opt" data-correct="0">The vocabulary lookup table</button></li></ol>
 <p class="quiz-expl" hidden>It trades memory for speed, and its size often limits how many concurrent users a GPU can serve.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Doubling a transformer's context length roughly does what to the cost of the attention score computation?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Leaves it unchanged</button></li><li><button type="button" class="quiz-opt" data-correct="0">Doubles it</button></li><li><button type="button" class="quiz-opt" data-correct="1">Quadruples it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Halves it</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Leaves it unchanged</button></li><li><button type="button" class="quiz-opt" data-correct="0">Halves it</button></li><li><button type="button" class="quiz-opt" data-correct="1">Quadruples it</button></li><li><button type="button" class="quiz-opt" data-correct="0">Doubles it</button></li></ol>
 <p class="quiz-expl" hidden>The score matrix is T × T, so attention compute grows with the square of sequence length.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -529,7 +530,7 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">�
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="transformers:4"><span>Done with session 5: Generation, the KV cache, and what attention costs</span></label>
 <button type="button" class="complete-btn" data-complete="transformers" data-sessions="5">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/07-sequences-embeddings.html"><span>Previous</span>07 Text as numbers, sequences and embeddings</a><a class="next" href="../lessons/09-how-llms-are-built.html"><span>Next</span>09 How large language models are built</a></nav>
 </footer>
@@ -560,7 +561,7 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">�
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

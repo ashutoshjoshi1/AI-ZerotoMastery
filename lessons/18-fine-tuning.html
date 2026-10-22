@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -375,7 +375,7 @@
     <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">v</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">totals</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rule baseline:&quot;</span><span class="p">,</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">rule_convert</span><span class="p">))</span></code></pre></div>
-<p>On the synthetic validation set the rules score close to 100% on every field, and that is the lesson rather than the result: the generator has nine job phrasings and four follow-up phrasings, so a short list of keywords covers it. Real notes have typos ("dessicant"), new parts, two instruments in one line and free-text follow-ups that no keyword list anticipates. A fine-tuned model earns its place on <em>that</em> variation, which is why the distillation exercise at the end of this lesson insists on 30 hand-written notes as the eval set. Whatever you fine-tune, keep <code>evaluate</code>: the same function scores the base model, the fine-tuned model and the large model.</p>
+<p>On the synthetic validation set the rules are perfect on validity, instrument id, duration and follow-up, but miss about a quarter of the parts: a note that ends "return with spare belt" names a belt that was never fitted, and the keyword rule counts it. Read the misses, and one more rule (ignore a belt named in the follow-up) brings every field to 100%. That is the lesson rather than the result: the generator has nine kinds of job and four kinds of follow-up, so a short list of keywords covers it. Real notes have typos ("dessicant"), new parts, two instruments in one line and free-text follow-ups that no keyword list anticipates. A fine-tuned model earns its place on <em>that</em> variation, which is why the distillation exercise at the end of this lesson insists on 30 hand-written notes as the eval set. Whatever you fine-tune, keep <code>evaluate</code>: the same function scores the base model, the fine-tuned model and the large model.</p>
 </details>
 <h3 id="training-with-hugging-face-trl-and-peft">Training with Hugging Face TRL and PEFT<a class="headerlink" href="#training-with-hugging-face-trl-and-peft" aria-label="Link to this section">#</a></h3>
 <p>Run this on a GPU (a free Colab T4 is enough for a 0.5B model). Library APIs evolve quickly; if an argument name has changed, check the TRL documentation for your installed version.</p>
@@ -453,7 +453,7 @@
 <h2 id="beyond-supervised-fine-tuning">Beyond supervised fine-tuning<a class="headerlink" href="#beyond-supervised-fine-tuning" aria-label="Link to this section">#</a></h2>
 <p>SFT teaches by imitation: show the model good outputs and it learns to produce them. Two families of technique start where imitation stops. This section is a map; lesson <a class="ref" href="../lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a> is the territory.</p>
 <h3 id="preference-tuning">Preference tuning<a class="headerlink" href="#preference-tuning" aria-label="Link to this section">#</a></h3>
-<p>Sometimes it is easier to say which of two outputs is better than to write the perfect one: tone, helpfulness, conciseness, safety. <strong>Preference tuning</strong> trains on triples of a prompt, a <strong>chosen</strong> response and a <strong>rejected</strong> response. You met the idea as RLHF in lesson <a class="ref" href="../lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a>; the practical workhorse is direct preference optimisation (DPO), which raises the probability of the chosen answer relative to the rejected one while a frozen reference model keeps the tuned model from drifting too far. It is usually run after SFT, and TRL's <code>DPOTrainer</code> takes the same model, tokenizer and LoRA configuration as the SFT code above. Lesson <a class="ref" href="../lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a> derives the DPO loss, implements it from scratch, and goes on to reward models and GRPO, the reinforcement-learning method behind reasoning models.</p>
+<p>Sometimes it is easier to say which of two outputs is better than to write the perfect one: tone, helpfulness, conciseness, safety. <strong>Preference tuning</strong> trains on triples of a prompt, a <strong>chosen</strong> response and a <strong>rejected</strong> response. You met the idea as RLHF in lesson <a class="ref" href="../lessons/09-how-llms-are-built.html" title="Lesson 09: How large language models are built">09</a>; the practical workhorse is direct preference optimisation (DPO), which raises the probability of the chosen answer relative to the rejected one while a frozen reference model keeps the tuned model from drifting too far. It is usually run after SFT, and TRL's <code>DPOTrainer</code> takes the same model, tokeniser and LoRA configuration as the SFT code above. Lesson <a class="ref" href="../lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a> derives the DPO loss, implements it from scratch, and goes on to reward models and GRPO, the reinforcement-learning method behind reasoning models.</p>
 <h3 id="distillation">Distillation<a class="headerlink" href="#distillation" aria-label="Link to this section">#</a></h3>
 <p><strong>Knowledge distillation</strong> trains a small "student" to imitate a large "teacher". The simplest version is what this lesson does: train on the teacher's outputs. The classic version also matches the teacher's full probability distribution over tokens with a KL-divergence loss, which carries more information per example but needs the teacher's logits, so it is mostly done between open models. Distillation is how many small, fast production models get most of a big model's quality on a narrow task. Lesson <a class="ref" href="../lessons/19-advanced-fine-tuning.html" title="Lesson 19: Post-training in depth: data, preference tuning, RL fine-tuning, distillation and merging">19</a> covers both forms, together with synthetic data generation, decontamination, model merging and how to evaluate a post-trained model.</p>
 <h3 id="hosted-fine-tuning">Hosted fine-tuning<a class="headerlink" href="#hosted-fine-tuning" aria-label="Link to this section">#</a></h3>
@@ -463,7 +463,7 @@
 <h3 id="things-that-go-wrong">Things that go wrong<a class="headerlink" href="#things-that-go-wrong" aria-label="Link to this section">#</a></h3>
 <ul>
 <li><strong>Catastrophic forgetting</strong>: heavy fine-tuning on a narrow task degrades general abilities. LoRA, low learning rates and few epochs reduce it; mixing in some general instruction data helps.</li>
-<li><strong>Format mismatch</strong>: training with one chat template and serving with another silently ruins results. Always use <code>apply_chat_template</code> from the same tokenizer.</li>
+<li><strong>Format mismatch</strong>: training with one chat template and serving with another silently ruins results. Always use <code>apply_chat_template</code> from the same tokeniser.</li>
 <li><strong>Data leakage</strong> between training and eval examples gives flattering scores (lesson <a class="ref" href="../lessons/03-ml-fundamentals.html" title="Lesson 03: Machine learning fundamentals">03</a> again, and the contamination section of lesson <a class="ref" href="../lessons/17-evaluation.html" title="Lesson 17: Evaluating LLM systems">17</a>).</li>
 <li><strong>Safety regressions</strong>: fine-tuning can weaken a model's refusal behaviour, even on benign data. Include safety cases in your eval set (lesson <a class="ref" href="../lessons/22-safety-security.html" title="Lesson 22: Safety, security and responsible AI">22</a>).</li>
 </ul>
@@ -491,7 +491,7 @@
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Your assistant needs to know the contents of 2,000 frequently updated product documents. What is the best approach?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Fine-tune a model on the documents every week</button></li><li><button type="button" class="quiz-opt" data-correct="1">Retrieval-augmented generation over the documents</button></li><li><button type="button" class="quiz-opt" data-correct="0">A longer system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">Preference tuning on question-answer pairs</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A longer system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">Fine-tune a model on the documents every week</button></li><li><button type="button" class="quiz-opt" data-correct="1">Retrieval-augmented generation over the documents</button></li><li><button type="button" class="quiz-opt" data-correct="0">Preference tuning on question-answer pairs</button></li></ol>
 <p class="quiz-expl" hidden>Knowledge that changes belongs in a retrieval index. Fine-tuning is for behaviour, format and efficiency.</p>
 </div>
 <div class="quiz-q" data-q>
@@ -506,12 +506,12 @@
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> What does QLoRA change compared with LoRA?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It trains the adapters in 4-bit</button></li><li><button type="button" class="quiz-opt" data-correct="1">It stores the frozen base model in 4-bit, cutting memory roughly fourfold, while training 16-bit adapters</button></li><li><button type="button" class="quiz-opt" data-correct="0">It removes the need for a GPU</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses a rank of 4</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">It stores the frozen base model in 4-bit, cutting memory roughly fourfold, while training 16-bit adapters</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses a rank of 4</button></li><li><button type="button" class="quiz-opt" data-correct="0">It trains the adapters in 4-bit</button></li><li><button type="button" class="quiz-opt" data-correct="0">It removes the need for a GPU</button></li></ol>
 <p class="quiz-expl" hidden>Quantising the frozen base is what lets large models fine-tune on a single GPU.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Validation loss rises while training loss keeps falling during fine-tuning. What is happening?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Overfitting: reduce epochs, add data or lower the rank</button></li><li><button type="button" class="quiz-opt" data-correct="0">Underfitting: train longer</button></li><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li><li><button type="button" class="quiz-opt" data-correct="0">The chat template is wrong</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Underfitting: train longer</button></li><li><button type="button" class="quiz-opt" data-correct="0">The learning rate is too low</button></li><li><button type="button" class="quiz-opt" data-correct="0">The chat template is wrong</button></li><li><button type="button" class="quiz-opt" data-correct="1">Overfitting: reduce epochs, add data or lower the rank</button></li></ol>
 <p class="quiz-expl" hidden>The classic signature from lesson <a class="ref" href="../lessons/03-ml-fundamentals.html" title="Lesson 03: Machine learning fundamentals">03</a> applies to LLMs too.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -566,7 +566,7 @@
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

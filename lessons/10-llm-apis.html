@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -593,22 +593,22 @@ Watch the input-token count climb every turn: that is the stateless API re-readi
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What is the most reliable way to get structured data out of an LLM?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Ask politely for JSON in the prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">Use a high temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">Give the API a JSON schema as the output format, then validate the reply with Pydantic and repair on failure</button></li><li><button type="button" class="quiz-opt" data-correct="0">Parse whatever comes back with regular expressions</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Give the API a JSON schema as the output format, then validate the reply with Pydantic and repair on failure</button></li><li><button type="button" class="quiz-opt" data-correct="0">Parse whatever comes back with regular expressions</button></li><li><button type="button" class="quiz-opt" data-correct="0">Ask politely for JSON in the prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">Use a high temperature</button></li></ol>
 <p class="quiz-expl" hidden>Constrain the output, validate it, and retry with the error message on the rare failure.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Which errors should your code retry automatically?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Rate limits, overload or server errors, and timeouts, with exponential backoff</button></li><li><button type="button" class="quiz-opt" data-correct="0">Authentication errors</button></li><li><button type="button" class="quiz-opt" data-correct="0">Bad request errors caused by an invalid parameter</button></li><li><button type="button" class="quiz-opt" data-correct="0">All errors, immediately and indefinitely</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Authentication errors</button></li><li><button type="button" class="quiz-opt" data-correct="0">Bad request errors caused by an invalid parameter</button></li><li><button type="button" class="quiz-opt" data-correct="0">All errors, immediately and indefinitely</button></li><li><button type="button" class="quiz-opt" data-correct="1">Rate limits, overload or server errors, and timeouts, with exponential backoff</button></li></ol>
 <p class="quiz-expl" hidden>Transient errors deserve a retry; client errors mean a bug that retrying will not fix.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Many requests share a 30,000-token system prompt containing a manual. What most reduces cost?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Increase max_tokens</button></li><li><button type="button" class="quiz-opt" data-correct="1">Prompt caching on the shared prefix</button></li><li><button type="button" class="quiz-opt" data-correct="0">Use streaming</button></li><li><button type="button" class="quiz-opt" data-correct="0">Raise the temperature</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Use streaming</button></li><li><button type="button" class="quiz-opt" data-correct="0">Raise the temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">Prompt caching on the shared prefix</button></li><li><button type="button" class="quiz-opt" data-correct="0">Increase max_tokens</button></li></ol>
 <p class="quiz-expl" hidden>Cached prefix tokens are billed at a fraction of the normal rate and processed faster.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Why does each turn of a long chat cost more than the previous one?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Providers charge more as the conversation ages</button></li><li><button type="button" class="quiz-opt" data-correct="1">Each request re-sends and re-bills the entire history as input tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">Output tokens get more expensive over time</button></li><li><button type="button" class="quiz-opt" data-correct="0">Streaming adds overhead</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Streaming adds overhead</button></li><li><button type="button" class="quiz-opt" data-correct="0">Providers charge more as the conversation ages</button></li><li><button type="button" class="quiz-opt" data-correct="1">Each request re-sends and re-bills the entire history as input tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">Output tokens get more expensive over time</button></li></ol>
 <p class="quiz-expl" hidden>Input tokens grow with every turn. Trim, summarise or cache to control it.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -663,7 +663,7 @@ Watch the input-token count climb every turn: that is the stateless API re-readi
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

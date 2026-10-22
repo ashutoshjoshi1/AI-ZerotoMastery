@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,11 +107,11 @@
 <h1><span class="lesson-num">23</span> Multimodal AI: vision, documents, speech and image generation</h1>
 <p class="lesson-summary">Extend everything you know beyond text, from vision transformers and CLIP to sending images and documents to vision-language models, transcribing speech, and understanding how diffusion models generate images.</p>
 <p class="lesson-meta"><span>3 sessions</span><span>about 15 min of reading</span><span>7 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Explain how a vision transformer turns an image into patch tokens and how CLIP's contrastive training aligns images and text in one embedding space</li><li>Classify images zero-shot with CLIP and send images to a vision-language model through an API</li><li>Extract validated records from documents by combining text extraction, OCR and a vision-language model with a schema</li><li>Transcribe speech with Whisper and explain why latency is the main challenge for voice agents</li><li>Implement the forward noising process of a diffusion model and explain how latent diffusion, text conditioning, guidance and step distillation make image generation practical</li><li>Design a two-stage pipeline that triages images cheaply with CLIP and escalates only uncertain or problem cases to a vision-language model</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 3 sessions of about an hour</p>
-<ol class="sessions"><li><label><input type="checkbox" data-session="multimodal:0"><span>Vision: from CNNs to vision transformers, CLIP, and vision-language models via API</span></label></li><li><label><input type="checkbox" data-session="multimodal:1"><span>Documents and speech: document understanding, OCR, speech-to-text and text-to-speech</span></label></li><li><label><input type="checkbox" data-session="multimodal:2"><span>Generating images: diffusion models from intuition to code</span></label></li></ol>
+<ol class="sessions"><li><label><input type="checkbox" data-session="multimodal:0"><span>Vision: from CNNs to vision transformers, CLIP, and vision-language models via API</span></label></li><li><label><input type="checkbox" data-session="multimodal:1"><span>Documents and speech: document understanding, OCR, speech-to-text and text-to-speech</span></label></li><li><label><input type="checkbox" data-session="multimodal:2"><span>Generating images: diffusion models from intuition to code; then a field-photo triage pipeline</span></label></li></ol>
 <p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
 <aside class="handson" aria-label="Hands-on notebook">
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 3</span>Vision: from CNNs to vision transformers, CLIP, and vision-language models via API</p>
 <h2 id="one-architecture-many-modalities">One architecture, many modalities<a class="headerlink" href="#one-architecture-many-modalities" aria-label="Link to this section">#</a></h2>
 <p>The transformer turned out to be modality-agnostic. Anything you can cut into a sequence of vectors, it can process: image patches, audio frames, video clips, sensor readings. Modern frontier models are <strong>multimodal</strong>: they accept images (and often audio or documents) alongside text, in the same conversation. For an AI engineer this opens up reading scanned forms, inspecting photos from the field, understanding plots and diagrams, transcribing meetings and generating images.</p>
 <h2 id="vision">Vision<a class="headerlink" href="#vision" aria-label="Link to this section">#</a></h2>
@@ -181,6 +182,7 @@
 <li><strong>Combine with structured output</strong> (lesson <a class="ref" href="../lessons/10-llm-apis.html" title="Lesson 10: Working with LLM APIs">10</a>) to turn photos and scans into validated records.</li>
 <li>VLMs are strong at reading text in images, charts and screenshots, describing scenes and comparing images. They can still misread small text, miscount objects and misjudge precise spatial measurements; verify where accuracy matters.</li>
 </ul>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="multimodal:0"><span>Done with session 1: Vision: from CNNs to vision transformers, CLIP, and vision-language models via API</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 3</span>Documents and speech: document understanding, OCR, speech-to-text and text-to-speech</p></div>
 <h2 id="documents-and-speech">Documents and speech<a class="headerlink" href="#documents-and-speech" aria-label="Link to this section">#</a></h2>
 <h3 id="document-understanding">Document understanding<a class="headerlink" href="#document-understanding" aria-label="Link to this section">#</a></h3>
 <p>Real-world documents are PDFs, scans, photos of forms, spreadsheets in screenshots. Three approaches, often combined:</p>
@@ -213,6 +215,7 @@
 <p>Faster local implementations (faster-whisper, whisper.cpp) and hosted speech APIs are common in production. A powerful pattern: transcribe a technician's voice memo, then use an LLM with structured output to turn it into a maintenance record (your lesson <a class="ref" href="../lessons/18-fine-tuning.html" title="Lesson 18: Fine-tuning language models">18</a> task, now hands-free).</p>
 <h3 id="text-to-speech-and-voice-agents">Text-to-speech and voice agents<a class="headerlink" href="#text-to-speech-and-voice-agents" aria-label="Link to this section">#</a></h3>
 <p>Neural text-to-speech models produce natural voices from text, and many providers offer them via API. A <strong>voice agent</strong> chains speech-to-text, an LLM (often with tools) and text-to-speech, or uses a natively speech-capable model end to end. The engineering challenge is <strong>latency</strong>: people expect replies within about a second, so everything streams and every stage is optimised.</p>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="multimodal:1"><span>Done with session 2: Documents and speech: document understanding, OCR, speech-to-text and text-to-speech</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 3</span>Generating images: diffusion models from intuition to code; then a field-photo triage pipeline</p></div>
 <h2 id="generating-images-diffusion-models">Generating images: diffusion models<a class="headerlink" href="#generating-images-diffusion-models" aria-label="Link to this section">#</a></h2>
 <h3 id="the-intuition">The intuition<a class="headerlink" href="#the-intuition" aria-label="Link to this section">#</a></h3>
 <p>A <strong>diffusion model</strong> learns to reverse a gradual noising process. Training: take a real image, add a random amount of Gaussian noise, and train a network to predict the noise that was added. Generation: start from pure noise, and repeatedly ask the network "what noise is in this?", subtract a little of it, and repeat. Over tens of steps, structure emerges from static.</p>
@@ -314,27 +317,27 @@ CLIP runs locally in tens of milliseconds per image at no per-call cost; the VLM
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> How does a vision transformer turn an image into a sequence?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It reads pixels one at a time, row by row</button></li><li><button type="button" class="quiz-opt" data-correct="1">It cuts the image into fixed-size patches and projects each patch to a vector, adding position embeddings</button></li><li><button type="button" class="quiz-opt" data-correct="0">It converts the image to a text caption first</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses an RNN over columns</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">It cuts the image into fixed-size patches and projects each patch to a vector, adding position embeddings</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses an RNN over columns</button></li><li><button type="button" class="quiz-opt" data-correct="0">It converts the image to a text caption first</button></li><li><button type="button" class="quiz-opt" data-correct="0">It reads pixels one at a time, row by row</button></li></ol>
 <p class="quiz-expl" hidden>Patches play the role tokens play for text: 224×224 with 16×16 patches gives 196 tokens.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What enables CLIP to classify images into categories it was never explicitly trained on?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Images and text share an embedding space, so you can compare an image with sentence descriptions of any label</button></li><li><button type="button" class="quiz-opt" data-correct="0">It was trained on every possible category</button></li><li><button type="button" class="quiz-opt" data-correct="0">It generates captions and string-matches them</button></li><li><button type="button" class="quiz-opt" data-correct="0">It fine-tunes itself at inference time</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It fine-tunes itself at inference time</button></li><li><button type="button" class="quiz-opt" data-correct="0">It generates captions and string-matches them</button></li><li><button type="button" class="quiz-opt" data-correct="0">It was trained on every possible category</button></li><li><button type="button" class="quiz-opt" data-correct="1">Images and text share an embedding space, so you can compare an image with sentence descriptions of any label</button></li></ol>
 <p class="quiz-expl" hidden>Contrastive training on image-caption pairs aligns the two modalities.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> What is a diffusion model's denoising network trained to predict?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The class of the image</button></li><li><button type="button" class="quiz-opt" data-correct="0">The next pixel</button></li><li><button type="button" class="quiz-opt" data-correct="1">The noise that was added to a training image at a given step</button></li><li><button type="button" class="quiz-opt" data-correct="0">The text prompt</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The next pixel</button></li><li><button type="button" class="quiz-opt" data-correct="1">The noise that was added to a training image at a given step</button></li><li><button type="button" class="quiz-opt" data-correct="0">The class of the image</button></li><li><button type="button" class="quiz-opt" data-correct="0">The text prompt</button></li></ol>
 <p class="quiz-expl" hidden>Generation repeatedly subtracts predicted noise, starting from pure noise.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why resize large photos before sending them to a vision-language model API?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">APIs reject large images</button></li><li><button type="button" class="quiz-opt" data-correct="1">Image token cost grows with resolution, so oversized images waste money and latency without helping the task</button></li><li><button type="button" class="quiz-opt" data-correct="0">Small images are more accurate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Resizing removes personal data</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Small images are more accurate</button></li><li><button type="button" class="quiz-opt" data-correct="0">APIs reject large images</button></li><li><button type="button" class="quiz-opt" data-correct="1">Image token cost grows with resolution, so oversized images waste money and latency without helping the task</button></li><li><button type="button" class="quiz-opt" data-correct="0">Resizing removes personal data</button></li></ol>
 <p class="quiz-expl" hidden>Send the resolution the task needs; for reading tiny text, crop rather than shrink.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> What is classifier-free guidance used for in text-to-image diffusion?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Removing the need for a text encoder</button></li><li><button type="button" class="quiz-opt" data-correct="1">Strengthening how closely each denoising step follows the prompt, trading off diversity</button></li><li><button type="button" class="quiz-opt" data-correct="0">Classifying generated images</button></li><li><button type="button" class="quiz-opt" data-correct="0">Speeding up training</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Speeding up training</button></li><li><button type="button" class="quiz-opt" data-correct="0">Classifying generated images</button></li><li><button type="button" class="quiz-opt" data-correct="1">Strengthening how closely each denoising step follows the prompt, trading off diversity</button></li><li><button type="button" class="quiz-opt" data-correct="0">Removing the need for a text encoder</button></li></ol>
 <p class="quiz-expl" hidden>The model compares conditional and unconditional predictions and pushes towards the prompt.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -359,7 +362,7 @@ CLIP runs locally in tens of milliseconds per image at no per-call cost; the VLM
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="multimodal:2"><span>Done with session 3: Generating images: diffusion models from intuition to code; then a field-photo triage pipeline</span></label>
 <button type="button" class="complete-btn" data-complete="multimodal" data-sessions="3">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/22-safety-security.html"><span>Previous</span>22 Safety, security and responsible AI</a><a class="next" href="../lessons/24-classical-ai.html"><span>Next</span>24 Search, planning and classical AI</a></nav>
 </footer>
@@ -390,7 +393,7 @@ CLIP runs locally in tens of milliseconds per image at no per-call cost; the VLM
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

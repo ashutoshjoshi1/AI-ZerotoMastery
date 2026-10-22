@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -106,11 +106,11 @@
 <h1><span class="lesson-num">22</span> Safety, security and responsible AI</h1>
 <p class="lesson-summary">Understand how LLM systems get attacked and how they fail (prompt injection, jailbreaks, data leakage, excessive agency), defend them in depth, and handle hallucination, bias, privacy and regulation responsibly.</p>
 <p class="lesson-meta"><span>3 sessions</span><span>about 15 min of reading</span><span>3 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Explain how direct and indirect prompt injection, jailbreaks, data leakage, excessive agency and insecure output handling put LLM systems at risk</li><li>Layer defences that bound the damage when an injection succeeds: least privilege, separated trust levels, human approval, sandboxing and output validation</li><li>Redact personal data with patterns and explain where pattern-based redaction fails</li><li>Red-team a system with an attack set that runs like a test suite, and harden it until the attacks fail</li><li>Apply responsible-AI practices for hallucination, bias, privacy and transparency, and outline what the EU AI Act and the NIST AI RMF expect</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 3 sessions of about an hour</p>
-<ol class="sessions"><li><label><input type="checkbox" data-session="safety-security:0"><span>The threat model: prompt injection, jailbreaks, data leakage and excessive agency</span></label></li><li><label><input type="checkbox" data-session="safety-security:1"><span>Defence in depth: isolation, least privilege, validation, approval and red teaming</span></label></li><li><label><input type="checkbox" data-session="safety-security:2"><span>Responsible AI: hallucination, bias, privacy, transparency and regulation</span></label></li></ol>
+<ol class="sessions"><li><label><input type="checkbox" data-session="safety-security:0"><span>The threat model: prompt injection, jailbreaks, data leakage and excessive agency</span></label></li><li><label><input type="checkbox" data-session="safety-security:1"><span>Defence in depth: isolation, least privilege, validation, approval and red teaming</span></label></li><li><label><input type="checkbox" data-session="safety-security:2"><span>Responsible AI: hallucination, bias, privacy, transparency and regulation; then attack and harden your agent</span></label></li></ol>
 <p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
 <aside class="handson" aria-label="Hands-on notebook">
@@ -122,6 +122,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 3</span>The threat model: prompt injection, jailbreaks, data leakage and excessive agency</p>
 <h2 id="why-ai-systems-need-their-own-security-thinking">Why AI systems need their own security thinking<a class="headerlink" href="#why-ai-systems-need-their-own-security-thinking" aria-label="Link to this section">#</a></h2>
 <p>Traditional software separates code from data. An LLM does not: instructions and data arrive as the same stream of tokens, and the model decides what to treat as an instruction. Any text the model reads (a user message, a retrieved document, a web page, an email, a tool result) can try to steer it. Combine that with tools that act in the world and you have a new class of vulnerabilities.</p>
 <p>The OWASP Top 10 for LLM Applications is a good checklist of the main risks. This lesson covers the ones you will meet most.</p>
@@ -152,6 +153,7 @@
 <p>An agent with broad tools and credentials turns a successful injection from embarrassing text into real damage: deleted records, sent emails, purchases, changed configurations. The risk scales with the power of the tools, not with how clever the prompt is.</p>
 <h3 id="insecure-output-handling">Insecure output handling<a class="headerlink" href="#insecure-output-handling" aria-label="Link to this section">#</a></h3>
 <p>Model output is untrusted input to whatever consumes it. Passing it unchecked into a shell, SQL query, <code>eval</code>, an HTML page (cross-site scripting) or a file path creates classic injection vulnerabilities with a new entry point.</p>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="safety-security:0"><span>Done with session 1: The threat model: prompt injection, jailbreaks, data leakage and excessive agency</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 3</span>Defence in depth: isolation, least privilege, validation, approval and red teaming</p></div>
 <h2 id="defence-in-depth">Defence in depth<a class="headerlink" href="#defence-in-depth" aria-label="Link to this section">#</a></h2>
 <p>No single control is enough. Layer them so that each failure is caught by the next.</p>
 <h3 id="1-constrain-what-the-model-can-do">1. Constrain what the model can do<a class="headerlink" href="#1-constrain-what-the-model-can-do" aria-label="Link to this section">#</a></h3>
@@ -228,6 +230,7 @@
         <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;FAIL&quot;</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;must_not_contain&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;pass&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span></code></pre></div>
 <p>Run the attack set in CI, add every new attack you discover, and monitor production for spikes in refusals, unusual tool use, and outputs containing URLs or data patterns that should not appear.</p>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="safety-security:1"><span>Done with session 2: Defence in depth: isolation, least privilege, validation, approval and red teaming</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 3</span>Responsible AI: hallucination, bias, privacy, transparency and regulation; then attack and harden your agent</p></div>
 <h2 id="responsible-ai">Responsible AI<a class="headerlink" href="#responsible-ai" aria-label="Link to this section">#</a></h2>
 <p>Security is about adversaries. Responsible AI is also about the harm a system can do while working as designed.</p>
 <h3 id="hallucination-and-over-reliance">Hallucination and over-reliance<a class="headerlink" href="#hallucination-and-over-reliance" aria-label="Link to this section">#</a></h3>
@@ -277,27 +280,27 @@
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> What makes indirect prompt injection especially dangerous?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It requires the attacker to have an account</button></li><li><button type="button" class="quiz-opt" data-correct="1">Instructions hidden in content the system reads (web pages, documents, emails) can steer the model on behalf of an unaware victim</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only works on small models</button></li><li><button type="button" class="quiz-opt" data-correct="0">It can be fully prevented with a good system prompt</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Instructions hidden in content the system reads (web pages, documents, emails) can steer the model on behalf of an unaware victim</button></li><li><button type="button" class="quiz-opt" data-correct="0">It can be fully prevented with a good system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">It requires the attacker to have an account</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only works on small models</button></li></ol>
 <p class="quiz-expl" hidden>The victim never sees the attack, and if the model has tools, it may act on it.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What is the most reliable defence against a successful prompt injection causing damage?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A longer, sterner system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">A higher-capability model</button></li><li><button type="button" class="quiz-opt" data-correct="1">Limiting what the model can do: least-privilege tools, human approval for consequential actions, and output filtering</button></li><li><button type="button" class="quiz-opt" data-correct="0">Lower temperature</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A longer, sterner system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">A higher-capability model</button></li><li><button type="button" class="quiz-opt" data-correct="0">Lower temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">Limiting what the model can do: least-privilege tools, human approval for consequential actions, and output filtering</button></li></ol>
 <p class="quiz-expl" hidden>Assume injection will sometimes succeed, and bound what it can achieve.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Where should a RAG system enforce that users only see documents they are authorised for?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">In the system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="1">In the retrieval layer, filtering by the user's permissions before anything reaches the model</button></li><li><button type="button" class="quiz-opt" data-correct="0">In the model's fine-tuning data</button></li><li><button type="button" class="quiz-opt" data-correct="0">In the user interface only</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">In the user interface only</button></li><li><button type="button" class="quiz-opt" data-correct="1">In the retrieval layer, filtering by the user's permissions before anything reaches the model</button></li><li><button type="button" class="quiz-opt" data-correct="0">In the model's fine-tuning data</button></li><li><button type="button" class="quiz-opt" data-correct="0">In the system prompt</button></li></ol>
 <p class="quiz-expl" hidden>Never rely on the model to keep secrets it has been shown.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why is automatically rendering images from model output a risk?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Images use many tokens</button></li><li><button type="button" class="quiz-opt" data-correct="1">An injected instruction can make the model emit an image URL containing private data, which the browser sends to an attacker</button></li><li><button type="button" class="quiz-opt" data-correct="0">Images cannot be streamed</button></li><li><button type="button" class="quiz-opt" data-correct="0">It violates copyright</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Images use many tokens</button></li><li><button type="button" class="quiz-opt" data-correct="0">It violates copyright</button></li><li><button type="button" class="quiz-opt" data-correct="1">An injected instruction can make the model emit an image URL containing private data, which the browser sends to an attacker</button></li><li><button type="button" class="quiz-opt" data-correct="0">Images cannot be streamed</button></li></ol>
 <p class="quiz-expl" hidden>Allow-list domains or render URLs as text.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Which practice best addresses bias in an AI-assisted screening tool?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Measure outcomes per relevant group, run counterfactual tests, and keep human review for decisions about people</button></li><li><button type="button" class="quiz-opt" data-correct="0">Remove all demographic words from the prompt and assume the problem is solved</button></li><li><button type="button" class="quiz-opt" data-correct="0">Use a larger model</button></li><li><button type="button" class="quiz-opt" data-correct="0">Raise the temperature to add randomness</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Use a larger model</button></li><li><button type="button" class="quiz-opt" data-correct="1">Measure outcomes per relevant group, run counterfactual tests, and keep human review for decisions about people</button></li><li><button type="button" class="quiz-opt" data-correct="0">Raise the temperature to add randomness</button></li><li><button type="button" class="quiz-opt" data-correct="0">Remove all demographic words from the prompt and assume the problem is solved</button></li></ol>
 <p class="quiz-expl" hidden>Measurement by slice and counterfactual testing reveal problems that averages hide.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -321,7 +324,7 @@
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="safety-security:2"><span>Done with session 3: Responsible AI: hallucination, bias, privacy, transparency and regulation; then attack and harden your agent</span></label>
 <button type="button" class="complete-btn" data-complete="safety-security" data-sessions="3">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/21-deployment-llmops.html"><span>Previous</span>21 Deployment, serving and LLMOps</a><a class="next" href="../lessons/23-multimodal.html"><span>Next</span>23 Multimodal AI: vision, documents, speech and image generation</a></nav>
 </footer>
@@ -352,7 +355,7 @@
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

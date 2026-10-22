@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -499,27 +499,27 @@ fixed 19 cases, broke 10 cases</code></pre></div>
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> In the design framework, what should you settle before choosing an architecture?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Which vector database to use</button></li><li><button type="button" class="quiz-opt" data-correct="1">The problem, the cost of mistakes, measurable success criteria and where evaluation data will come from</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model with the highest leaderboard score</button></li><li><button type="button" class="quiz-opt" data-correct="0">The deployment platform</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The model with the highest leaderboard score</button></li><li><button type="button" class="quiz-opt" data-correct="0">The deployment platform</button></li><li><button type="button" class="quiz-opt" data-correct="1">The problem, the cost of mistakes, measurable success criteria and where evaluation data will come from</button></li><li><button type="button" class="quiz-opt" data-correct="0">Which vector database to use</button></li></ol>
 <p class="quiz-expl" hidden>Requirements and evaluation shape every later choice.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> In case study 3, why is anomaly detection done with classical methods rather than an LLM?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">LLMs cannot read numbers</button></li><li><button type="button" class="quiz-opt" data-correct="1">Detection over high-volume numerical streams is cheaper, faster and more reliable with statistical and ML methods; LLMs add value in explanation and interaction</button></li><li><button type="button" class="quiz-opt" data-correct="0">Isolation Forest is newer than LLMs</button></li><li><button type="button" class="quiz-opt" data-correct="0">LLMs are not allowed to process sensor data</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">LLMs are not allowed to process sensor data</button></li><li><button type="button" class="quiz-opt" data-correct="1">Detection over high-volume numerical streams is cheaper, faster and more reliable with statistical and ML methods; LLMs add value in explanation and interaction</button></li><li><button type="button" class="quiz-opt" data-correct="0">LLMs cannot read numbers</button></li><li><button type="button" class="quiz-opt" data-correct="0">Isolation Forest is newer than LLMs</button></li></ol>
 <p class="quiz-expl" hidden>Use each tool where it is strongest: numbers to classical methods, language to LLMs.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Why must access-level filtering happen in the retrieval layer of the documentation assistant?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Anything placed in the model's context can leak into an answer; filtering before retrieval guarantees restricted text never reaches the model</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes retrieval faster</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model cannot read metadata</button></li><li><button type="button" class="quiz-opt" data-correct="0">Regulations require it to be done in SQL</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It makes retrieval faster</button></li><li><button type="button" class="quiz-opt" data-correct="0">The model cannot read metadata</button></li><li><button type="button" class="quiz-opt" data-correct="0">Regulations require it to be done in SQL</button></li><li><button type="button" class="quiz-opt" data-correct="1">Anything placed in the model's context can leak into an answer; filtering before retrieval guarantees restricted text never reaches the model</button></li></ol>
 <p class="quiz-expl" hidden>The model is not a security boundary.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> A support assistant answers simple lookups and, occasionally, hard multi-step diagnoses. Where does a reasoning model belong in the design?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Everywhere, because it is more accurate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nowhere, because reasoning models are only for maths</button></li><li><button type="button" class="quiz-opt" data-correct="1">Behind a router that sends only the hard cases to it with a thinking budget, since it adds latency and cost that lookups do not need</button></li><li><button type="button" class="quiz-opt" data-correct="0">As the retrieval component</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Behind a router that sends only the hard cases to it with a thinking budget, since it adds latency and cost that lookups do not need</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nowhere, because reasoning models are only for maths</button></li><li><button type="button" class="quiz-opt" data-correct="0">As the retrieval component</button></li><li><button type="button" class="quiz-opt" data-correct="0">Everywhere, because it is more accurate</button></li></ol>
 <p class="quiz-expl" hidden>Reasoning effort is a lever to spend where multi-step correctness matters, not a default.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> A new model is released that claims large benchmark gains. What should your team do?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Switch immediately</button></li><li><button type="button" class="quiz-opt" data-correct="0">Ignore it until competitors adopt it</button></li><li><button type="button" class="quiz-opt" data-correct="1">Run your own eval set against it, compare quality with a confidence interval plus cost and latency, and switch if it wins on your workload</button></li><li><button type="button" class="quiz-opt" data-correct="0">Fine-tune it before testing</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Fine-tune it before testing</button></li><li><button type="button" class="quiz-opt" data-correct="0">Ignore it until competitors adopt it</button></li><li><button type="button" class="quiz-opt" data-correct="1">Run your own eval set against it, compare quality with a confidence interval plus cost and latency, and switch if it wins on your workload</button></li><li><button type="button" class="quiz-opt" data-correct="0">Switch immediately</button></li></ol>
 <p class="quiz-expl" hidden>Your evals turn hype into a quick, evidence-based decision.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -574,7 +574,7 @@ fixed 19 cases, broke 10 cases</code></pre></div>
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

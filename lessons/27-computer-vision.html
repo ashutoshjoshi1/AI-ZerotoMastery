@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -985,27 +985,27 @@ object 2 got track IDs {0}</code></pre></div>
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Two 10×10 boxes overlap in a strip 5 pixels wide and 10 pixels tall. What is their IoU?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">0.5</button></li><li><button type="button" class="quiz-opt" data-correct="1">About 0.33</button></li><li><button type="button" class="quiz-opt" data-correct="0">0.25</button></li><li><button type="button" class="quiz-opt" data-correct="0">About 0.67</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">0.25</button></li><li><button type="button" class="quiz-opt" data-correct="0">0.5</button></li><li><button type="button" class="quiz-opt" data-correct="1">About 0.33</button></li><li><button type="button" class="quiz-opt" data-correct="0">About 0.67</button></li></ol>
 <p class="quiz-expl" hidden>The intersection is 50 and the union is 100 + 100 − 50 = 150, so IoU is 50/150. Half-overlapping boxes score only a third.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> A detector scores mAP@0.5 = 0.90 but mAP@[.5:.95] = 0.45. What is the most likely explanation?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It misses about half of the objects</button></li><li><button type="button" class="quiz-opt" data-correct="0">It confuses the classes</button></li><li><button type="button" class="quiz-opt" data-correct="1">It finds the objects, but its boxes are often not tight</button></li><li><button type="button" class="quiz-opt" data-correct="0">The score threshold is set too high</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It confuses the classes</button></li><li><button type="button" class="quiz-opt" data-correct="0">It misses about half of the objects</button></li><li><button type="button" class="quiz-opt" data-correct="0">The score threshold is set too high</button></li><li><button type="button" class="quiz-opt" data-correct="1">It finds the objects, but its boxes are often not tight</button></li></ol>
 <p class="quiz-expl" hidden>Finding objects is what mAP@0.5 rewards; the stricter thresholds up to 0.95 reward precise boxes, so a large gap points to loose localisation.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Why does DETR not need non-maximum suppression?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It uses larger anchor boxes</button></li><li><button type="button" class="quiz-opt" data-correct="1">Training matches each object to exactly one prediction, so duplicate predictions are penalised by the loss</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only predicts one object per image</button></li><li><button type="button" class="quiz-opt" data-correct="0">It runs NMS inside the transformer</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Training matches each object to exactly one prediction, so duplicate predictions are penalised by the loss</button></li><li><button type="button" class="quiz-opt" data-correct="0">It only predicts one object per image</button></li><li><button type="button" class="quiz-opt" data-correct="0">It runs NMS inside the transformer</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses larger anchor boxes</button></li></ol>
 <p class="quiz-expl" hidden>Hungarian matching gives each true object one query; any other query predicting it is trained towards "no object".</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> A segmentation model reaches 95% pixel accuracy on images in which 94% of the pixels are background. What should you conclude?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It is an excellent model</button></li><li><button type="button" class="quiz-opt" data-correct="1">Very little yet: check per-class IoU or Dice, because predicting background everywhere already scores 94%</button></li><li><button type="button" class="quiz-opt" data-correct="0">It is overfitting</button></li><li><button type="button" class="quiz-opt" data-correct="0">The background class needs more weight in the loss</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The background class needs more weight in the loss</button></li><li><button type="button" class="quiz-opt" data-correct="1">Very little yet: check per-class IoU or Dice, because predicting background everywhere already scores 94%</button></li><li><button type="button" class="quiz-opt" data-correct="0">It is overfitting</button></li><li><button type="button" class="quiz-opt" data-correct="0">It is an excellent model</button></li></ol>
 <p class="quiz-expl" hidden>Pixel accuracy is dominated by the majority class; overlap scores per class show whether the objects are actually found.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> How can an open-vocabulary detector find a class that was never in its training labels?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It searches the web for example images</button></li><li><button type="button" class="quiz-opt" data-correct="0">It fine-tunes itself on each new prompt</button></li><li><button type="button" class="quiz-opt" data-correct="1">It scores each region against the text embedding of the prompt, so a new class is just new text</button></li><li><button type="button" class="quiz-opt" data-correct="0">It falls back to the closest of its fixed classes</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">It scores each region against the text embedding of the prompt, so a new class is just new text</button></li><li><button type="button" class="quiz-opt" data-correct="0">It searches the web for example images</button></li><li><button type="button" class="quiz-opt" data-correct="0">It falls back to the closest of its fixed classes</button></li><li><button type="button" class="quiz-opt" data-correct="0">It fine-tunes itself on each new prompt</button></li></ol>
 <p class="quiz-expl" hidden>The fixed classification layer is replaced by a comparison with text embeddings from a CLIP-style encoder, so the vocabulary is whatever you type.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -1062,7 +1062,7 @@ object 2 got track IDs {0}</code></pre></div>
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

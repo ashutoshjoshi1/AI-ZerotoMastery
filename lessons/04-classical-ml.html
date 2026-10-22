@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,7 +107,7 @@
 <h1><span class="lesson-num">04</span> Classical machine learning</h1>
 <p class="lesson-summary">The algorithms that still run much of the world, from linear and logistic regression built by hand to random forests, gradient boosting, clustering and PCA, finishing with an end-to-end scikit-learn project.</p>
 <p class="lesson-meta"><span>4 sessions</span><span>about 20 min of reading</span><span>11 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Fit linear regression with the normal equation and logistic regression with gradient descent, and check both against scikit-learn</li><li>Explain how decision trees, random forests and gradient boosting differ, and weigh them against other model families for tabular data</li><li>Cluster data with k-means, compress features with PCA, and flag anomalies with an Isolation Forest</li><li>Build a leak-proof scikit-learn pipeline with a ColumnTransformer and compare model families under the same cross-validation</li><li>Use permutation importance to see what a model relies on, and engineer a feature from domain knowledge that lifts a linear model</li><li>Translate model scores into the decision they support, such as which units technicians should visit first</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 4 sessions of about an hour</p>
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 4</span>Linear and logistic regression, from scratch and in scikit-learn</p>
 <h2 id="why-classical-ml-still-matters">Why classical ML still matters<a class="headerlink" href="#why-classical-ml-still-matters" aria-label="Link to this section">#</a></h2>
 <p>LLMs get the headlines, but for <strong>tabular data</strong> (rows of measurements, transactions, sensor summaries, customer records) gradient-boosted trees still routinely beat deep learning, train in seconds on a laptop, and are easy to explain. Classical methods are also how you build baselines, and many AI products combine an LLM with a small classical model for routing, scoring or anomaly detection. An AI engineer who only knows LLMs is missing half the toolbox.</p>
 <p>All the models here share scikit-learn's interface, so once you learn one you know them all:</p>
@@ -172,6 +173,7 @@
 <span class="n">sk</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">penalty</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sk</span><span class="o">.</span><span class="n">coef_</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">sk</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>                  <span class="c1"># about [[2.39 1.77]] 0.94</span></code></pre></div>
 <p>Our hand-written version lands close to scikit-learn's (it would match exactly with more steps). The <strong>decision boundary</strong> is where <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="bold">w</mi><mo>⋅</mo><mi mathvariant="bold">x</mi><mo>+</mo><mi>b</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\mathbf{w}\cdot\mathbf{x}+b=0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4445em;"></span><span class="mord mathbf" style="margin-right:0.01597em;">w</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathbf">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>: a straight line. That is the limitation of linear models: they can only separate classes with flat boundaries, unless you engineer features that bend the space for them.</p>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="classical-ml:0"><span>Done with session 1: Linear and logistic regression, from scratch and in scikit-learn</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 4</span>Decision trees, random forests and gradient boosting</p></div>
 <h2 id="trees-forests-and-boosting">Trees, forests and boosting<a class="headerlink" href="#trees-forests-and-boosting" aria-label="Link to this section">#</a></h2>
 <h3 id="decision-trees">Decision trees<a class="headerlink" href="#decision-trees" aria-label="Link to this section">#</a></h3>
 <p>A decision tree asks a sequence of yes/no questions about features ("is humidity above 70%?", "is the instrument older than 900 days?") and makes a prediction at each leaf. Training greedily picks, at each node, the question that best separates the targets (by Gini impurity or entropy for classification, variance for regression).</p>
@@ -223,6 +225,7 @@
 </tr>
 </tbody>
 </table></div>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="classical-ml:1"><span>Done with session 2: Decision trees, random forests and gradient boosting</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 4</span>Unsupervised learning: k-means, PCA and anomaly detection</p></div>
 <h2 id="unsupervised-learning">Unsupervised learning<a class="headerlink" href="#unsupervised-learning" aria-label="Link to this section">#</a></h2>
 <h3 id="k-means-clustering">k-means clustering<a class="headerlink" href="#k-means-clustering" aria-label="Link to this section">#</a></h3>
 <p>k-means finds <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> cluster centres: assign each point to its nearest centre, move each centre to the mean of its points, repeat until nothing changes. You choose <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span>. The "elbow" method plots the within-cluster distance (inertia) against <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> and looks for where adding clusters stops helping much.</p>
@@ -253,6 +256,7 @@
 <span class="n">iso</span> <span class="o">=</span> <span class="n">IsolationForest</span><span class="p">(</span><span class="n">contamination</span><span class="o">=</span><span class="mf">0.03</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 <span class="n">pred</span> <span class="o">=</span> <span class="n">iso</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>                  <span class="c1"># -1 = anomaly, 1 = normal</span>
 <span class="nb">print</span><span class="p">((</span><span class="n">pred</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="o">-</span><span class="mi">15</span><span class="p">:]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>   <span class="c1"># flags 16 points, 14 of the 15 real anomalies</span></code></pre></div>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="classical-ml:2"><span>Done with session 3: Unsupervised learning: k-means, PCA and anomaly detection</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 4</span>Feature engineering and an end-to-end pipeline: predicting instrument failures</p></div>
 <h2 id="end-to-end-project-predicting-instrument-failures">End-to-end project: predicting instrument failures<a class="headerlink" href="#end-to-end-project-predicting-instrument-failures" aria-label="Link to this section">#</a></h2>
 <p>Time to put it together on a realistic tabular problem: a fleet of field instruments, and we want to predict which will fail in the next 90 days so technicians can visit them first. We generate the data so you can run it anywhere, and so we know the truth it hides.</p>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -352,27 +356,27 @@ The engineered feature lifts the linear model, and regularising the boosted mode
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why does deep learning use gradient descent even though linear regression has an exact solution?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The exact solution is less accurate</button></li><li><button type="button" class="quiz-opt" data-correct="1">Gradient descent scales to huge models and streaming data; the exact solution needs everything in memory and costs roughly cubic time in the number of features</button></li><li><button type="button" class="quiz-opt" data-correct="0">Gradient descent always finds a better minimum</button></li><li><button type="button" class="quiz-opt" data-correct="0">Exact solutions do not exist for linear models</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Gradient descent scales to huge models and streaming data; the exact solution needs everything in memory and costs roughly cubic time in the number of features</button></li><li><button type="button" class="quiz-opt" data-correct="0">Exact solutions do not exist for linear models</button></li><li><button type="button" class="quiz-opt" data-correct="0">The exact solution is less accurate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Gradient descent always finds a better minimum</button></li></ol>
 <p class="quiz-expl" hidden>For neural networks no closed form exists anyway, and even for linear models the normal equation does not scale.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What is the key difference between a random forest and gradient boosting?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Forests use shallow trees; boosting uses deep trees</button></li><li><button type="button" class="quiz-opt" data-correct="1">Forests average many independent deep trees; boosting adds shallow trees in sequence, each correcting the errors so far</button></li><li><button type="button" class="quiz-opt" data-correct="0">Forests only do classification</button></li><li><button type="button" class="quiz-opt" data-correct="0">Boosting does not use trees</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Boosting does not use trees</button></li><li><button type="button" class="quiz-opt" data-correct="0">Forests only do classification</button></li><li><button type="button" class="quiz-opt" data-correct="1">Forests average many independent deep trees; boosting adds shallow trees in sequence, each correcting the errors so far</button></li><li><button type="button" class="quiz-opt" data-correct="0">Forests use shallow trees; boosting uses deep trees</button></li></ol>
 <p class="quiz-expl" hidden>Averaging reduces variance; sequential correction reduces bias. That is also why boosting needs more careful tuning.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> In the failure-prediction project, logistic regression beat gradient boosting. What is the right conclusion?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Gradient boosting is a poor algorithm</button></li><li><button type="button" class="quiz-opt" data-correct="0">Always use logistic regression for tabular data</button></li><li><button type="button" class="quiz-opt" data-correct="1">Model choice depends on the data; compare several model families under the same cross-validation rather than assuming</button></li><li><button type="button" class="quiz-opt" data-correct="0">The cross-validation was wrong</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The cross-validation was wrong</button></li><li><button type="button" class="quiz-opt" data-correct="0">Always use logistic regression for tabular data</button></li><li><button type="button" class="quiz-opt" data-correct="0">Gradient boosting is a poor algorithm</button></li><li><button type="button" class="quiz-opt" data-correct="1">Model choice depends on the data; compare several model families under the same cross-validation rather than assuming</button></li></ol>
 <p class="quiz-expl" hidden>The hidden rule was nearly linear. On other data boosting often wins. The process, not the favourite algorithm, is the lesson.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> What does permutation importance measure?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The size of each model weight</button></li><li><button type="button" class="quiz-opt" data-correct="1">How much the held-out score drops when one feature's values are shuffled</button></li><li><button type="button" class="quiz-opt" data-correct="0">How often a feature is used in tree splits</button></li><li><button type="button" class="quiz-opt" data-correct="0">The correlation between each feature and the target</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The size of each model weight</button></li><li><button type="button" class="quiz-opt" data-correct="1">How much the held-out score drops when one feature's values are shuffled</button></li><li><button type="button" class="quiz-opt" data-correct="0">The correlation between each feature and the target</button></li><li><button type="button" class="quiz-opt" data-correct="0">How often a feature is used in tree splits</button></li></ol>
 <p class="quiz-expl" hidden>It measures what the trained model actually relies on, and it works for any model.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> Which method would you reach for to compress 64 pixel features into 2 for a scatter plot?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">k-means</button></li><li><button type="button" class="quiz-opt" data-correct="0">Isolation Forest</button></li><li><button type="button" class="quiz-opt" data-correct="1">PCA</button></li><li><button type="button" class="quiz-opt" data-correct="0">Logistic regression</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Isolation Forest</button></li><li><button type="button" class="quiz-opt" data-correct="0">Logistic regression</button></li><li><button type="button" class="quiz-opt" data-correct="0">k-means</button></li><li><button type="button" class="quiz-opt" data-correct="1">PCA</button></li></ol>
 <p class="quiz-expl" hidden>PCA projects onto the directions of greatest variance. (t-SNE and UMAP are non-linear alternatives for visualisation.)</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -394,7 +398,7 @@ The engineered feature lifts the linear model, and regularising the boosted mode
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="classical-ml:3"><span>Done with session 4: Feature engineering and an end-to-end pipeline: predicting instrument failures</span></label>
 <button type="button" class="complete-btn" data-complete="classical-ml" data-sessions="4">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/03-ml-fundamentals.html"><span>Previous</span>03 Machine learning fundamentals</a><a class="next" href="../lessons/05-neural-networks.html"><span>Next</span>05 Neural networks from scratch</a></nav>
 </footer>
@@ -425,7 +429,7 @@ The engineered feature lifts the linear model, and regularising the boosted mode
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

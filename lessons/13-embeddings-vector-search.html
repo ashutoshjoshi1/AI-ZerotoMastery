@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -394,6 +394,7 @@ ef_search=256  recall@10=0.999  0.151 ms/query</code></pre></div>
 <p>Embeddings also let you explore collections you have never read. Embed a few thousand support tickets, cluster them with k-means (lesson <a class="ref" href="../lessons/04-classical-ml.html" title="Lesson 04: Classical machine learning">04</a>), and ask an LLM to name each cluster from a sample of its members. You get an instant map of what users complain about.</p>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">KMeans</span>
 
+<span class="c1"># tickets: a list of ticket texts (the notebook uses a dozen samples and 4 clusters)</span>
 <span class="n">ticket_vecs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">tickets</span><span class="p">,</span> <span class="n">normalize_embeddings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">km</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">ticket_vecs</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">):</span>
@@ -440,27 +441,27 @@ Typical findings: both models do well on paraphrased questions; the better one d
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> How are text embedding models typically trained?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To predict the next token</button></li><li><button type="button" class="quiz-opt" data-correct="1">Contrastively, so matching pairs (question and answer, paraphrases) end up close and unrelated texts far apart</button></li><li><button type="button" class="quiz-opt" data-correct="0">With k-means clustering</button></li><li><button type="button" class="quiz-opt" data-correct="0">By hand-labelling each dimension</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To predict the next token</button></li><li><button type="button" class="quiz-opt" data-correct="0">By hand-labelling each dimension</button></li><li><button type="button" class="quiz-opt" data-correct="1">Contrastively, so matching pairs (question and answer, paraphrases) end up close and unrelated texts far apart</button></li><li><button type="button" class="quiz-opt" data-correct="0">With k-means clustering</button></li></ol>
 <p class="quiz-expl" hidden>Contrastive training shapes the space so that distance reflects meaning.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> Why normalise embeddings to unit length before indexing?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To save memory</button></li><li><button type="button" class="quiz-opt" data-correct="1">So cosine similarity becomes a plain dot product, making search a fast matrix multiplication</button></li><li><button type="button" class="quiz-opt" data-correct="0">Because FAISS rejects non-normalised vectors</button></li><li><button type="button" class="quiz-opt" data-correct="0">To improve the embedding model's accuracy</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To improve the embedding model's accuracy</button></li><li><button type="button" class="quiz-opt" data-correct="0">To save memory</button></li><li><button type="button" class="quiz-opt" data-correct="0">Because FAISS rejects non-normalised vectors</button></li><li><button type="button" class="quiz-opt" data-correct="1">So cosine similarity becomes a plain dot product, making search a fast matrix multiplication</button></li></ol>
 <p class="quiz-expl" hidden>For unit vectors, cosine similarity and inner product are identical.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> A user searches for "error E-4071" and gets documents about other error codes. What is the best fix?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Use a bigger embedding model</button></li><li><button type="button" class="quiz-opt" data-correct="1">Add keyword search (such as BM25) and combine it with embeddings in a hybrid search</button></li><li><button type="button" class="quiz-opt" data-correct="0">Increase the number of dimensions</button></li><li><button type="button" class="quiz-opt" data-correct="0">Lower the temperature</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Lower the temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">Add keyword search (such as BM25) and combine it with embeddings in a hybrid search</button></li><li><button type="button" class="quiz-opt" data-correct="0">Use a bigger embedding model</button></li><li><button type="button" class="quiz-opt" data-correct="0">Increase the number of dimensions</button></li></ol>
 <p class="quiz-expl" hidden>Embeddings blur exact identifiers. Keyword search handles them precisely.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> You switch to a new embedding model. What must you do with your existing vectors?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Nothing</button></li><li><button type="button" class="quiz-opt" data-correct="0">Normalise them again</button></li><li><button type="button" class="quiz-opt" data-correct="1">Re-embed every document, because different models produce incompatible vector spaces</button></li><li><button type="button" class="quiz-opt" data-correct="0">Average old and new vectors</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Re-embed every document, because different models produce incompatible vector spaces</button></li><li><button type="button" class="quiz-opt" data-correct="0">Average old and new vectors</button></li><li><button type="button" class="quiz-opt" data-correct="0">Normalise them again</button></li><li><button type="button" class="quiz-opt" data-correct="0">Nothing</button></li></ol>
 <p class="quiz-expl" hidden>Vectors from different models are not comparable.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> In HNSW, what does increasing ef_search do?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Explores more candidates per query, raising recall at the cost of speed</button></li><li><button type="button" class="quiz-opt" data-correct="0">Builds the index faster</button></li><li><button type="button" class="quiz-opt" data-correct="0">Reduces memory use</button></li><li><button type="button" class="quiz-opt" data-correct="0">Changes the similarity metric</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Builds the index faster</button></li><li><button type="button" class="quiz-opt" data-correct="0">Reduces memory use</button></li><li><button type="button" class="quiz-opt" data-correct="0">Changes the similarity metric</button></li><li><button type="button" class="quiz-opt" data-correct="1">Explores more candidates per query, raising recall at the cost of speed</button></li></ol>
 <p class="quiz-expl" hidden>It is the main query-time knob for trading speed against recall.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -516,7 +517,7 @@ Typical findings: both models do well on paraphrased questions; the better one d
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

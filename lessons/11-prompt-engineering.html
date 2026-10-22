@@ -13,7 +13,7 @@
 <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -456,22 +456,22 @@ The missing-tag reply is dropped rather than counted, which matters: a parser th
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> What is the best quick test of whether a prompt is clear enough?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It is longer than 200 words</button></li><li><button type="button" class="quiz-opt" data-correct="1">A capable new colleague with only this text would do the task the way you want without asking questions</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses the word "please"</button></li><li><button type="button" class="quiz-opt" data-correct="0">It starts with "You are an expert"</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It is longer than 200 words</button></li><li><button type="button" class="quiz-opt" data-correct="0">It starts with "You are an expert"</button></li><li><button type="button" class="quiz-opt" data-correct="0">It uses the word "please"</button></li><li><button type="button" class="quiz-opt" data-correct="1">A capable new colleague with only this text would do the task the way you want without asking questions</button></li></ol>
 <p class="quiz-expl" hidden>If a person would need clarification, the model will guess instead of asking.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> Why use XML-style tags to separate instructions from input data?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">So the model can tell instructions from data, and your code can parse sections back out</button></li><li><button type="button" class="quiz-opt" data-correct="0">Because models only understand XML</button></li><li><button type="button" class="quiz-opt" data-correct="0">To make the prompt shorter</button></li><li><button type="button" class="quiz-opt" data-correct="0">To enable streaming</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">To make the prompt shorter</button></li><li><button type="button" class="quiz-opt" data-correct="1">So the model can tell instructions from data, and your code can parse sections back out</button></li><li><button type="button" class="quiz-opt" data-correct="0">To enable streaming</button></li><li><button type="button" class="quiz-opt" data-correct="0">Because models only understand XML</button></li></ol>
 <p class="quiz-expl" hidden>Clear delimiters reduce confusion and make prompt injection harder (though not impossible).</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Your prompt works on the three examples you tried but fails in production. What should you have done?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Used a higher temperature</button></li><li><button type="button" class="quiz-opt" data-correct="0">Added "be accurate" to the prompt</button></li><li><button type="button" class="quiz-opt" data-correct="1">Tested every prompt version against a labelled set of realistic, including tricky, cases</button></li><li><button type="button" class="quiz-opt" data-correct="0">Used a longer system prompt</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Tested every prompt version against a labelled set of realistic, including tricky, cases</button></li><li><button type="button" class="quiz-opt" data-correct="0">Used a higher temperature</button></li><li><button type="button" class="quiz-opt" data-correct="0">Used a longer system prompt</button></li><li><button type="button" class="quiz-opt" data-correct="0">Added "be accurate" to the prompt</button></li></ol>
 <p class="quiz-expl" hidden>Prompts need tests just like code. Read the failures to learn what the prompt leaves unspecified.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> You switch a working pipeline to a reasoning model and accuracy drops. What is the most likely prompt-side cause?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The prompt is too short</button></li><li><button type="button" class="quiz-opt" data-correct="1">The prompt dictates the reasoning steps in detail, so the model follows a worse recipe than its own</button></li><li><button type="button" class="quiz-opt" data-correct="0">Reasoning models cannot follow instructions</button></li><li><button type="button" class="quiz-opt" data-correct="0">The examples are too diverse</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">The examples are too diverse</button></li><li><button type="button" class="quiz-opt" data-correct="0">Reasoning models cannot follow instructions</button></li><li><button type="button" class="quiz-opt" data-correct="1">The prompt dictates the reasoning steps in detail, so the model follows a worse recipe than its own</button></li><li><button type="button" class="quiz-opt" data-correct="0">The prompt is too short</button></li></ol>
 <p class="quiz-expl" hidden>Give a reasoning model the goal and constraints; let it choose the route.</p>
 </div>
 <div class="quiz-q" data-q>
@@ -530,7 +530,7 @@ The missing-tag reply is dropped rather than counted, which matters: a parser th
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

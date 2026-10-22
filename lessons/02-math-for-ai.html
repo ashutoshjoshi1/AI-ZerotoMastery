@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,7 +107,7 @@
 <h1><span class="lesson-num">02</span> The maths behind AI</h1>
 <p class="lesson-summary">Just enough linear algebra, calculus and probability to understand what every model is doing, with each idea turned straight into NumPy code.</p>
 <p class="lesson-meta"><span>4 sessions</span><span>about 15 min of reading</span><span>11 code examples</span><span>2 hands-on exercises</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Compute dot products, norms and cosine similarity in NumPy, and explain why normalised vectors turn similarity search into one matrix multiplication</li><li>Read a matrix as a transformation, predict the shape of a matrix product, and use the SVD to find how many directions a matrix really uses</li><li>Fit a line by gradient descent from its partial derivatives, and pick a learning rate that neither crawls nor diverges</li><li>Verify an analytic gradient against a numerical gradient check</li><li>Apply Bayes' rule to a diagnostic test and explain why the base rate dominates the answer</li><li>Implement a numerically stable softmax, cross-entropy and KL divergence, and show how temperature sharpens or flattens a distribution</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 4 sessions of about an hour</p>
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 4</span>Vectors, dot products, norms and cosine similarity</p>
 <h2 id="how-much-maths-do-you-need">How much maths do you need?<a class="headerlink" href="#how-much-maths-do-you-need" aria-label="Link to this section">#</a></h2>
 <p>Less than you fear, more than none. You do not need to prove theorems. You do need to read an equation in a paper and see the code it describes, and to reason about why training is unstable or why two embeddings are "close". Three areas cover almost everything:</p>
 <ul>
@@ -166,6 +167,7 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">â€
 <p class="admonition-title">Normalise once, then dot</p>
 <p>If you scale every vector to length 1 up front, cosine similarity becomes a plain dot product. Vector databases rely on this trick: store normalised embeddings, and similarity search becomes one fast matrix multiplication.</p>
 </div>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="math-for-ai:0"><span>Done with session 1: Vectors, dot products, norms and cosine similarity</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 4</span>Matrices as transformations, matrix multiplication, and the SVD</p></div>
 <h2 id="matrices-as-transformations">Matrices as transformations<a class="headerlink" href="#matrices-as-transformations" aria-label="Link to this section">#</a></h2>
 <p>A matrix is a grid of numbers, but the useful way to think of one is as a <em>function that transforms vectors</em>. Multiplying a vector by a matrix rotates, stretches, squashes or projects it.</p>
 <div class="highlight" data-lang="python"><div class="code-head"><span class="code-label">Python</span></div><pre><code><span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
@@ -187,6 +189,7 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">â€
 <span class="n">A</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span> <span class="o">@</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>   <span class="c1"># a 100x50 matrix built from rank 20</span>
 <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">Vt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">((</span><span class="n">S</span> <span class="o">&gt;</span> <span class="mf">1e-8</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>          <span class="c1"># 20: only 20 directions are really used</span></code></pre></div>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="math-for-ai:1"><span>Done with session 2: Matrices as transformations, matrix multiplication, and the SVD</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 4</span>Derivatives, the chain rule, gradients and gradient descent</p></div>
 <h2 id="calculus-how-models-learn">Calculus: how models learn<a class="headerlink" href="#calculus-how-models-learn" aria-label="Link to this section">#</a></h2>
 <p>Training a model means adjusting its parameters to make a <strong>loss</strong> (a number measuring how wrong it is) as small as possible. Calculus tells us which direction to adjust them in.</p>
 <h3 id="derivatives">Derivatives<a class="headerlink" href="#derivatives" aria-label="Link to this section">#</a></h3>
@@ -262,6 +265,7 @@ Write <code>numerical_grad(loss_fn, params)</code> and confirm it matches <code>
 <span class="nb">print</span><span class="p">([</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">err</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">err</span><span class="o">.</span><span class="n">mean</span><span class="p">()])</span>   <span class="c1"># should agree to ~6 decimal places</span></code></pre></div>
 Researchers still use gradient checks when they write custom layers. It is the unit test of calculus.</p>
 </details>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="math-for-ai:2"><span>Done with session 3: Derivatives, the chain rule, gradients and gradient descent</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 4</span>Probability for ML: distributions, Bayes, softmax, cross-entropy and KL divergence</p></div>
 <h2 id="probability-what-models-output">Probability: what models output<a class="headerlink" href="#probability-what-models-output" aria-label="Link to this section">#</a></h2>
 <p>A classifier does not just say "cat"; it outputs a probability distribution: 0.92 cat, 0.07 dog, 0.01 car. An LLM outputs a distribution over its whole vocabulary for the next token. To work with these you need a few ideas.</p>
 <h3 id="distributions-expectation-and-variance">Distributions, expectation and variance<a class="headerlink" href="#distributions-expectation-and-variance" aria-label="Link to this section">#</a></h3>
@@ -322,27 +326,27 @@ Low temperature sharpens the distribution towards the top choice; high temperatu
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Two embedding vectors have cosine similarity 0.02. What does that suggest?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They are almost identical</button></li><li><button type="button" class="quiz-opt" data-correct="1">They point in nearly perpendicular directions, so the texts are largely unrelated</button></li><li><button type="button" class="quiz-opt" data-correct="0">They have opposite meanings</button></li><li><button type="button" class="quiz-opt" data-correct="0">One vector is much longer than the other</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">They point in nearly perpendicular directions, so the texts are largely unrelated</button></li><li><button type="button" class="quiz-opt" data-correct="0">They have opposite meanings</button></li><li><button type="button" class="quiz-opt" data-correct="0">One vector is much longer than the other</button></li><li><button type="button" class="quiz-opt" data-correct="0">They are almost identical</button></li></ol>
 <p class="quiz-expl" hidden>Cosine similarity measures direction only. Near 0 means roughly perpendicular, usually read as "unrelated".</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> In gradient descent, why do we subtract the gradient rather than add it?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">The gradient points in the direction of steepest increase of the loss, and we want the loss to decrease</button></li><li><button type="button" class="quiz-opt" data-correct="0">Subtraction is numerically more stable</button></li><li><button type="button" class="quiz-opt" data-correct="0">Adding would make the learning rate negative</button></li><li><button type="button" class="quiz-opt" data-correct="0">It is a convention; adding works equally well</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Adding would make the learning rate negative</button></li><li><button type="button" class="quiz-opt" data-correct="0">It is a convention; adding works equally well</button></li><li><button type="button" class="quiz-opt" data-correct="1">The gradient points in the direction of steepest increase of the loss, and we want the loss to decrease</button></li><li><button type="button" class="quiz-opt" data-correct="0">Subtraction is numerically more stable</button></li></ol>
 <p class="quiz-expl" hidden>The gradient points uphill. Stepping against it goes downhill.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Your loss jumps around wildly and then becomes nan. What is the first thing to try?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Increase the learning rate</button></li><li><button type="button" class="quiz-opt" data-correct="1">Lower the learning rate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Train for more epochs</button></li><li><button type="button" class="quiz-opt" data-correct="0">Remove the bias term</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Train for more epochs</button></li><li><button type="button" class="quiz-opt" data-correct="1">Lower the learning rate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Increase the learning rate</button></li><li><button type="button" class="quiz-opt" data-correct="0">Remove the bias term</button></li></ol>
 <p class="quiz-expl" hidden>Steps that are too large overshoot the minimum and can diverge. Lowering the learning rate is the first fix.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Why do we subtract max(z) inside softmax?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It makes the probabilities sum to 1</button></li><li><button type="button" class="quiz-opt" data-correct="0">It sharpens the distribution</button></li><li><button type="button" class="quiz-opt" data-correct="1">It prevents overflow in exp() without changing the result</button></li><li><button type="button" class="quiz-opt" data-correct="0">It converts logits into log-probabilities</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">It sharpens the distribution</button></li><li><button type="button" class="quiz-opt" data-correct="0">It converts logits into log-probabilities</button></li><li><button type="button" class="quiz-opt" data-correct="0">It makes the probabilities sum to 1</button></li><li><button type="button" class="quiz-opt" data-correct="1">It prevents overflow in exp() without changing the result</button></li></ol>
 <p class="quiz-expl" hidden>The constant cancels between numerator and denominator, so the output is unchanged, but exp never sees huge numbers.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">5.</span> A model assigns probability 0.01 to the correct next token. What is the cross-entropy loss for that prediction?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">0.01</button></li><li><button type="button" class="quiz-opt" data-correct="0">0.99</button></li><li><button type="button" class="quiz-opt" data-correct="1">About 4.6</button></li><li><button type="button" class="quiz-opt" data-correct="0">About 0.0</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">About 0.0</button></li><li><button type="button" class="quiz-opt" data-correct="0">0.99</button></li><li><button type="button" class="quiz-opt" data-correct="0">0.01</button></li><li><button type="button" class="quiz-opt" data-correct="1">About 4.6</button></li></ol>
 <p class="quiz-expl" hidden>âˆ’ln(0.01) â‰ˆ 4.605. Confident wrong predictions are punished heavily.</p>
 </div>
 <p class="quiz-score" aria-live="polite"></p></div>
@@ -363,7 +367,7 @@ Low temperature sharpens the distribution towards the top choice; high temperatu
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="math-for-ai:3"><span>Done with session 4: Probability for ML: distributions, Bayes, softmax, cross-entropy and KL divergence</span></label>
 <button type="button" class="complete-btn" data-complete="math-for-ai" data-sessions="4">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/01-python-for-ai.html"><span>Previous</span>01 Python for AI work</a><a class="next" href="../lessons/03-ml-fundamentals.html"><span>Next</span>03 Machine learning fundamentals</a></nav>
 </footer>
@@ -394,7 +398,7 @@ Low temperature sharpens the distribution towards the top choice; high temperatu
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>

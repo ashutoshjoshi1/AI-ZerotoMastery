@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
-<link rel="stylesheet" href="../assets/style.css?v=da7d24f3">
+<link rel="stylesheet" href="../assets/style.css?v=8c001bc5">
 <script>try{var d=document.documentElement,s=JSON.parse(localStorage.getItem("aie-prefs")||"{}");if(s.theme&&s.theme!=="auto")d.setAttribute("data-theme",s.theme);if(s.size)d.setAttribute("data-size",s.size);if(s.font)d.setAttribute("data-font",s.font);}catch(e){}</script>
 <script>if(/^https?:$/.test(location.protocol)){var m=document.createElement("link");m.rel="manifest";m.href="../manifest.webmanifest";document.head.appendChild(m);}</script>
 </head>
@@ -107,7 +107,7 @@
 <h1><span class="lesson-num">14</span> Retrieval-augmented generation (RAG)</h1>
 <p class="lesson-summary">Make a model answer from your own documents, with citations, by building the full pipeline without a framework (parsing, chunking, hybrid retrieval, reranking and grounded generation), then measure it and fix what it gets wrong.</p>
 <p class="lesson-meta"><span>5 sessions</span><span>about 25 min of reading</span><span>7 code examples</span><span>1 hands-on exercise</span></p>
-
+<section class="objectives"><h2 class="mini">By the end you will be able to</h2><ul><li>Parse documents and chunk them at natural boundaries, keeping metadata and context with every chunk</li><li>Implement BM25 and dense retrieval, fuse them with reciprocal rank fusion and rerank the candidates with a cross-encoder</li><li>Build a complete RAG pipeline without a framework, with a prompt that enforces grounded answers, inline citations and abstention</li><li>Measure retrieval with recall@k and MRR, and generation with faithfulness, correctness and abstention, then trace each failure to the stage that caused it</li><li>Decide when advanced techniques such as query rewriting or HyDE are worth adding, and when long context fits better than retrieval</li></ul></section>
 
 <div class="study-plan">
 <p class="plan-title">Study plan: 5 sessions of about an hour</p>
@@ -123,6 +123,7 @@
 <p class="resume" hidden><button type="button" class="btn-small resume-btn">Jump back to where you stopped</button></p>
 </header>
 <div class="prose">
+<p class="session-start" id="session-1"><span class="sb-kicker">Session 1 of 5</span>Why RAG, and the architecture of a retrieval pipeline</p>
 <h2 id="why-rag">Why RAG<a class="headerlink" href="#why-rag" aria-label="Link to this section">#</a></h2>
 <p>An LLM knows what was in its training data, up to its cutoff date. It does not know your instrument manuals, last week's incident reports, your codebase or your customer contracts. You could paste documents into the prompt, but a document collection is usually far larger than any context window, and paying for a million tokens per question is wasteful.</p>
 <p><strong>Retrieval-augmented generation</strong> solves this: for each question, <em>retrieve</em> the few most relevant passages from your collection and <em>give them to the model</em> with instructions to answer from them and cite them. It is the most common LLM application pattern in industry because it:</p>
@@ -157,6 +158,7 @@
 </figure>
 
 <p>Frameworks such as LlamaIndex and LangChain package these steps. This lesson builds them by hand first, because when a RAG system gives a bad answer you need to know which box failed, and you cannot debug what you do not understand.</p>
+<div class="session-break" id="session-2"><label class="sb-done"><input type="checkbox" data-session="rag:0"><span>Done with session 1: Why RAG, and the architecture of a retrieval pipeline</span></label><p class="sb-next"><span class="sb-kicker">Session 2 of 5</span>Ingestion: parsing documents and chunking them well</p></div>
 <h2 id="ingestion-parsing-and-chunking">Ingestion: parsing and chunking<a class="headerlink" href="#ingestion-parsing-and-chunking" aria-label="Link to this section">#</a></h2>
 <h3 id="parsing-garbage-in-garbage-out">Parsing: garbage in, garbage out<a class="headerlink" href="#parsing-garbage-in-garbage-out" aria-label="Link to this section">#</a></h3>
 <p>Most retrieval failures start here. PDFs are layout instructions, not text: columns get interleaved, tables turn into number soup, headers and footers repeat on every page, scanned pages contain no text at all.</p>
@@ -170,7 +172,7 @@
 <h3 id="chunking">Chunking<a class="headerlink" href="#chunking" aria-label="Link to this section">#</a></h3>
 <p>Documents are split into <strong>chunks</strong> that are embedded and retrieved individually. Chunk size is a real trade-off:</p>
 <ul>
-<li><strong>Too small</strong> (a sentence): precise matches, but the chunk lacks the context needed to answer ("Set it to 5" — set what?).</li>
+<li><strong>Too small</strong> (a sentence): precise matches, but the chunk lacks the context needed to answer ("Set it to 5": set what?).</li>
 <li><strong>Too large</strong> (a whole chapter): the embedding becomes a blurry average of many topics, retrieval gets less precise, and you waste context tokens.</li>
 <li>A common starting point is <strong>200 to 800 tokens</strong>, split at natural boundaries (sections, then paragraphs, then sentences), with a little <strong>overlap</strong> so ideas spanning a boundary survive.</li>
 </ul>
@@ -208,6 +210,7 @@
 <p class="admonition-title">Give every chunk its context</p>
 <p>A chunk saying "Tighten to 2 N·m" is useless if retrieval cannot tell it belongs to "Section 4.2: Replacing the filter wheel belt" of the model X manual. Prepend the document title and section path to each chunk's text before embedding. Going further, <strong>contextual retrieval</strong> asks an LLM to write one or two sentences situating each chunk within its whole document, and prepends that. Anthropic reported this substantially reduced retrieval failures, and it combines well with prompt caching to keep the cost down.</p>
 </div>
+<div class="session-break" id="session-3"><label class="sb-done"><input type="checkbox" data-session="rag:1"><span>Done with session 2: Ingestion: parsing documents and chunking them well</span></label><p class="sb-next"><span class="sb-kicker">Session 3 of 5</span>Retrieval: dense, BM25, hybrid fusion and reranking</p></div>
 <h2 id="retrieval">Retrieval<a class="headerlink" href="#retrieval" aria-label="Link to this section">#</a></h2>
 <h3 id="dense-retrieval">Dense retrieval<a class="headerlink" href="#dense-retrieval" aria-label="Link to this section">#</a></h3>
 <p>Embed the chunks and the question; take the nearest chunks by cosine similarity (lesson <a class="ref" href="../lessons/13-embeddings-vector-search.html" title="Lesson 13: Embeddings and vector search">13</a>). Strong on paraphrase and meaning.</p>
@@ -262,6 +265,7 @@
 <span class="n">scores</span> <span class="o">=</span> <span class="n">reranker</span><span class="o">.</span><span class="n">predict</span><span class="p">([(</span><span class="n">question</span><span class="p">,</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">candidate_ids</span><span class="p">])</span>
 <span class="n">best</span> <span class="o">=</span> <span class="p">[</span><span class="n">candidate_ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">scores</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]]</span></code></pre></div>
 <p>Hosted rerank APIs exist too. Reranking is often the single cheapest large improvement to a RAG system.</p>
+<div class="session-break" id="session-4"><label class="sb-done"><input type="checkbox" data-session="rag:2"><span>Done with session 3: Retrieval: dense, BM25, hybrid fusion and reranking</span></label><p class="sb-next"><span class="sb-kicker">Session 4 of 5</span>Grounded generation with citations, and advanced retrieval techniques</p></div>
 <h2 id="grounded-generation">Grounded generation<a class="headerlink" href="#grounded-generation" aria-label="Link to this section">#</a></h2>
 <h3 id="the-prompt">The prompt<a class="headerlink" href="#the-prompt" aria-label="Link to this section">#</a></h3>
 <p>Number the retrieved chunks, tell the model to answer only from them, to cite them, and to say when they do not contain the answer.</p>
@@ -339,6 +343,7 @@
 <li><strong>Agentic RAG.</strong> Give an agent a search tool and let it search repeatedly, refine queries and decide when it has enough (lesson <a class="ref" href="../lessons/15-agents.html" title="Lesson 15: Agents, tool use and MCP">15</a>). Better for complex questions, slower and costlier.</li>
 <li><strong>GraphRAG.</strong> Extract entities and relationships into a knowledge graph to answer questions that need connecting many documents ("which sites had both firmware 2.3 and belt failures?").</li>
 </ul>
+<div class="session-break" id="session-5"><label class="sb-done"><input type="checkbox" data-session="rag:3"><span>Done with session 4: Grounded generation with citations, and advanced retrieval techniques</span></label><p class="sb-next"><span class="sb-kicker">Session 5 of 5</span>Evaluate a RAG system, diagnose failures, and know when to use long context instead</p></div>
 <h2 id="evaluate-and-improve">Evaluate and improve<a class="headerlink" href="#evaluate-and-improve" aria-label="Link to this section">#</a></h2>
 <p>You cannot improve what you do not measure, and RAG has two separate things to measure.</p>
 <h3 id="build-an-evaluation-set">Build an evaluation set<a class="headerlink" href="#build-an-evaluation-set" aria-label="Link to this section">#</a></h3>
@@ -454,22 +459,22 @@
 <div class="quiz" data-quiz>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">1.</span> Why is RAG usually preferred over fine-tuning for giving a model knowledge of company documents?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Fine-tuning is impossible for most models</button></li><li><button type="button" class="quiz-opt" data-correct="1">RAG stays current by re-indexing, enables citations and access control, and is cheaper; fine-tuning is better suited to behaviour and format</button></li><li><button type="button" class="quiz-opt" data-correct="0">RAG never hallucinates</button></li><li><button type="button" class="quiz-opt" data-correct="0">Fine-tuned models cannot answer questions</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Fine-tuning is impossible for most models</button></li><li><button type="button" class="quiz-opt" data-correct="0">RAG never hallucinates</button></li><li><button type="button" class="quiz-opt" data-correct="0">Fine-tuned models cannot answer questions</button></li><li><button type="button" class="quiz-opt" data-correct="1">RAG stays current by re-indexing, enables citations and access control, and is cheaper; fine-tuning is better suited to behaviour and format</button></li></ol>
 <p class="quiz-expl" hidden>Knowledge changes; indexes are easy to update. Fine-tuning shapes how a model behaves rather than reliably storing facts.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">2.</span> What is the risk of very large chunks?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">They cannot be embedded</button></li><li><button type="button" class="quiz-opt" data-correct="1">Their embeddings blur many topics together, making retrieval less precise and wasting context</button></li><li><button type="button" class="quiz-opt" data-correct="0">They make BM25 impossible</button></li><li><button type="button" class="quiz-opt" data-correct="0">They always exceed the context window</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="1">Their embeddings blur many topics together, making retrieval less precise and wasting context</button></li><li><button type="button" class="quiz-opt" data-correct="0">They always exceed the context window</button></li><li><button type="button" class="quiz-opt" data-correct="0">They cannot be embedded</button></li><li><button type="button" class="quiz-opt" data-correct="0">They make BM25 impossible</button></li></ol>
 <p class="quiz-expl" hidden>Chunk size trades precision against context. Start around 200 to 800 tokens and measure.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">3.</span> Why combine dense and BM25 results with reciprocal rank fusion rather than adding their scores?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">RRF is faster to compute</button></li><li><button type="button" class="quiz-opt" data-correct="1">The two scores are on incomparable scales; fusing ranks avoids calibrating them</button></li><li><button type="button" class="quiz-opt" data-correct="0">BM25 scores are always negative</button></li><li><button type="button" class="quiz-opt" data-correct="0">Dense scores cannot be sorted</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Dense scores cannot be sorted</button></li><li><button type="button" class="quiz-opt" data-correct="1">The two scores are on incomparable scales; fusing ranks avoids calibrating them</button></li><li><button type="button" class="quiz-opt" data-correct="0">RRF is faster to compute</button></li><li><button type="button" class="quiz-opt" data-correct="0">BM25 scores are always negative</button></li></ol>
 <p class="quiz-expl" hidden>RRF uses only positions in each ranking, so no score normalisation is needed.</p>
 </div>
 <div class="quiz-q" data-q>
 <p class="quiz-prompt"><span class="quiz-num">4.</span> Your evaluation shows the correct chunk is usually in the top 30 but rarely in the top 5. What should you try first?</p>
-<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">A bigger LLM for generation</button></li><li><button type="button" class="quiz-opt" data-correct="0">Smaller chunks</button></li><li><button type="button" class="quiz-opt" data-correct="1">A cross-encoder reranker on the top candidates</button></li><li><button type="button" class="quiz-opt" data-correct="0">A higher temperature</button></li></ol>
+<ol class="quiz-options" type="A"><li><button type="button" class="quiz-opt" data-correct="0">Smaller chunks</button></li><li><button type="button" class="quiz-opt" data-correct="0">A higher temperature</button></li><li><button type="button" class="quiz-opt" data-correct="1">A cross-encoder reranker on the top candidates</button></li><li><button type="button" class="quiz-opt" data-correct="0">A bigger LLM for generation</button></li></ol>
 <p class="quiz-expl" hidden>The first stage finds it; the ordering is the problem. Rerankers fix ordering.</p>
 </div>
 <div class="quiz-q" data-q>
@@ -498,7 +503,7 @@
 </ul>
 </div>
 <footer class="lesson-foot">
-
+<label class="sb-done final"><input type="checkbox" data-session="rag:4"><span>Done with session 5: Evaluate a RAG system, diagnose failures, and know when to use long context instead</span></label>
 <button type="button" class="complete-btn" data-complete="rag" data-sessions="5">Mark all sessions done</button>
 <nav class="pager" aria-label="Lesson navigation"><a class="prev" href="../lessons/13-embeddings-vector-search.html"><span>Previous</span>13 Embeddings and vector search</a><a class="next" href="../lessons/15-agents.html"><span>Next</span>15 Agents, tool use and MCP</a></nav>
 </footer>
@@ -529,7 +534,7 @@
 </fieldset>
 </form>
 </dialog>
-<script src="../assets/course-data.js?v=da7d24f3"></script>
-<script src="../assets/app.js?v=da7d24f3"></script>
+<script src="../assets/course-data.js?v=8c001bc5"></script>
+<script src="../assets/app.js?v=8c001bc5"></script>
 </body>
 </html>
