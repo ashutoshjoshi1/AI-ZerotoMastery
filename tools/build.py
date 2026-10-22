@@ -688,7 +688,7 @@ def lesson_page(lesson, ctx, maths):
 <p class="handson-title">{ICONS['laptop']} Hands-on at your computer</p>
 <p>Read here on any screen. When a <span class="chip">At your computer</span> exercise comes up, open <code>notebooks/{nb_name}</code> in JupyterLab or VS Code and run the cells under the same heading.</p>
 <p class="handson-runs"><strong>Runs on:</strong> {esc(meta.get('runs_on', 'Any computer (CPU).'))}</p>
-<p class="handson-links"><a href="{colab}" rel="noopener">Open in Colab</a><a href="{github}" rel="noopener">View on GitHub</a><a href="{root}{lesson.notebook}" download>Download notebook</a><a href="{root}{lesson.solutions}" download>Solutions</a></p>
+<p class="handson-links"><a href="{colab}" target="_blank" rel="noopener">Open in Colab</a><a href="{github}" target="_blank" rel="noopener">View on GitHub</a><a href="{root}{lesson.notebook}" download>Download notebook</a><a href="{root}{lesson.solutions}" download>Solutions</a></p>
 </aside>"""
     if meta.get("draft"):
         stats = '<p class="lesson-meta"><span>Outline only: the full lesson is being written</span></p>'
