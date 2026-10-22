@@ -6,9 +6,15 @@
   "sessions": [
     "The threat model: prompt injection, jailbreaks, data leakage and excessive agency",
     "Defence in depth: isolation, least privilege, validation, approval and red teaming",
-    "Responsible AI: hallucination, bias, privacy, transparency and regulation"
+    "Responsible AI: hallucination, bias, privacy, transparency and regulation; then attack and harden your agent"
   ],
-  "objectives": [],
+  "objectives": [
+    "Explain how direct and indirect prompt injection, jailbreaks, data leakage, excessive agency and insecure output handling put LLM systems at risk",
+    "Layer defences that bound the damage when an injection succeeds: least privilege, separated trust levels, human approval, sandboxing and output validation",
+    "Redact personal data with patterns and explain where pattern-based redaction fails",
+    "Red-team a system with an attack set that runs like a test suite, and harden it until the attacks fail",
+    "Apply responsible-AI practices for hallucination, bias, privacy and transparency, and outline what the EU AI Act and the NIST AI RMF expect"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU). No API key needed.",
   "glossary": [
@@ -47,6 +53,7 @@
 <p>An agent with broad tools and credentials turns a successful injection from embarrassing text into real damage: deleted records, sent emails, purchases, changed configurations. The risk scales with the power of the tools, not with how clever the prompt is.</p>
 <h3>Insecure output handling</h3>
 <p>Model output is untrusted input to whatever consumes it. Passing it unchecked into a shell, SQL query, <code>eval</code>, an HTML page (cross-site scripting) or a file path creates classic injection vulnerabilities with a new entry point.</p>
+<hr data-session="2">
 <h2>Defence in depth</h2>
 <p>No single control is enough. Layer them so that each failure is caught by the next.</p>
 <h3>1. Constrain what the model can do</h3>
@@ -123,6 +130,7 @@ def run_attacks(answer_fn):
         status = "FAIL" if a["must_not_contain"].lower() in out.lower() else "pass"
         print(status, a["id"])</code></pre>
 <p>Run the attack set in CI, add every new attack you discover, and monitor production for spikes in refusals, unusual tool use, and outputs containing URLs or data patterns that should not appear.</p>
+<hr data-session="3">
 <h2>Responsible AI</h2>
 <p>Security is about adversaries. Responsible AI is also about the harm a system can do while working as designed.</p>
 <h3>Hallucination and over-reliance</h3>

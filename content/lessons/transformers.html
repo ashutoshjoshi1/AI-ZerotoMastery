@@ -10,7 +10,13 @@
     "Build and train a tiny GPT in PyTorch",
     "Generation, the KV cache, and what attention costs"
   ],
-  "objectives": [],
+  "objectives": [
+    "Implement scaled dot-product self-attention in NumPy and explain why the scores are divided by the square root of the key dimension",
+    "Add causal masking, multiple heads and positional information, and explain the problem each one solves",
+    "Assemble a transformer block from attention, an MLP, residual connections and layer norm, and compare encoder-only, decoder-only and encoder-decoder models",
+    "Build and train a character-level GPT in PyTorch, then run ablations that show what the mask, positions and model size contribute",
+    "Explain generation as a sampling loop, estimate the memory a KV cache needs, and reason about the quadratic cost of attention"
+  ],
   "prerequisites": [],
   "runs_on": "The NumPy sections run anywhere. Training the tiny GPT takes minutes on a GPU and much longer on a CPU.",
   "glossary": [
@@ -69,6 +75,7 @@ print(weights.round(2))</code></pre>
     q, k = rng.normal(size=d), rng.normal(size=(1000, d))
     print(d, (k @ q).std().round(1), (k @ q / np.sqrt(d)).std().round(1))
 # 4 1.8 0.9    64 8.6 1.1    1024 31.5 1.0</code></pre>
+<hr data-session="2">
 <h2>Masking, heads and positions</h2>
 <h3>Causal masking: no peeking at the future</h3>
 <p>A language model predicts the next token, so position \(i\) must not see positions after it. Set those scores to \(-\infty\) before softmax; they become exactly zero weight.</p>
@@ -107,6 +114,7 @@ print(multi_head(X, *Ws, n_heads=H).shape)                    # (6, 16)</code></
 <li><strong>Sinusoidal positions</strong> (original transformer): add fixed sine and cosine waves of different frequencies.</li>
 <li><strong>Rotary position embeddings, RoPE</strong> (most current open LLMs): rotate query and key vectors by an angle proportional to their position, so the dot product \(q_i\cdot k_j\) depends on the <em>relative</em> offset \(i-j\). It generalises better and can be stretched to longer contexts.</li>
 </ul>
+<hr data-session="3">
 <h2>The transformer block</h2>
 <p>Attention lets tokens exchange information. A per-token <strong>MLP</strong> (two linear layers with a non-linearity, typically expanding the dimension fourfold in between) then processes what each token gathered. Wrap both in residual connections and layer normalisation, the stabilisers from lesson <a data-ref="neural-networks"></a>, and you have a block:</p>
 \[
@@ -143,40 +151,37 @@ x &\leftarrow x + \mathrm{MLP}(\mathrm{LayerNorm}(x))
 <table>
 <thead>
 <tr>
-<th>Architecture</th>
+<th>Architecture (examples)</th>
 <th>Attention</th>
 <th>Trained to</th>
-<th>Examples</th>
 <th>Good for</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Encoder-only</td>
+<td>Encoder-only (BERT, RoBERTa)</td>
 <td>Bidirectional (sees all tokens)</td>
 <td>Fill in masked-out words</td>
-<td>BERT, RoBERTa</td>
 <td>Classification, embeddings, search ranking</td>
 </tr>
 <tr>
-<td>Decoder-only</td>
+<td>Decoder-only (GPT, Claude, Llama, Mistral, Qwen)</td>
 <td>Causal (sees the past only)</td>
 <td>Predict the next token</td>
-<td>GPT, Claude, Llama, Mistral, Qwen</td>
 <td>Text generation, chat, essentially all modern LLMs</td>
 </tr>
 <tr>
-<td>Encoder-decoder</td>
+<td>Encoder-decoder (original transformer, T5, Whisper)</td>
 <td>Encoder bidirectional, decoder causal plus cross-attention</td>
 <td>Map input sequence to output sequence</td>
-<td>Original transformer, T5, Whisper</td>
 <td>Translation, speech recognition, summarisation</td>
 </tr>
 </tbody>
 </table>
 <p>Decoder-only models won the generality race: with enough scale, "predict the next token" covers translation, classification and everything else as special cases.</p>
+<hr data-session="4">
 <h2>Build a tiny GPT</h2>
-<p>Now the real thing, in about a hundred lines of PyTorch. It is a character-level model, so the "tokens" are single characters and you need no tokenizer yet (that comes in the next lesson). Train it on any plain-text file; the classic choice is Tiny Shakespeare, about 1 MB of plays. Run this on a Colab GPU for speed, although a modern laptop CPU will finish a shorter run.</p>
+<p>Now the real thing, in about a hundred lines of PyTorch. It is a character-level model, so the "tokens" are single characters and you need no tokeniser yet (that comes in the next lesson). Train it on any plain-text file; the classic choice is Tiny Shakespeare, about 1 MB of plays. Run this on a Colab GPU for speed, although a modern laptop CPU will finish a shorter run.</p>
 <h3>Data</h3>
 <pre><code class="language-python">import math, torch, torch.nn as nn, torch.nn.functional as F
 
@@ -334,6 +339,7 @@ print(decode(model.generate(start, 400, temperature=0.8, top_k=40)[0].tolist()))
 <li>On Python code the model quickly learns indentation and keywords, and soon produces plausible-looking, non-working code: a miniature version of why code LLMs work and why their output needs testing.</li>
 </ol>
 </details>
+<hr data-session="5">
 <h2>Generation, the KV cache and the cost of attention</h2>
 <h3>Generation is a loop</h3>
 <p>An LLM produces text one token at a time: run the model on the context, sample a token from the last position's distribution, append it, repeat. Our <code>generate</code> method does exactly that, and so does every chat model, which is why responses stream in word by word.</p>

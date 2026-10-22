@@ -13,6 +13,7 @@ import hashlib
 import html
 import json
 import math
+import random
 import re
 import shutil
 import subprocess
@@ -50,6 +51,10 @@ def esc(s):
 
 def strip_tags(s):
     return html.unescape(re.sub(r"<[^>]+>", "", s))
+
+
+def plural(n, word):
+    return f"{n} {word}{'' if n == 1 else 's'}"
 
 
 def slugify(value):
@@ -293,8 +298,26 @@ def render_code_block(attrs, lang, code, is_output):
             f'<span class="code-label">{esc(label)}</span></div><pre><code>{spans}</code></pre></div>')
 
 
+def shuffle_options(options, rng, slots):
+    """Put the correct option at the next slot and the others in random order around it.
+
+    Slots are drawn from shuffled runs of positions, so across a quiz the right answer
+    lands everywhere instead of wherever the author happened to write it.
+    """
+    if not slots:
+        slots.extend(range(4))
+        rng.shuffle(slots)
+    target = slots.pop() % len(options)
+    right = [o for o in options if o[0]]
+    wrong = [o for o in options if not o[0]]
+    rng.shuffle(wrong)
+    return wrong[:target] + right + wrong[target:]
+
+
 def expand_quiz(block):
     qs = re.findall(r'<div class="q">(.*?)</div>', block, re.S)
+    rng = random.Random(hashlib.sha1(block.encode()).hexdigest())
+    slots = []
     out = []
     for n, q in enumerate(qs, 1):
         prompt = re.search(r"<p>(.*?)</p>", q, re.S).group(1)
@@ -302,6 +325,11 @@ def expand_quiz(block):
         why = re.search(r'<p class="why">(.*?)</p>', q, re.S)
         if sum(1 for c, _ in options if c) != 1:
             warn(f"quiz question {n} needs exactly one correct option: {strip_tags(prompt)[:60]}")
+        elif not why:
+            warn(f"quiz question {n} needs a <p class=\"why\"> explanation: {strip_tags(prompt)[:60]}")
+        # Numeric answers stay in the order written (usually ascending); the rest are shuffled.
+        if not all(re.match(r"\s*[~≈$]?\d", strip_tags(t)) for _, t in options):
+            options = shuffle_options(options, rng, slots)
         opts = "".join(f'<li><button type="button" class="quiz-opt" data-correct="{1 if c else 0}">{t}</button></li>'
                        for c, t in options)
         out.append(f'<div class="quiz-q" data-q>\n<p class="quiz-prompt"><span class="quiz-num">{n}.</span> {prompt}</p>\n'
@@ -438,6 +466,45 @@ def check_balance(name, s):
             warn(f"{name}: stray </{tag}>")
     if stack:
         warn(f"{name}: unclosed {stack[-5:]}")
+
+
+def notebook_headings(rel):
+    """The markdown headings of a notebook, lower-cased, without # marks or backticks."""
+    nb = json.loads((ROOT / rel).read_text(encoding="utf-8"))
+    heads = set()
+    for cell in nb["cells"]:
+        if cell["cell_type"] == "markdown":
+            for line in "".join(cell["source"]).split("\n"):
+                if line.startswith("#"):
+                    heads.add(" ".join(line.lstrip("#").replace("`", "").split()).lower())
+    return heads
+
+
+def check_lesson(lesson):
+    """Warn where a lesson strays from the shape docs/AUTHORING.md describes. Drafts are let off."""
+    meta, body, where = lesson.meta, lesson.body, lesson.slug
+    if meta.get("draft"):
+        return
+    n = len(lesson.sessions)
+    if n > 1 and '<hr data-session="' not in body:
+        warn(f"{where}: {n} sessions but no <hr data-session> markers between them")
+    if not 3 <= len(meta.get("objectives", [])) <= 6:
+        warn(f"{where}: needs three to six objectives in its metadata")
+    for needed in ("<h2>Check yourself</h2>", '<div class="admonition takeaways">', "<h3>Go deeper</h3>"):
+        if needed not in body:
+            warn(f"{where}: missing {needed}")
+    n_q = body.count('<div class="q">')
+    if n_q != 5:
+        warn(f"{where}: the quiz has {n_q} questions instead of five")
+    titles = [" ".join(strip_tags(t).replace("`", "").split()) for t in
+              re.findall(r'<div class="admonition exercise">\s*<p class="admonition-title">(.*?)</p>', body, re.S)]
+    for rel in (lesson.notebook, lesson.solutions):
+        if not (ROOT / rel).exists():
+            continue  # sync_notebooks reports it
+        heads = notebook_headings(rel)
+        for t in titles:
+            if t.lower() not in heads:
+                warn(f"{rel}: no cell headed {t!r}, which the lesson's exercise points to")
 
 
 # ----------------------------------------------------------------------------- page chrome
@@ -623,8 +690,11 @@ def lesson_page(lesson, ctx, maths):
 <p class="handson-runs"><strong>Runs on:</strong> {esc(meta.get('runs_on', 'Any computer (CPU).'))}</p>
 <p class="handson-links"><a href="{colab}" rel="noopener">Open in Colab</a><a href="{github}" rel="noopener">View on GitHub</a><a href="{root}{lesson.notebook}" download>Download notebook</a><a href="{root}{lesson.solutions}" download>Solutions</a></p>
 </aside>"""
-    stats = (f'<p class="lesson-meta"><span>{len(lesson.sessions)} sessions</span><span>about {minutes} min of reading</span>'
-             f'<span>{n_code} code examples</span><span>{n_ex} hands-on exercise{"s" if n_ex != 1 else ""}</span></p>')
+    if meta.get("draft"):
+        stats = '<p class="lesson-meta"><span>Outline only: the full lesson is being written</span></p>'
+    else:
+        stats = (f'<p class="lesson-meta"><span>{plural(len(lesson.sessions), "session")}</span><span>about {minutes} min of reading</span>'
+                 f'<span>{plural(n_code, "code example")}</span><span>{plural(n_ex, "hands-on exercise")}</span></p>')
     last = len(lesson.sessions)
     has_markers = '<hr data-session="' in lesson.body
     final_tick = ""
@@ -648,7 +718,7 @@ def lesson_page(lesson, ctx, maths):
 {objectives}
 {prereq}
 <div class="study-plan">
-<p class="plan-title">Study plan: {len(lesson.sessions)} sessions of about an hour</p>
+<p class="plan-title">Study plan: {plural(len(lesson.sessions), "session")} of about an hour</p>
 <ol class="sessions">{sessions}</ol>
 <p class="plan-note">Tick a session when you finish it. Ticks are saved in this browser; use <button type="button" class="linklike open-settings">sync</button> to carry them to another device.</p>
 </div>
@@ -716,8 +786,9 @@ def home_page(ctx):
     for p in ctx["parts"]:
         items = []
         for l in p["lessons"]:
+            meta = "outline, full lesson coming" if l.meta.get("draft") else f"{plural(len(l.sessions), 'session')} · {l.read_minutes} min read"
             items.append(f'<li style="{l.style}"><a href="{l.href}" data-lesson="{l.slug}" data-sessions="{len(l.sessions)}">'
-                         f'<span class="num">{l.num}</span> {esc(l.title)}</a><span class="meta">{len(l.sessions)} sessions · {l.read_minutes} min read</span>'
+                         f'<span class="num">{l.num}</span> {esc(l.title)}</a><span class="meta">{meta}</span>'
                          f'<p>{l.meta["summary"]}</p></li>')
         blocks.append(f'<section class="part-block" style="--pc:{p["colour"]}"><h3><span class="roman">{p["roman"]}</span> {esc(p["name"])}</h3>'
                       f'<p class="part-desc">{esc(p["desc"])} <span class="meta">{p["sessions"]} sessions</span></p><ol class="part-lessons">{"".join(items)}</ol></section>')
@@ -947,7 +1018,7 @@ self.addEventListener("message", (e) => {{
   let done = 0;
   const report = () => e.source && e.source.postMessage({{ type: "cache-progress", done: done, total: urls.length }});
   e.waitUntil(caches.open(PAGES).then((pages) => Promise.all(urls.map((u) =>
-    fetch(u).then((res) => {{ if (res.ok) return (u.endsWith(".html") ? pages : caches.open(ASSETS).then((a) => a)).then((c) => c.put(u, res)); }})
+    fetch(u).then((res) => {{ if (res.ok) return (u.endsWith(".html") ? Promise.resolve(pages) : caches.open(ASSETS)).then((c) => c.put(u, res)); }})
       .catch(() => {{}}).then(() => {{ done++; report(); }})
   ))));
 }});
@@ -1123,6 +1194,7 @@ def build(out_root, skip_missing=False):
     lesson_html = {}
     ctx["v"] = "0"
     for l in lessons:
+        check_lesson(l)
         TabCounter.n = 0
         lesson_page(l, ctx, maths)  # dry run for metadata; re-rendered below with the asset version
     glossary_html = glossary_page(ctx)
@@ -1191,7 +1263,7 @@ def main():
             expected = set(written["files"])
             stale += [p.relative_to(ROOT).as_posix() + " (no longer generated; delete it)"
                       for p in sorted((ROOT / "lessons").glob("*.html")) if p.relative_to(ROOT).as_posix() not in expected]
-        for w in WARNINGS:
+        for w in dict.fromkeys(WARNINGS):
             print("warning:", w)
         if stale:
             print("The built site is out of date. Run `python tools/build.py` and commit the result. Stale files:")
@@ -1202,7 +1274,7 @@ def main():
         sys.exit(1 if WARNINGS else 0)
     out = (args.out or ROOT).resolve()
     ctx, written = build(out, args.skip_missing)
-    for w in WARNINGS:
+    for w in dict.fromkeys(WARNINGS):
         print("warning:", w)
     print(f"Built {len(ctx['lessons'])} lessons, {ctx['vars']['sessions']} sessions; "
           f"{len(written['changed'])} of {len(written['files'])} files changed"

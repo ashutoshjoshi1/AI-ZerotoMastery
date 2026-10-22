@@ -12,6 +12,12 @@ python tools/build.py --check    # rebuild into a temporary folder and fail if t
 The build needs Python 3.10+ with `pygments`, and Node.js 18+ with KaTeX installed once in `tools/`
 (`cd tools && npm install`). See the README for details.
 
+Besides building, it checks every lesson against this guide and prints a warning for each thing it finds:
+missing objectives or session dividers, a quiz that is not five questions with one right answer and an
+explanation each, a missing *Check yourself*, *Key takeaways* or *Go deeper*, an exercise with no notebook
+cell of the same title, broken links, unknown cross-references and unbalanced tags. `--check` fails on any
+warning, and CI runs it on every push, so fix warnings rather than ignoring them.
+
 ## Where things live
 
 | Path | What it is |
@@ -63,6 +69,7 @@ A lesson file starts with a JSON metadata block inside an HTML comment, followed
 | `prerequisites` | Slugs of earlier lessons the reader should have done. |
 | `runs_on` | What the notebook needs (CPU, GPU, API key, downloads). |
 | `glossary` | Terms this lesson introduces. They are merged into the course glossary, linked back here. |
+| `draft` | Optional. `true` for a lesson that is only an outline so far: its page says so, and the build skips the completeness checks. Remove it when the lesson is written. |
 
 ## The body
 
@@ -135,8 +142,10 @@ Kinds: `note`, `tip`, `warning`, `danger`. Use them sparingly, for things a read
 </details>
 ```
 
-Each exercise needs a matching markdown cell (with the same title) and an empty `# Your code here` cell in
-the notebook, and a worked solution in the solutions notebook.
+Each exercise needs a markdown cell headed with exactly the same title (`### Hands-on: train a Q-learning
+agent`) and an empty `# Your code here` cell in the notebook, and the same heading with a worked solution
+in the solutions notebook. The lesson page sends the reader to that cell by name, so the build warns when
+the heading is missing from either notebook.
 
 ### Tabs
 
@@ -190,6 +199,11 @@ Plain `<table>` with `<thead>` and `<tbody>`. Keep them to four columns or fewer
    </div>
    ```
 
+   Write the options in any order. The build shuffles them, spreading the right answers across A to D so a
+   reader cannot learn that "it is usually B". Options that all start with a number keep the order you wrote
+   them in, so put those in ascending order. Because the letters change, never refer to an option by its
+   letter or position in the question or the explanation.
+
 2. Key takeaways: `<div class="admonition takeaways"><p class="admonition-title">Key takeaways</p><ul>...</ul></div>`
 3. `<h3>Go deeper</h3>` with three to six books, papers, courses or documentation pages.
 
@@ -206,5 +220,5 @@ Plain `<table>` with `<thead>` and `<tbody>`. Keep them to four columns or fewer
 * Check a notebook with:
 
   ```bash
-  python tools/check_notebooks.py --no-install notebooks/21-reinforcement-learning.ipynb
+  python tools/check_notebooks.py --no-install notebooks/03-ml-fundamentals.ipynb
   ```

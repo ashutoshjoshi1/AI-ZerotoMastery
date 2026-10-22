@@ -9,7 +9,14 @@
     "Derivatives, the chain rule, gradients and gradient descent",
     "Probability for ML: distributions, Bayes, softmax, cross-entropy and KL divergence"
   ],
-  "objectives": [],
+  "objectives": [
+    "Compute dot products, norms and cosine similarity in NumPy, and explain why normalised vectors turn similarity search into one matrix multiplication",
+    "Read a matrix as a transformation, predict the shape of a matrix product, and use the SVD to find how many directions a matrix really uses",
+    "Fit a line by gradient descent from its partial derivatives, and pick a learning rate that neither crawls nor diverges",
+    "Verify an analytic gradient against a numerical gradient check",
+    "Apply Bayes' rule to a diagnostic test and explain why the base rate dominates the answer",
+    "Implement a numerically stable softmax, cross-entropy and KL divergence, and show how temperature sharpens or flattens a distribution"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU).",
   "glossary": [
@@ -61,6 +68,7 @@ print(cos)                               # 0.96: nearly the same direction</code
 <p class="admonition-title">Normalise once, then dot</p>
 <p>If you scale every vector to length 1 up front, cosine similarity becomes a plain dot product. Vector databases rely on this trick: store normalised embeddings, and similarity search becomes one fast matrix multiplication.</p>
 </div>
+<hr data-session="2">
 <h2>Matrices as transformations</h2>
 <p>A matrix is a grid of numbers, but the useful way to think of one is as a <em>function that transforms vectors</em>. Multiplying a vector by a matrix rotates, stretches, squashes or projects it.</p>
 <pre><code class="language-python">R = np.array([[0, -1],
@@ -84,6 +92,7 @@ C_{ij} = \sum_k A_{ik} B_{kj}
 A = rng.normal(size=(100, 20)) @ rng.normal(size=(20, 50))   # a 100x50 matrix built from rank 20
 U, S, Vt = np.linalg.svd(A, full_matrices=False)
 print((S &gt; 1e-8).sum())          # 20: only 20 directions are really used</code></pre>
+<hr data-session="3">
 <h2>Calculus: how models learn</h2>
 <p>Training a model means adjusting its parameters to make a <strong>loss</strong> (a number measuring how wrong it is) as small as possible. Calculus tells us which direction to adjust them in.</p>
 <h3>Derivatives</h3>
@@ -166,6 +175,7 @@ print(numerical_grad(loss_fn, p))
 print([2 * (err * x).mean(), 2 * err.mean()])   # should agree to ~6 decimal places</code></pre>
 Researchers still use gradient checks when they write custom layers. It is the unit test of calculus.</p>
 </details>
+<hr data-session="4">
 <h2>Probability: what models output</h2>
 <p>A classifier does not just say "cat"; it outputs a probability distribution: 0.92 cat, 0.07 dog, 0.01 car. An LLM outputs a distribution over its whole vocabulary for the next token. To work with these you need a few ideas.</p>
 <h3>Distributions, expectation and variance</h3>

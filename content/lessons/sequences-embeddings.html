@@ -5,12 +5,28 @@
   "summary": "How text becomes vectors whose geometry captures meaning, how recurrent networks read sequences one step at a time, and the bottleneck that motivated attention.",
   "sessions": [
     "Representing text: one-hot vectors, the distributional hypothesis and word embeddings",
-    "Recurrent networks, LSTMs, sequence-to-sequence models and their bottleneck"
+    "Recurrent networks, LSTMs, the sequence-to-sequence bottleneck and attention"
   ],
-  "objectives": [],
+  "objectives": [
+    "Explain why one-hot vectors carry no meaning and how the distributional hypothesis fixes that",
+    "Build word vectors from co-occurrence counts with PPMI and the SVD, and find nearest neighbours by cosine similarity",
+    "Describe how word2vec learns embeddings by prediction, and use nn.Embedding as a trainable lookup table",
+    "Run a recurrent network step by step in NumPy, and explain why plain RNNs suffer vanishing gradients while LSTMs cope better",
+    "Explain the sequence-to-sequence bottleneck and how attention removed it, leading to the transformer",
+    "Probe pretrained GloVe vectors for neighbours, analogies and social bias"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU). The last cells use PyTorch.",
-  "glossary": []
+  "glossary": [
+    {"term": "Contextual embedding", "def": "A token vector that changes with the surrounding words, so the same word gets different vectors in different sentences."},
+    {"term": "Distributional hypothesis", "def": "The idea that words which appear in similar contexts tend to have similar meanings."},
+    {"term": "LSTM (long short-term memory)", "def": "A recurrent network with a gated cell state that is updated additively, so it can carry information across many more steps than a plain RNN."},
+    {"term": "One-hot vector", "def": "A vector of zeros with a single 1 at a word's index, which identifies the word but says nothing about its meaning."},
+    {"term": "Recurrent neural network (RNN)", "def": "A network that reads a sequence one step at a time, updating a hidden state that summarises everything seen so far."},
+    {"term": "Sequence-to-sequence (seq2seq)", "def": "A design in which an encoder reads an input sequence and a decoder generates an output sequence from it, as in translation."},
+    {"term": "Vanishing gradient", "def": "Gradients shrinking towards zero as they are multiplied back through many layers or time steps, so the earliest ones stop learning."},
+    {"term": "word2vec", "def": "A 2013 method that learns word embeddings by training a small network to predict the words around each word."}
+  ]
 }
 -->
 <h2>The problem: models need numbers</h2>
@@ -85,6 +101,7 @@ vectors = emb(token_ids)                                       # (2, 4, 256)</co
 <p class="admonition-title">Static versus contextual embeddings</p>
 <p>word2vec gives "bank" one vector, whether it is a river bank or a savings bank. Transformers produce <strong>contextual</strong> embeddings: the vector for "bank" changes depending on the surrounding words. That is a large part of why they understand language so much better.</p>
 </div>
+<hr data-session="2">
 <h2>Recurrent neural networks</h2>
 <p>Embeddings handle individual words; language is sequences. A feed-forward network takes a fixed-size input, but sentences vary in length and order matters ("dog bites man" is not "man bites dog").</p>
 <p>A <strong>recurrent neural network</strong> (RNN) reads a sequence one step at a time, carrying a <strong>hidden state</strong> \(h_t\) that summarises everything so far:</p>
@@ -107,7 +124,7 @@ print(h.shape)                         # (16,): a summary of the whole sequence<
 <p>Training an RNN backpropagates through every time step, multiplying by \(W_h\) (and the tanh derivative) again and again. Repeated multiplication either shrinks or explodes:</p>
 <pre><code class="language-python">for factor in [0.9, 1.0, 1.1]:
     print(factor, factor ** 50)       # 0.0052, 1.0, 117.4</code></pre>
-<p>After 50 steps, a factor of 0.9 leaves half a percent of the gradient: the network effectively cannot learn that a word at the start of a paragraph matters for one at the end. This is the <strong>vanishing gradient problem</strong> in time.</p>
+<p>After 50 steps, a factor of 0.9 leaves half a per cent of the gradient: the network effectively cannot learn that a word at the start of a paragraph matters for one at the end. This is the <strong>vanishing gradient problem</strong> in time.</p>
 <h3>LSTMs and GRUs</h3>
 <p>The <strong>LSTM</strong> (long short-term memory) adds a separate cell state that flows through time with only gentle, gated modifications, and three learned <strong>gates</strong> decide what to forget, what to write and what to output. Because the cell state is updated additively, gradients can flow across many more steps (the same insight as residual connections). The <strong>GRU</strong> is a simpler variant with two gates. From roughly 2014 to 2017, LSTMs were the state of the art for translation, speech recognition and language modelling.</p>
 <pre><code class="language-python">lstm = nn.LSTM(input_size=256, hidden_size=512, num_layers=2, batch_first=True)

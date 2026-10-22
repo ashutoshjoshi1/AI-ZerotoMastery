@@ -4,7 +4,7 @@ A free, self-paced course that takes you from writing your first NumPy array to 
 shipping AI systems. Every lesson is a readable web page with an interactive quiz, and every lesson has a
 Jupyter notebook with all of its code and hands-on exercises, plus worked solutions.
 
-**Read it online:** <https://ashutoshjoshi1.github.io/AI-ZerotoMastery/> (see [Publishing the site](#publishing-the-site) to switch this on)
+**Read it online:** <https://ashutoshjoshi1.github.io/AI-ZerotoMastery/>
 
 ## How to use it
 
@@ -126,7 +126,7 @@ Or with plain pip:
 cd AI-ZerotoMastery/notebooks
 python -m venv .venv
 source .venv/bin/activate              # Windows: .venv\Scripts\activate
-pip install jupyterlab numpy pandas matplotlib scikit-learn
+pip install -r requirements.txt        # or just jupyterlab, and let each notebook install what it needs
 jupyter lab
 ```
 
@@ -139,17 +139,15 @@ ANTHROPIC_API_KEY=sk-ant-...
 No setup, or no GPU? Every lesson page has an **Open in Colab** link. [notebooks/README.md](notebooks/README.md)
 lists what each notebook needs (CPU, GPU, API key or a download).
 
-## Publishing the site
+## Publishing your own copy
 
-The website is plain static HTML in this repository, so GitHub Pages can serve it as it is:
+The website is plain static HTML in this repository, so GitHub Pages can serve a fork as it is:
 
-1. Push the repository to GitHub.
-2. In the repository, open **Settings, Pages**.
+1. Fork the repository, then change `repo` and `site_url` in `content/course.json` and rebuild (see below),
+   so the Colab, GitHub and sync links point at your copy.
+2. In your fork, open **Settings, Pages**.
 3. Under **Build and deployment**, choose **Deploy from a branch**, then **main** and **/ (root)**, and save.
 4. After a minute the site is live at `https://<your-user>.github.io/AI-ZerotoMastery/`.
-
-If you fork the course, change `repo` and `site_url` in `content/course.json` and rebuild, so the Colab and
-sync links point at your copy.
 
 You can also read it without any server: open `index.html` in a browser. Everything (fonts, maths, search)
 is bundled; only offline caching and installing as an app need the hosted version.
@@ -159,15 +157,18 @@ is bundled; only offline caching and installing as an app need the hosted versio
 The pages are generated from sources in `content/`. Edit a lesson in `content/lessons/<slug>.html`, then rebuild:
 
 ```bash
-pip install pygments                    # once
+pip install pygments nbclient nbformat ipykernel   # once
 cd tools && npm install && cd ..        # once: installs KaTeX for the maths
 python tools/build.py                   # regenerates every page, the search index and the notebook headers
+python tools/build.py --check           # what CI runs: fails on a stale site or any warning
 python tools/check_notebooks.py --no-install notebooks/03-ml-fundamentals.ipynb   # runs a notebook top to bottom
 ```
 
 [docs/AUTHORING.md](docs/AUTHORING.md) describes the source format: metadata, sessions, code, maths,
 exercises, quizzes, figures and cross-references. Lesson numbers come from the order in
-`content/course.json`, so you can insert or reorder lessons and every link and number updates.
+`content/course.json`, so you can insert or reorder lessons and every link and number updates. The build
+also checks each lesson against that guide (objectives, session dividers, a five-question quiz, and a
+notebook cell for every exercise) and prints a warning for anything missing.
 
 ## Repository layout
 

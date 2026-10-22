@@ -9,7 +9,14 @@
     "Convolutional networks: train an image classifier on Fashion-MNIST",
     "Transfer learning, checkpoints, mixed precision and debugging training"
   ],
-  "objectives": [],
+  "objectives": [
+    "Create tensors, move them between NumPy and devices, and let autograd compute gradients",
+    "Define models with nn.Module and feed them batches with Dataset and DataLoader",
+    "Write the standard training loop with train and eval modes, zeroed gradients and a loss that takes raw logits",
+    "Train a small convolutional network on Fashion-MNIST and read its confusion matrix",
+    "Set up transfer learning from a pretrained ResNet by freezing its layers and replacing the head, and save and reload checkpoints",
+    "Use mixed precision, and debug a model that will not learn with a checklist that starts by overfitting one batch"
+  ],
   "prerequisites": [],
   "runs_on": "CPU works; a GPU runtime (for example Google Colab) makes the CNN sections much faster.",
   "glossary": [
@@ -54,6 +61,7 @@ print(w.grad, b.grad)                     # dL/dw = 2(wx+b-10)x = -21.0, dL/db =
 <li><strong>Gradients accumulate.</strong> <code>.backward()</code> <em>adds</em> to <code>.grad</code>. You must zero gradients before each step (<code>optimizer.zero_grad()</code>).</li>
 <li><strong>Turn tracking off when you do not need it.</strong> Wrap evaluation and inference in <code>with torch.no_grad():</code> (or <code>torch.inference_mode()</code>) to save memory and time.</li>
 </ul>
+<hr data-session="2">
 <h2>Modules, data and the training loop</h2>
 <h3>nn.Module</h3>
 <p>Layers and models are subclasses of <code>nn.Module</code>. You declare layers in <code>__init__</code> and describe the computation in <code>forward</code>. PyTorch tracks all their parameters for you.</p>
@@ -129,6 +137,7 @@ class SensorWindows(Dataset):
 
 train(MLP().to(device), train_dl, val_dl)    # val accuracy about 0.97</code></pre>
 <p>Note <code>model(xb) &gt; 0</code>: with logits, the sigmoid's 0.5 threshold is a logit threshold of 0.</p>
+<hr data-session="3">
 <h2>Convolutional networks</h2>
 <p>Feeding a 28×28 image into a fully connected layer treats every pixel as unrelated to its neighbours and needs a separate weight for every pixel-neuron pair. <strong>Convolutions</strong> build in two facts about images: nearby pixels are related (local receptive fields), and a pattern means the same thing wherever it appears (weight sharing). A small filter, say 3×3, slides over the image computing a dot product at each position, producing a feature map. Early layers learn edges and textures; deeper layers combine them into parts and objects. <strong>Pooling</strong> downsamples between stages.</p>
 <p>Even if you mostly work with language, CNN ideas reappear: vision transformers split images into patches, and speech models often start with convolutions over audio.</p>
@@ -171,6 +180,7 @@ for epoch in range(5):
             correct += (model(xb.to(device)).argmax(1).cpu() == yb).sum().item()
     print(epoch, correct / len(test_set))                      # about 0.91 to 0.92 after 5 epochs</code></pre>
 <p>On a free Colab GPU each epoch takes seconds. On a laptop CPU it takes a minute or two, which is still fine.</p>
+<hr data-session="4">
 <h2>Transfer learning</h2>
 <p>Training from scratch needs lots of data. <strong>Transfer learning</strong> starts from a network already trained on a huge dataset and adapts it, which is the same idea that later lets you fine-tune LLMs instead of pretraining them. Two flavours:</p>
 <ul>

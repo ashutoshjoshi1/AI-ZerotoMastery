@@ -6,9 +6,16 @@
   "sessions": [
     "Vision: from CNNs to vision transformers, CLIP, and vision-language models via API",
     "Documents and speech: document understanding, OCR, speech-to-text and text-to-speech",
-    "Generating images: diffusion models from intuition to code"
+    "Generating images: diffusion models from intuition to code; then a field-photo triage pipeline"
   ],
-  "objectives": [],
+  "objectives": [
+    "Explain how a vision transformer turns an image into patch tokens and how CLIP's contrastive training aligns images and text in one embedding space",
+    "Classify images zero-shot with CLIP and send images to a vision-language model through an API",
+    "Extract validated records from documents by combining text extraction, OCR and a vision-language model with a schema",
+    "Transcribe speech with Whisper and explain why latency is the main challenge for voice agents",
+    "Implement the forward noising process of a diffusion model and explain how latent diffusion, text conditioning, guidance and step distillation make image generation practical",
+    "Design a two-stage pipeline that triages images cheaply with CLIP and escalates only uncertain or problem cases to a vision-language model"
+  ],
   "prerequisites": [],
   "runs_on": "CPU for most cells; an API key for the vision-language model; a GPU for image generation.",
   "glossary": [
@@ -78,6 +85,7 @@ print(ask_about_image("spectrum_plot.png",
 <li><strong>Combine with structured output</strong> (lesson <a data-ref="llm-apis"></a>) to turn photos and scans into validated records.</li>
 <li>VLMs are strong at reading text in images, charts and screenshots, describing scenes and comparing images. They can still misread small text, miscount objects and misjudge precise spatial measurements; verify where accuracy matters.</li>
 </ul>
+<hr data-session="2">
 <h2>Documents and speech</h2>
 <h3>Document understanding</h3>
 <p>Real-world documents are PDFs, scans, photos of forms, spreadsheets in screenshots. Three approaches, often combined:</p>
@@ -110,6 +118,7 @@ print(result["text"])</code></pre>
 <p>Faster local implementations (faster-whisper, whisper.cpp) and hosted speech APIs are common in production. A powerful pattern: transcribe a technician's voice memo, then use an LLM with structured output to turn it into a maintenance record (your lesson <a data-ref="fine-tuning"></a> task, now hands-free).</p>
 <h3>Text-to-speech and voice agents</h3>
 <p>Neural text-to-speech models produce natural voices from text, and many providers offer them via API. A <strong>voice agent</strong> chains speech-to-text, an LLM (often with tools) and text-to-speech, or uses a natively speech-capable model end to end. The engineering challenge is <strong>latency</strong>: people expect replies within about a second, so everything streams and every stage is optimised.</p>
+<hr data-session="3">
 <h2>Generating images: diffusion models</h2>
 <h3>The intuition</h3>
 <p>A <strong>diffusion model</strong> learns to reverse a gradual noising process. Training: take a real image, add a random amount of Gaussian noise, and train a network to predict the noise that was added. Generation: start from pure noise, and repeatedly ask the network "what noise is in this?", subtract a little of it, and repeat. Over tens of steps, structure emerges from static.</p>

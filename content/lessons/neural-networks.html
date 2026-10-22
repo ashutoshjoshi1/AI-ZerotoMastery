@@ -7,9 +7,15 @@
     "The neuron, activation functions, and why depth needs non-linearity",
     "The forward pass and the loss for a multilayer perceptron",
     "Backpropagation by hand, verified with a gradient check",
-    "Making training work: initialisation, mini-batches, momentum and Adam, normalisation, dropout"
+    "Making training work: mini-batches, momentum and Adam, initialisation, residual connections, normalisation and dropout"
   ],
-  "objectives": [],
+  "objectives": [
+    "Explain why stacked layers need non-linear activations, and compare sigmoid, tanh, ReLU and GELU",
+    "Implement the forward pass of a multilayer perceptron in NumPy and sanity-check its initial loss",
+    "Derive and code backpropagation for linear and ReLU layers, and verify it with a gradient check",
+    "Write the Adam optimiser and a mini-batch training loop that learns to separate the two-moons dataset",
+    "Explain how initialisation, residual connections, normalisation, dropout and learning-rate schedules keep deep networks trainable, and test some of them by experiment"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU).",
   "glossary": [
@@ -72,6 +78,7 @@ a = \phi(\mathbf{w}\cdot\mathbf{x} + b)
 </tr>
 </tbody>
 </table>
+<hr data-session="2">
 <h2>The forward pass</h2>
 <p>We will classify the "two moons" dataset: two interlocking crescents that no straight line can separate. The network has two hidden layers of 16 ReLU neurons and a sigmoid output.</p>
 <figure>
@@ -128,6 +135,7 @@ params = init([2, 16, 16, 1])
 p, _ = forward(params, X)
 print(p.shape, bce(p, y))                   # (1000, 1) about 0.7: random guessing</code></pre>
 <p>A loss around \(\ln 2 \approx 0.69\) is what you get from predicting 0.5 for everything. That is a useful sanity check: an untrained binary classifier should start near 0.69, and an untrained 10-class classifier near \(\ln 10 \approx 2.3\). If yours starts far from that, something is wrong before training even begins.</p>
+<hr data-session="3">
 <h2>Backpropagation</h2>
 <p>We need \(\partial L/\partial W\) for every weight. Backpropagation computes them all in one backward sweep, applying the chain rule layer by layer from the loss to the inputs and reusing intermediate results so nothing is computed twice.</p>
 <h3>Deriving it, one layer at a time</h3>
@@ -177,6 +185,7 @@ for k in ["W1", "b2", "W3"]:
     params[k][idx] = old
     print(k, g[k][idx], (lp - lm) / (2 * eps))   # the two columns should agree to ~8 digits</code></pre>
 <p>This is exactly what PyTorch's <strong>autograd</strong> does for you automatically, for any composition of operations: it records the forward pass as a graph and walks it backwards applying these rules. Lesson <a data-ref="pytorch"></a> hands this job over to the machine.</p>
+<hr data-session="4">
 <h2>Training it</h2>
 <h3>Mini-batches</h3>
 <p>Computing the gradient on all 800 training examples per step is slow; using one example is noisy. <strong>Mini-batch</strong> gradient descent uses a batch of, say, 32. The noise is actually helpful: it jolts the model out of poor regions. One pass over the training data is an <strong>epoch</strong>.</p>

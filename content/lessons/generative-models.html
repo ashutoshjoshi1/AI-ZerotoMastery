@@ -78,7 +78,7 @@ print(new_points.round(2))</code></pre>
 <tr><td>Energy-based</td><td>Lowering an energy \(E(x)\) on data and raising it elsewhere, \(p(x) \propto e^{-E(x)}\)</td><td>Slow iterative sampling; likelihood only up to an unknown constant</td><td>Mostly research; its score-matching ideas underpin diffusion</td></tr>
 </tbody>
 </table>
-<p>In practice the families are combined. A latent diffusion model is a VAE whose latents are modelled by diffusion, and its decoder is usually trained with a GAN loss. An image or audio tokenizer is a vector-quantised autoencoder whose tokens an autoregressive transformer then models. This lesson builds one of each (except energy-based models) at toy scale, so you can see what each piece contributes.</p>
+<p>In practice the families are combined. A latent diffusion model is a VAE whose latents are modelled by diffusion, and its decoder is usually trained with a GAN loss. An image or audio tokeniser is a vector-quantised autoencoder whose tokens an autoregressive transformer then models. This lesson builds one of each (except energy-based models) at toy scale, so you can see what each piece contributes.</p>
 
 <h2>Autoencoders</h2>
 <h3>Compress and reconstruct</h3>
@@ -323,7 +323,7 @@ z_q.sum().backward()
 print(z.grad[0])               # ones: the gradient passed straight through</code></pre>
 <pre><code class="language-text">tensor([12, 10,  9,  7,  4,  2])
 tensor([1., 1., 1., 1.])</code></pre>
-<p>Discrete latents matter because once an image or a sound is a sequence of integers, a transformer can model it exactly like text, with next-token prediction (lesson <a data-ref="transformers"></a>). Neural audio codecs such as SoundStream and EnCodec turn audio into tokens with residual vector quantisation (several codebooks, each quantising what the previous one missed), and speech and music generators predict those tokens. VQGAN-style tokenizers do the same for images. The tokenizer is a generative model in its own right, and the quality of its decoder caps the quality of everything built on top.</p>
+<p>Discrete latents matter because once an image or a sound is a sequence of integers, a transformer can model it exactly like text, with next-token prediction (lesson <a data-ref="transformers"></a>). Neural audio codecs such as SoundStream and EnCodec turn audio into tokens with residual vector quantisation (several codebooks, each quantising what the previous one missed), and speech and music generators predict those tokens. VQGAN-style tokenisers do the same for images. The tokeniser is a generative model in its own right, and the quality of its decoder caps the quality of everything built on top.</p>
 
 <h2>Generative adversarial networks</h2>
 <h3>The game</h3>

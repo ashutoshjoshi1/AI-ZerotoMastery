@@ -78,7 +78,7 @@ CHEAP_MODEL = "claude-haiku-5-5"       # for summaries and bulk harness calls
 print("API key found" if os.environ.get("ANTHROPIC_API_KEY") else
       "No API key set: cells marked 'Needs an API key' will fail until you add one")</code></pre>
 <h3>Counting tokens without an API</h3>
-<p>The only exact count comes from the provider's tokenizer for the model you call (<code>count_tokens</code>, lesson <a data-ref="llm-apis"></a>); a count for one model is only an estimate for another. Offline, a rule of thumb is enough to plan with: about four characters per token for English prose. Code, JSON, numbers and non-English text need more tokens per character, so the rule undercounts them.</p>
+<p>The only exact count comes from the provider's tokeniser for the model you call (<code>count_tokens</code>, lesson <a data-ref="llm-apis"></a>); a count for one model is only an estimate for another. Offline, a rule of thumb is enough to plan with: about four characters per token for English prose. Code, JSON, numbers and non-English text need more tokens per character, so the rule undercounts them.</p>
 <pre><code class="language-python">CHARS_PER_TOKEN = 4.0      # rule of thumb for English prose; code and other languages need more tokens
 
 def approx_tokens(text: str) -&gt; int:

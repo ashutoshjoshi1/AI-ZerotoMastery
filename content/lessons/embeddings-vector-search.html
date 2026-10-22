@@ -300,6 +300,7 @@ ef_search=256  recall@10=0.999  0.151 ms/query</code></pre>
 <p>Embeddings also let you explore collections you have never read. Embed a few thousand support tickets, cluster them with k-means (lesson <a data-ref="classical-ml"></a>), and ask an LLM to name each cluster from a sample of its members. You get an instant map of what users complain about.</p>
 <pre><code class="language-python">from sklearn.cluster import KMeans
 
+# tickets: a list of ticket texts (the notebook uses a dozen samples and 4 clusters)
 ticket_vecs = model.encode(tickets, normalize_embeddings=True)
 km = KMeans(n_clusters=12, n_init=10, random_state=0).fit(ticket_vecs)
 for c in range(12):

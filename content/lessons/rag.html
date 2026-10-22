@@ -10,7 +10,13 @@
     "Grounded generation with citations, and advanced retrieval techniques",
     "Evaluate a RAG system, diagnose failures, and know when to use long context instead"
   ],
-  "objectives": [],
+  "objectives": [
+    "Parse documents and chunk them at natural boundaries, keeping metadata and context with every chunk",
+    "Implement BM25 and dense retrieval, fuse them with reciprocal rank fusion and rerank the candidates with a cross-encoder",
+    "Build a complete RAG pipeline without a framework, with a prompt that enforces grounded answers, inline citations and abstention",
+    "Measure retrieval with recall@k and MRR, and generation with faithfulness, correctness and abstention, then trace each failure to the stage that caused it",
+    "Decide when advanced techniques such as query rewriting or HyDE are worth adding, and when long context fits better than retrieval"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU). Retrieval downloads two small models; generating answers needs an API key.",
   "glossary": [
@@ -58,6 +64,7 @@
 </figure>
 
 <p>Frameworks such as LlamaIndex and LangChain package these steps. This lesson builds them by hand first, because when a RAG system gives a bad answer you need to know which box failed, and you cannot debug what you do not understand.</p>
+<hr data-session="2">
 <h2>Ingestion: parsing and chunking</h2>
 <h3>Parsing: garbage in, garbage out</h3>
 <p>Most retrieval failures start here. PDFs are layout instructions, not text: columns get interleaved, tables turn into number soup, headers and footers repeat on every page, scanned pages contain no text at all.</p>
@@ -71,7 +78,7 @@
 <h3>Chunking</h3>
 <p>Documents are split into <strong>chunks</strong> that are embedded and retrieved individually. Chunk size is a real trade-off:</p>
 <ul>
-<li><strong>Too small</strong> (a sentence): precise matches, but the chunk lacks the context needed to answer ("Set it to 5" — set what?).</li>
+<li><strong>Too small</strong> (a sentence): precise matches, but the chunk lacks the context needed to answer ("Set it to 5": set what?).</li>
 <li><strong>Too large</strong> (a whole chapter): the embedding becomes a blurry average of many topics, retrieval gets less precise, and you waste context tokens.</li>
 <li>A common starting point is <strong>200 to 800 tokens</strong>, split at natural boundaries (sections, then paragraphs, then sentences), with a little <strong>overlap</strong> so ideas spanning a boundary survive.</li>
 </ul>
@@ -109,6 +116,7 @@ def chunk_text(text: str, max_chars: int = 2000, overlap_chars: int = 200) -&gt;
 <p class="admonition-title">Give every chunk its context</p>
 <p>A chunk saying "Tighten to 2 N·m" is useless if retrieval cannot tell it belongs to "Section 4.2: Replacing the filter wheel belt" of the model X manual. Prepend the document title and section path to each chunk's text before embedding. Going further, <strong>contextual retrieval</strong> asks an LLM to write one or two sentences situating each chunk within its whole document, and prepends that. Anthropic reported this substantially reduced retrieval failures, and it combines well with prompt caching to keep the cost down.</p>
 </div>
+<hr data-session="3">
 <h2>Retrieval</h2>
 <h3>Dense retrieval</h3>
 <p>Embed the chunks and the question; take the nearest chunks by cosine similarity (lesson <a data-ref="embeddings-vector-search"></a>). Strong on paraphrase and meaning.</p>
@@ -163,6 +171,7 @@ reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 scores = reranker.predict([(question, chunks[i]) for i in candidate_ids])
 best = [candidate_ids[i] for i in np.argsort(-scores)[:5]]</code></pre>
 <p>Hosted rerank APIs exist too. Reranking is often the single cheapest large improvement to a RAG system.</p>
+<hr data-session="4">
 <h2>Grounded generation</h2>
 <h3>The prompt</h3>
 <p>Number the retrieved chunks, tell the model to answer only from them, to cite them, and to say when they do not contain the answer.</p>
@@ -240,6 +249,7 @@ class MiniRAG:
 <li><strong>Agentic RAG.</strong> Give an agent a search tool and let it search repeatedly, refine queries and decide when it has enough (lesson <a data-ref="agents"></a>). Better for complex questions, slower and costlier.</li>
 <li><strong>GraphRAG.</strong> Extract entities and relationships into a knowledge graph to answer questions that need connecting many documents ("which sites had both firmware 2.3 and belt failures?").</li>
 </ul>
+<hr data-session="5">
 <h2>Evaluate and improve</h2>
 <p>You cannot improve what you do not measure, and RAG has two separate things to measure.</p>
 <h3>Build an evaluation set</h3>

@@ -303,7 +303,7 @@ for gpu in [24, 48, 80]:
         print(f"{gpu:&gt;4}GB {name:&gt;8} {8192:&gt;8} {2:&gt;3}  {max_concurrent(gpu, wb, 8192)}")
 print(f"{80:&gt;4}GB {'4-bit':&gt;8} {8192:&gt;8} {1:&gt;3}  {max_concurrent(80, 0.5, 8192, kv_bytes=1)}")
 print(f"{80:&gt;4}GB {'4-bit':&gt;8} {4096:&gt;8} {2:&gt;3}  {max_concurrent(80, 0.5, 4096)}")</code></pre>
-<p>Each 8k-token sequence costs about 1.07 GB of KV cache. A 24 GB card with 4-bit weights has about 16 GB left, so 15 users, however small the weights get: the cache, not the weights, is the wall. An 80 GB card at BF16 holds about 48 users, and at 4-bit about 60; quantising the KV cache to 8-bit doubles that, and halving the context limit doubles it again. The cheapest route to 32 users at 8k is a single 48 GB card with INT8 weights (about 30 users) or 4-bit weights (about 34), with KV-cache quantisation as the next lever. Real servers reserve memory differently, so treat the numbers as a planning estimate and confirm with a load test.</p>
+<p>Each 8k-token sequence costs about 1.07 GB of KV cache. A 24 GB card with 4-bit weights has about 16 GB left, so 15 users, however small the weights get: the cache, not the weights, is the wall. An 80 GB card at BF16 holds about 48 users, and at 4-bit about 60. Quantising the KV cache to 8-bit doubles that to about 120, and so, on its own, does halving the context limit: both halve the bytes each sequence needs. The cheapest route to 32 users at 8k is a single 48 GB card with 4-bit weights (about 34 users). INT8 weights fall just short at about 30, which is where KV-cache quantisation becomes the next lever. Real servers reserve memory differently, so treat the numbers as a planning estimate and confirm with a load test.</p>
 </details>
 <hr data-session="3">
 <h2>Latency, throughput and cost</h2>
@@ -390,7 +390,7 @@ print(df.groupby("feature").latency_s.quantile([0.5, 0.95]).unstack().round(2))
 ask = df[(df.feature == "ask") &amp; ~df.cache_hit]
 would_cost = (PRICES["big"][0] * ask["in"] + PRICES["big"][1] * ask["out"]).sum() / 1e6
 print(f"ask: actual ${ask.cost.sum():.2f} versus ${would_cost:.2f} with no routing")</code></pre>
-<p>The summarise column jumps on the fourth day, which is exactly the kind of silent prompt growth that a dashboard catches and a unit test never will. Routing 30% of the easy questions to the small model cuts the <code>ask</code> bill by roughly a quarter; whether that is worth it depends on the eval, not the dashboard. In production the same three queries run against a log store or a metrics system instead of a file, and the price table lives in configuration next to the model name.</p>
+<p>The summarise column jumps on the fifth day (16 October), which is exactly the kind of silent prompt growth that a dashboard catches and a unit test never will. Routing 30% of the easy questions to the small model cuts the <code>ask</code> bill by roughly a quarter; whether that is worth it depends on the eval, not the dashboard. In production the same three queries run against a log store or a metrics system instead of a file, and the price table lives in configuration next to the model name.</p>
 </details>
 <hr data-session="4">
 <h2>Observability</h2>
@@ -464,7 +464,7 @@ for name, mean in [("week 2", 180), ("week 3", 260)]:
     days = rng.normal(mean, 12, 7)
     flags = [f"day {i + 1}" for i, d in enumerate(days) if abs(d - mu) &gt; 3 * sd]
     print(f"{name}: mean length {days.mean():.0f}, alerts: {flags or 'none'}")</code></pre>
-<p>Week two lands near zero (sampling noise alone gives a PSI of a few thousandths), and week three lands well above 0.2 because a fifth of the traffic moved category. The length detector is the same idea for a numeric metric. Two refinements for production: compare against a rolling reference so that slow seasonal change does not accumulate into a false alert, and when an alert fires, pull a sample of the new traffic into your eval set before anyone touches the prompt.</p>
+<p>Week two lands near zero (sampling noise alone gives a PSI of a few thousandths), and week three lands at about 0.21, just over the 0.2 line, because a fifth of the traffic moved category. A shift that size sits right at the threshold, so another week's sample could fall just under it: a PSI between 0.1 and 0.2 deserves a look, not silence. The length detector is the same idea for a numeric metric. Two refinements for production: compare against a rolling reference so that slow seasonal change does not accumulate into a false alert, and when an alert fires, pull a sample of the new traffic into your eval set before anyone touches the prompt.</p>
 </details>
 <h3>Rolling out changes: canaries, A/B tests and shadow deployments</h3>
 <p>Every prompt, model or index change is a deployment, and there are three ways to expose it to traffic:</p>
@@ -527,7 +527,7 @@ async def load_test(questions, concurrency=50):
 <ul>
 <li>The quantised weights</li>
 <li class="correct">The KV cache, which grows with context length times the number of concurrent sequences</li>
-<li>The tokenizer</li>
+<li>The tokeniser</li>
 <li>The Python process</li>
 </ul>
 <p class="why">At 4-bit, weights take about 4 GB; the KV cache for many long sequences can be several times that.</p>

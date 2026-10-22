@@ -4,13 +4,19 @@
   "short": "Agents and MCP",
   "summary": "Give models the ability to act by writing the tool-use loop by hand, designing tools models use well, choosing between workflows and autonomous agents, and building an MCP server, then add the guardrails and evaluation that make agents safe to deploy.",
   "sessions": [
-    "What an agent is, and the tool-use loop written by hand",
-    "Designing good tools, and handling results, errors and parallel calls",
+    "What an agent is, and defining tools for a model by hand",
+    "The tool-use loop written by hand: results, errors, parallel calls and good tool design",
     "Patterns: workflows versus agents, planning, memory and multi-agent systems",
     "The Model Context Protocol: build an MCP server for your own data",
     "Build a research agent with guardrails, budgets and an evaluation"
   ],
-  "objectives": [],
+  "objectives": [
+    "Define tools with names, descriptions and JSON schemas, and write the tool-use loop by hand, returning results and errors to the model",
+    "Design tools that models use well, with clear descriptions, compact results, instructive errors and safe implementations",
+    "Choose between workflow patterns and an autonomous agent, and explain where planning, memory and multiple agents help",
+    "Build an MCP server that exposes tools and a resource, test it and register it with a client",
+    "Guard an agent with step and cost limits, least privilege, human approval and tracing, and evaluate it on task success, trajectory, cost and safety"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer, plus an API key for the agent loop.",
   "glossary": [
@@ -107,6 +113,7 @@ TOOLS = [
     },
 ]
 TOOL_FUNCS = {"get_instrument_status": get_instrument_status, "calculate": calculate}</code></pre>
+<hr data-session="2">
 <h3>The loop</h3>
 <pre><code class="language-python">def run_agent(task: str, max_steps: int = 10, verbose: bool = True) -&gt; str:
     messages = [{"role": "user", "content": task}]
@@ -154,6 +161,7 @@ print(run_agent("Is P-117 healthy? If not, how many hours has it been without da
 <li><strong>Separate reading from acting.</strong> Tools that change the world (send email, restart an instrument, delete data) deserve confirmation steps, narrow permissions and logs.</li>
 </ul>
 <p>Models can request <strong>several tool calls in one turn</strong> (for example, checking five instruments at once). The loop above handles this; run independent calls concurrently when they are slow.</p>
+<hr data-session="3">
 <h2>Workflows, agents and when to use which</h2>
 <p>Many "agent" problems are better solved with <strong>workflows</strong>: predefined code paths that call models at fixed points. They are cheaper, faster and easier to test. Anthropic's guide "Building effective agents" names a useful set of patterns:</p>
 <table>
@@ -208,6 +216,7 @@ print(run_agent("Is P-117 healthy? If not, how many hours has it been without da
 </ul>
 <h3>Multi-agent systems</h3>
 <p>Splitting work across several agents (an orchestrator plus specialised sub-agents with their own context windows) can help on broad tasks such as deep research, because each sub-agent explores in parallel with a clean context. It also multiplies token use and adds coordination failure modes. Start with one agent and add more only when a single context demonstrably becomes the bottleneck.</p>
+<hr data-session="4">
 <h2>The Model Context Protocol</h2>
 <p>Every application used to wire up its own tools. The <strong>Model Context Protocol (MCP)</strong> is an open standard, introduced by Anthropic in 2024 and since adopted widely, for connecting AI applications to tools and data. Write an <strong>MCP server</strong> once, and any MCP-capable client (Claude's apps, IDEs, agent frameworks, your own code) can use it. Think of it as USB for AI tools.</p>
 <p>An MCP server can expose:</p>
@@ -258,6 +267,7 @@ if __name__ == "__main__":
 <p class="admonition-title">MCP servers are code you run with your permissions</p>
 <p>Only install servers you trust, give them the narrowest credentials that work, and remember that tool results are untrusted input to the model: a document or web page fetched by one tool can contain instructions trying to hijack the agent (prompt injection, lesson <a data-ref="safety-security"></a>).</p>
 </div>
+<hr data-session="5">
 <h2>Guardrails, budgets and evaluation</h2>
 <p>An agent that loops forever, burns your budget or deletes the wrong thing is worse than no agent. Build in:</p>
 <ul>

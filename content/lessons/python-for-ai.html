@@ -8,7 +8,14 @@
     "NumPy: arrays, shapes, broadcasting and vectorised maths",
     "pandas and Matplotlib: clean, explore and plot a week of sensor data"
   ],
-  "objectives": [],
+  "objectives": [
+    "Write clear data-handling Python with comprehensions, type-hinted functions, dataclasses and generators that stream data in batches",
+    "Wrap unreliable calls in a retry helper with exponential backoff and jitter",
+    "Create, index and reduce NumPy arrays, reading shapes and axes to debug array code",
+    "Replace Python loops with vectorised maths, using broadcasting and matrix multiplication to compute a full distance matrix",
+    "Load, inspect and clean a messy time series in pandas: flag outliers with a rolling median, fill short gaps and resample",
+    "Plot a series and a daily profile with Matplotlib to confirm the structure you expect is really in the data"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU).",
   "glossary": [
@@ -110,6 +117,7 @@ def with_retries(fn, attempts: int = 5, base: float = 0.5):
             wait = base * 2 ** i + random.uniform(0, 0.1)   # exponential backoff with jitter
             print(f"attempt {i + 1} failed ({e}); retrying in {wait:.2f}s")
             time.sleep(wait)</code></pre>
+<hr data-session="2">
 <h2>NumPy: thinking in arrays</h2>
 <p>Everything in machine learning is an array of numbers: an image is a 3-D array of pixel intensities, a batch of sentences is a 2-D array of token ids, a model's weights are a pile of matrices. NumPy's <code>ndarray</code> is the shared language, and PyTorch tensors behave almost identically, so time spent here pays off twice.</p>
 <h3>Creating arrays and reading shapes</h3>
@@ -208,6 +216,7 @@ nearest = dist.argmin(axis=1)                 # (1000,)
 print(dist.shape, nearest[:5])</code></pre>
 This is the core of nearest-neighbour search, which you will meet again in the embeddings and RAG lessons. <code>keepdims=True</code> keeps <code>q2</code> as a column so it broadcasts across columns.</p>
 </details>
+<hr data-session="3">
 <h2>pandas and Matplotlib: real data is messy</h2>
 <p>NumPy handles numbers; pandas handles <em>tables</em>: named columns of mixed types, timestamps, missing values, group-bys and joins. Matplotlib draws the pictures. Together they are how you get to know a dataset before you model it, and skipping that step is the most common beginner mistake in ML.</p>
 <h3>A week of sensor data</h3>

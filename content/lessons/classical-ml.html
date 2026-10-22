@@ -9,7 +9,14 @@
     "Unsupervised learning: k-means, PCA and anomaly detection",
     "Feature engineering and an end-to-end pipeline: predicting instrument failures"
   ],
-  "objectives": [],
+  "objectives": [
+    "Fit linear regression with the normal equation and logistic regression with gradient descent, and check both against scikit-learn",
+    "Explain how decision trees, random forests and gradient boosting differ, and weigh them against other model families for tabular data",
+    "Cluster data with k-means, compress features with PCA, and flag anomalies with an Isolation Forest",
+    "Build a leak-proof scikit-learn pipeline with a ColumnTransformer and compare model families under the same cross-validation",
+    "Use permutation importance to see what a model relies on, and engineer a feature from domain knowledge that lifts a linear model",
+    "Translate model scores into the decision they support, such as which units technicians should visit first"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU). The cross-validation cells take a minute.",
   "glossary": [
@@ -72,6 +79,7 @@ from sklearn.linear_model import LogisticRegression
 sk = LogisticRegression(penalty=None).fit(X, y)
 print(sk.coef_.round(2), sk.score(X, y))                  # about [[2.39 1.77]] 0.94</code></pre>
 <p>Our hand-written version lands close to scikit-learn's (it would match exactly with more steps). The <strong>decision boundary</strong> is where \(\mathbf{w}\cdot\mathbf{x}+b=0\): a straight line. That is the limitation of linear models: they can only separate classes with flat boundaries, unless you engineer features that bend the space for them.</p>
+<hr data-session="2">
 <h2>Trees, forests and boosting</h2>
 <h3>Decision trees</h3>
 <p>A decision tree asks a sequence of yes/no questions about features ("is humidity above 70%?", "is the instrument older than 900 days?") and makes a prediction at each leaf. Training greedily picks, at each node, the question that best separates the targets (by Gini impurity or entropy for classification, variance for regression).</p>
@@ -125,6 +133,7 @@ F_m(\mathbf{x}) = F_{m-1}(\mathbf{x}) + \eta\, h_m(\mathbf{x})
 </tr>
 </tbody>
 </table>
+<hr data-session="3">
 <h2>Unsupervised learning</h2>
 <h3>k-means clustering</h3>
 <p>k-means finds \(k\) cluster centres: assign each point to its nearest centre, move each centre to the mean of its points, repeat until nothing changes. You choose \(k\). The "elbow" method plots the within-cluster distance (inertia) against \(k\) and looks for where adding clusters stops helping much.</p>
@@ -155,6 +164,7 @@ X = np.vstack([normal, anomalies])
 iso = IsolationForest(contamination=0.03, random_state=0).fit(X)
 pred = iso.predict(X)                  # -1 = anomaly, 1 = normal
 print((pred == -1).sum(), (pred[-15:] == -1).sum())   # flags 16 points, 14 of the 15 real anomalies</code></pre>
+<hr data-session="4">
 <h2>End-to-end project: predicting instrument failures</h2>
 <p>Time to put it together on a realistic tabular problem: a fleet of field instruments, and we want to predict which will fail in the next 90 days so technicians can visit them first. We generate the data so you can run it anywhere, and so we know the truth it hides.</p>
 <pre><code class="language-python">import numpy as np

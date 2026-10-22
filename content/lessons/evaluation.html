@@ -178,7 +178,7 @@ by_cat = Counter(c.expected["category"] for c in cases)
 by_tag = Counter(t for c in cases for t in c.tags)
 print(len(cases), "cases"); print("per category:", dict(by_cat)); print("per tag:", dict(by_tag))
 assert min(by_cat.values()) &gt;= 5 and min(by_tag.values()) &gt;= 5</code></pre>
-<p>Thirty-two cases, eight per category, six ambiguous and five multi-problem ones. The validator catches the mistakes that creep into hand-written files (a typo in a category name, a missing tag), and the counts show which slices are thin. Keep the file: the harness section runs two classifiers over it.</p>
+<p>Thirty-two cases, eight per category, ten of them ambiguous, five of which also mention more than one problem. The validator catches the mistakes that creep into hand-written files (a typo in a category name, a missing tag), and the counts show which slices are thin. Keep the file: the harness section runs two classifiers over it.</p>
 </details>
 <hr data-session="2">
 <h2>Graders</h2>
@@ -306,7 +306,7 @@ for (src, ans, label), g in zip(CALIBRATION_SET, heur):
     if g != label:
         kind = "miss" if label == "FAIL" else "false alarm"
         print(f"{kind:&lt;11} human={label} grader={g}: {ans}")</code></pre>
-<p>The heuristic reaches a kappa of about 0.6: three misses and one false alarm out of 18. The misses are answers made entirely of words that do appear in the sources but combined into a claim the sources do not make ("all firmware versions", "clean with acetone", "day and night"); no overlap statistic can catch those. The false alarm is a correct paraphrase ("1-minute intervals" for "every 60 seconds"). Those four cases are exactly what you want in the calibration set when you move to an LLM judge: if it gets them right you have gained something real, and if it does not, the rubric needs an explicit line about paraphrase and about claims that generalise beyond the source.</p>
+<p>The heuristic reaches an accuracy of 0.78 and a kappa of about 0.56, moderate agreement: three misses and one false alarm out of 18. The misses are answers made entirely of words that do appear in the sources but combined into a claim the sources do not make ("all firmware versions", "clean with acetone", "day and night"); no overlap statistic can catch those. The false alarm is a correct paraphrase ("1-minute intervals" for "every 60 seconds"). Those four cases are exactly what you want in the calibration set when you move to an LLM judge: if it gets them right you have gained something real, and if it does not, the rubric needs an explicit line about paraphrase and about claims that generalise beyond the source.</p>
 <pre><code class="language-python"># Needs an API key (see the setup cell)
 llm = [judge_faithfulness(ans, src)["verdict"] for src, ans, _ in CALIBRATION_SET]
 print(f"LLM judge: accuracy {sum(h == g for h, g in zip(human, llm)) / len(human):.2f}  kappa {cohens_kappa(human, llm):.2f}")

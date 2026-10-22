@@ -8,7 +8,14 @@
     "Train, validation and test sets; overfitting, bias and variance; regularisation and cross-validation",
     "Metrics that tell the truth, baselines, and data leakage"
   ],
-  "objectives": [],
+  "objectives": [
+    "Tell supervised, unsupervised, self-supervised and reinforcement learning apart, and lay out the workflow every ML project follows",
+    "Split data into training, validation and test sets that match how the model will meet data in production",
+    "Diagnose underfitting and overfitting from training and validation error, and reduce overfitting with ridge or lasso regularisation",
+    "Estimate performance with k-fold cross-validation and report the spread across folds, not just the mean",
+    "Choose metrics that reflect the cost of each mistake, using precision, recall, F1 and PR curves when classes are imbalanced",
+    "Beat a trivial baseline, and prevent data leakage by fitting preprocessing inside a scikit-learn Pipeline"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU).",
   "glossary": [
@@ -80,6 +87,7 @@
 <li><strong>Test once</strong> on the held-out test set.</li>
 <li><strong>Deploy and monitor</strong>, because the world changes and models decay.</li>
 </ol>
+<hr data-session="2">
 <h2>Splits, overfitting and generalisation</h2>
 <h3>Three sets, three jobs</h3>
 <ul>
@@ -199,6 +207,7 @@ scores = cross_val_score(model, X, y, cv=KFold(5, shuffle=True, random_state=0),
                          scoring="neg_mean_squared_error")
 print(f"MSE {-scores.mean():.3f} ± {scores.std():.3f}")</code></pre>
 <p>Report the spread, not just the mean. If two models differ by less than the standard deviation across folds, you have not shown that one is better.</p>
+<hr data-session="3">
 <h2>Metrics that tell the truth</h2>
 <h3>Regression</h3>
 <ul>

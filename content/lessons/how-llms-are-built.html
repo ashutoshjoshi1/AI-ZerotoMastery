@@ -2,19 +2,26 @@
 {
   "title": "How large language models are built",
   "short": "How LLMs are built",
-  "summary": "The full life of an LLM, from tokenizer to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.",
+  "summary": "The full life of an LLM, from tokeniser to pretraining at scale, then instruction tuning, RLHF, DPO and reasoning training, ending with how decoding settings shape what the model says and why it sometimes makes things up.",
   "sessions": [
-    "Tokenization: implement byte-pair encoding and see its quirks",
+    "Tokenisation: implement byte-pair encoding and see its quirks",
     "Pretraining: data, objective, compute and scaling laws",
     "Post-training: instruction tuning, RLHF, DPO, reasoning models",
-    "Decoding, context windows, hallucination, and the model landscape"
+    "Decoding, context windows, hallucination and the model landscape; hands-on with a real tokeniser"
   ],
-  "objectives": [],
+  "objectives": [
+    "Implement byte-pair encoding and explain how tokenisation causes quirks with spelling, numbers and non-English text",
+    "Estimate training compute with C ≈ 6ND and explain what scaling laws and the Chinchilla result say about model size and data",
+    "Explain how supervised fine-tuning, RLHF, DPO, AI feedback and RL on checkable problems turn a base model into an assistant or a reasoning model",
+    "Implement temperature, top-k and top-p sampling and choose decoding settings to suit a task",
+    "Explain why models hallucinate and which engineering mitigations reduce it",
+    "Weigh closed API-only models against open-weight models on capability, setup, data control, customisation and cost"
+  ],
   "prerequisites": [],
   "runs_on": "Any computer (CPU).",
   "glossary": [
     {"term": "Base model", "def": "A model after pretraining only. It continues text rather than following instructions."},
-    {"term": "BPE (byte-pair encoding)", "def": "A tokenizer training method that repeatedly merges the most frequent adjacent pair of tokens into a new token."},
+    {"term": "BPE (byte-pair encoding)", "def": "A tokeniser training method that repeatedly merges the most frequent adjacent pair of tokens into a new token."},
     {"term": "Context window", "def": "The maximum number of tokens (input plus output) a model can attend to in one request."},
     {"term": "FLOPs", "def": "Floating-point operations; training a transformer costs about 6 × parameters × tokens."},
     {"term": "Hallucination", "def": "Fluent, confident output that is false or unsupported."},
@@ -31,11 +38,11 @@
 }
 -->
 <h2>From TinyGPT to a frontier model</h2>
-<p>Your TinyGPT from lesson <a data-ref="transformers"></a> has the same architecture as a frontier LLM, give or take some refinements. The differences are a proper tokenizer, about a million times more parameters, roughly a hundred million times more training data, and a long post-training phase that turns a text predictor into a helpful assistant. This lesson walks through each stage, because each one explains behaviour you will run into as an engineer: odd failures on spelling and arithmetic, the cost of long prompts, why temperature matters, and why models can be confidently wrong.</p>
-<h2>Tokenization</h2>
+<p>Your TinyGPT from lesson <a data-ref="transformers"></a> has the same architecture as a frontier LLM, give or take some refinements. The differences are a proper tokeniser, about a million times more parameters, roughly a hundred million times more training data, and a long post-training phase that turns a text predictor into a helpful assistant. This lesson walks through each stage, because each one explains behaviour you will run into as an engineer: odd failures on spelling and arithmetic, the cost of long prompts, why temperature matters, and why models can be confidently wrong.</p>
+<h2>Tokenisation</h2>
 <p>Characters make sequences long (attention is quadratic in length); whole words make the vocabulary enormous and cannot handle new words. Modern LLMs use <strong>subword tokens</strong>: frequent words get a single token, rare words are split into pieces, and anything at all can fall back to raw bytes. Vocabularies are typically 32,000 to 260,000 tokens. In English, one token is roughly four characters, or about three-quarters of a word.</p>
 <h3>Byte-pair encoding, implemented</h3>
-<p>BPE starts from the 256 possible byte values and repeatedly merges the most frequent adjacent pair into a new token. Real tokenizers first split text into word-like chunks with a regular expression, so merges never cross word boundaries.</p>
+<p>BPE starts from the 256 possible byte values and repeatedly merges the most frequent adjacent pair into a new token. Real tokenisers first split text into word-like chunks with a regular expression, so merges never cross word boundaries.</p>
 <pre><code class="language-python">import re
 from collections import Counter
 
@@ -85,7 +92,7 @@ def encode(text, merges):
 
 def decode(ids, vocab):
     return b"".join(vocab[i] for i in ids).decode("utf-8", errors="replace")</code></pre>
-<p>Train it on a paragraph about tokenizers (repeated a few times) with a 400-token vocabulary, then look at what it does:</p>
+<p>Train it on a paragraph about tokenisers (repeated a few times) with a 400-token vocabulary, then look at what it does:</p>
 <pre><code class="language-text">'The tokenizer splits words.'   27 bytes -&gt;  6 tokens: 'T' 'he' ' tokenizer' ' splits' ' words' '.'
 'remodelling'                   11 bytes -&gt;  4 tokens: 're' 'model' 'l' 'ing'
 'Tokenization of 3.14159'       23 bytes -&gt; 18 tokens: 'T' 'o' 'k' 'en' 'i' 'z' 'at' 'i' 'on' ' of' ...
@@ -94,13 +101,14 @@ def decode(ids, vocab):
 <ul>
 <li><strong>Frequent words are one token; rare ones fragment.</strong> " tokenizer" was common in training text, "Tokenization" with a capital T was not, so it shatters into letters.</li>
 <li><strong>Shared pieces carry meaning.</strong> "remodelling" reuses "model".</li>
-<li><strong>Numbers tokenize awkwardly.</strong> Digits are split inconsistently, which is one reason LLMs can be unreliable at arithmetic and at counting letters ("how many r's in strawberry?"): the model never sees individual characters, only tokens.</li>
+<li><strong>Numbers tokenise awkwardly.</strong> Digits are split inconsistently, which is one reason LLMs can be unreliable at arithmetic and at counting letters ("how many r's in strawberry?"): the model never sees individual characters, only tokens.</li>
 <li><strong>Unseen text falls back to bytes.</strong> Nothing is ever unknown, but non-English text and emoji cost many more tokens, which means more cost and less effective context.</li>
 </ul>
 <div class="admonition tip">
 <p class="admonition-title">Tokens are the unit of everything</p>
-<p>APIs charge per token, context windows are measured in tokens, and latency scales with tokens generated. Use the provider's token counter (or <code>tiktoken</code> for OpenAI-style tokenizers, or a Hugging Face tokenizer for open models) when you estimate costs. Never estimate from word counts in production.</p>
+<p>APIs charge per token, context windows are measured in tokens, and latency scales with tokens generated. Use the provider's token counter (or <code>tiktoken</code> for OpenAI-style tokenisers, or a Hugging Face tokeniser for open models) when you estimate costs. Never estimate from word counts in production.</p>
 </div>
+<hr data-session="2">
 <h2>Pretraining</h2>
 <h3>The objective</h3>
 <p>Exactly what TinyGPT did: minimise cross-entropy on the next token, averaged over every position of every sequence. No labels, no task definitions. To predict the next token of a physics textbook, a chemistry paper, a Python repository and a legal contract, a model has to absorb grammar, facts, reasoning patterns and coding conventions. Capabilities emerge as a by-product of compression.</p>
@@ -120,6 +128,7 @@ C \approx 6ND \ \text{floating-point operations}
 <li><strong>RoPE</strong> positions and <strong>grouped-query attention</strong> (lesson <a data-ref="transformers"></a>).</li>
 <li><strong>Mixture of experts (MoE)</strong>: each MLP is replaced by many "expert" MLPs and a small router that sends each token to only a few of them. Total parameters can be huge while the compute per token stays modest. Several leading open models use MoE.</li>
 </ul>
+<hr data-session="3">
 <h2>Post-training: from predictor to assistant</h2>
 <p>A freshly pretrained <strong>base model</strong> continues text. Ask it "What is the capital of France?" and it may continue with "What is the capital of Germany?", because lists of quiz questions are common on the web. Post-training turns it into something that follows instructions, holds a conversation, refuses harmful requests and uses tools.</p>
 <h3>1. Supervised fine-tuning (SFT)</h3>
@@ -132,6 +141,7 @@ C \approx 6ND \ \text{floating-point operations}
 <p>Human labelling is slow and costly. <strong>RLAIF</strong> uses a model to judge responses, often against a written set of principles. Anthropic's Constitutional AI is the best-known example: a model critiques and revises its own outputs according to a constitution of principles, and AI-generated preferences train the final model.</p>
 <h3>5. Reasoning models</h3>
 <p>A more recent shift: train models with reinforcement learning on problems whose answers can be <strong>checked automatically</strong> (maths with known answers, code with unit tests), rewarding correct final answers. Models learn to produce long chains of intermediate reasoning, to try approaches, notice mistakes and backtrack. At inference time these models spend extra tokens "thinking" before answering, and accuracy on hard problems improves as they are allowed to think longer. This <strong>test-time compute</strong> is a second scaling axis next to model size. As an engineer you will see it as a setting (a thinking or reasoning budget) that trades latency and cost for accuracy.</p>
+<hr data-session="4">
 <h2>Decoding: turning distributions into text</h2>
 <p>At each step the model outputs a probability for every token in its vocabulary. How you pick from that distribution changes the output a lot.</p>
 <ul>
@@ -218,10 +228,10 @@ print(sample(logits, temperature=0.1))   # [0.993 0.007 0.    0.    0.   ]  near
 </table>
 <p>Most real systems mix them: a frontier model for hard reasoning, a small open model for high-volume classification, an embedding model for search. Model names and rankings change every few months, so build systems where the model is a configuration value, and keep an evaluation set (lesson <a data-ref="evaluation"></a>) to tell you objectively when to switch.</p>
 <div class="admonition exercise">
-<p class="admonition-title">Hands-on: tokenizers in the wild</p>
-<p>Install <code>tiktoken</code> (<code>uv add tiktoken</code>) and load <code>tiktoken.get_encoding("cl100k_base")</code>, a real production tokenizer.</p>
+<p class="admonition-title">Hands-on: tokenisers in the wild</p>
+<p>Install <code>tiktoken</code> (<code>uv add tiktoken</code>) and load <code>tiktoken.get_encoding("cl100k_base")</code>, a real production tokeniser.</p>
 <ol>
-<li>Tokenize an English sentence, the same sentence translated into another language you know, a line of Python, and a long number. Compare token counts per character.</li>
+<li>Tokenise an English sentence, the same sentence translated into another language you know, a line of Python, and a long number. Compare token counts per character.</li>
 <li>Print the individual tokens for "strawberry", " strawberry" and "Strawberry". Why do these differ, and how does this relate to letter-counting failures?</li>
 <li>Remove the pre-split regex from the BPE code above (treat the whole text as one chunk) and retrain. Look at the longest learned tokens. What goes wrong?</li>
 </ol>
